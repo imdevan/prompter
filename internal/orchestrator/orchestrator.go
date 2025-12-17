@@ -276,14 +276,40 @@ func (o *Orchestrator) formatContentForPrompt(files []interfaces.FileInfo) strin
 	}
 
 	var parts []string
-	parts = append(parts, "## Included Files\n")
-
+	
+	// Check if we have files or directories
+	var fileRefs []string
+	var dirRefs []string
+	
 	for _, file := range files {
-		parts = append(parts, fmt.Sprintf("### %s\n", file.RelPath))
-		if file.Language != "" {
-			parts = append(parts, fmt.Sprintf("```%s\n%s\n```\n", file.Language, file.Content))
+		// Check if this is a directory reference (directories have empty content and no extension typically)
+		stat, err := os.Stat(file.Path)
+		if err == nil && stat.IsDir() {
+			dirRefs = append(dirRefs, file.RelPath)
 		} else {
-			parts = append(parts, fmt.Sprintf("```\n%s\n```\n", file.Content))
+			fileRefs = append(fileRefs, file.RelPath)
+		}
+	}
+	
+	// Format file references
+	if len(fileRefs) > 0 {
+		parts = append(parts, "Referencing files:")
+		for _, fileRef := range fileRefs {
+			parts = append(parts, fileRef)
+		}
+	}
+	
+	// Format directory references
+	if len(dirRefs) > 0 {
+		parts = append(parts, "Referencing dir:")
+		for _, dirRef := range dirRefs {
+			// For directories, show the full path instead of relative path
+			for _, file := range files {
+				if file.RelPath == dirRef {
+					parts = append(parts, file.Path)
+					break
+				}
+			}
 		}
 	}
 
