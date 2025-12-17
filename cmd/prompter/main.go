@@ -68,7 +68,7 @@ func init() {
 	rootCmd.Flags().String("pre", "", "pre-template name")
 	rootCmd.Flags().String("post", "", "post-template name")
 	rootCmd.Flags().StringSlice("file", []string{}, "files to include")
-	rootCmd.Flags().String("directory", "", "directory to include")
+	rootCmd.Flags().BoolP("directory", "d", false, "include current directory")
 	rootCmd.Flags().String("target", "", "output target (clipboard, stdout, file:/path)")
 	rootCmd.Flags().String("editor", "", "editor to open prompt in")
 	rootCmd.Flags().Bool("fix", false, "fix mode - process captured command output")
@@ -108,8 +108,18 @@ func buildRequestFromFlags(cmd *cobra.Command, args []string) (*models.PromptReq
 		return nil, fmt.Errorf("invalid file flag: %w", err)
 	}
 
-	if request.Directory, err = cmd.Flags().GetString("directory"); err != nil {
+	var includeDirectory bool
+	if includeDirectory, err = cmd.Flags().GetBool("directory"); err != nil {
 		return nil, fmt.Errorf("invalid directory flag: %w", err)
+	}
+	
+	// If --directory flag is set, use current directory
+	if includeDirectory {
+		if cwd, err := os.Getwd(); err == nil {
+			request.Directory = cwd
+		} else {
+			request.Directory = "."
+		}
 	}
 
 	if request.Target, err = cmd.Flags().GetString("target"); err != nil {
