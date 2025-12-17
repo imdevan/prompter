@@ -25,9 +25,7 @@ editor = "vim"
 default_pre = "engineering"
 default_post = "testing"
 fix_file = "~/fix-output.txt"
-max_file_size_bytes = 32768
-max_total_bytes = 131072
-allow_oversize = true
+
 directory_strategy = "filesystem"
 target = "stdout"
 `
@@ -47,7 +45,7 @@ target = "stdout"
 	}
 	
 	fmt.Printf("   Editor: %s\n", cfg.Editor)
-	fmt.Printf("   Max File Size: %d bytes\n", cfg.MaxFileSizeBytes)
+
 	fmt.Printf("   Directory Strategy: %s\n", cfg.DirectoryStrategy)
 	fmt.Printf("   Target: %s\n", cfg.Target)
 
@@ -68,14 +66,14 @@ target = "stdout"
 	
 	fmt.Printf("   Editor (env override): %s\n", cfg2.Editor)
 	fmt.Printf("   Target (env override): %s\n", cfg2.Target)
-	fmt.Printf("   Max File Size (from config): %d bytes\n", cfg2.MaxFileSizeBytes)
+
 
 	// Test 3: Flag precedence
 	fmt.Println("\n3. Testing flag precedence:")
 	manager3 := config.NewManager()
 	manager3.Load(configPath)
 	manager3.SetFlag("editor", "nano")
-	manager3.SetFlag("max_file_size_bytes", int64(16384))
+
 	
 	cfg3, err := manager3.Resolve()
 	if err != nil {
@@ -83,7 +81,7 @@ target = "stdout"
 	}
 	
 	fmt.Printf("   Editor (flag override): %s\n", cfg3.Editor)
-	fmt.Printf("   Max File Size (flag override): %d bytes\n", cfg3.MaxFileSizeBytes)
+
 	fmt.Printf("   Target (from env): %s\n", cfg3.Target)
 
 	// Test 4: Validation
@@ -98,7 +96,7 @@ target = "stdout"
 	// Test 5: Invalid config
 	fmt.Println("\n5. Testing invalid configuration:")
 	invalidCfg := *cfg3
-	invalidCfg.MaxFileSizeBytes = -1
+
 	invalidCfg.DirectoryStrategy = "invalid"
 	
 	err = manager3.Validate(&invalidCfg)

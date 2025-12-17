@@ -268,9 +268,6 @@ func (o *Orchestrator) buildTemplateData(request *models.PromptRequest, cfg *int
 		"default_pre":         cfg.DefaultPre,
 		"default_post":        cfg.DefaultPost,
 		"fix_file":            cfg.FixFile,
-		"max_file_size_bytes": cfg.MaxFileSizeBytes,
-		"max_total_bytes":     cfg.MaxTotalBytes,
-		"allow_oversize":      cfg.AllowOversize,
 		"directory_strategy":  cfg.DirectoryStrategy,
 		"target":              cfg.Target,
 	}

@@ -41,7 +41,7 @@ func TestProcessor_IntegrationWithRealTemplates(t *testing.T) {
 			Dirty:  false,
 		},
 		Config: map[string]interface{}{
-			"max_file_size": 1024,
+			"target": "clipboard",
 		},
 		Env: map[string]string{
 			"USER": "testuser",
@@ -136,8 +136,8 @@ Output:
 			Dirty:  true,
 		},
 		Config: map[string]interface{}{
-			"max_file_size": 2048,
-			"debug":         true,
+			"target": "stdout",
+			"debug":  true,
 		},
 		Env: map[string]string{
 			"USER": "testuser",
@@ -166,7 +166,7 @@ Output:
 		"- Branch: feature/test",
 		"- Commit: def456",
 		"- Dirty: true",
-		"- max_file_size: 2048",
+		"- target: stdout",
 		"- debug: true",
 		"User: testuser",
 		"## Fix Mode",

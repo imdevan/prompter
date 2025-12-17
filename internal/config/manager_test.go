@@ -28,12 +28,6 @@ func TestManager_Load_DefaultPath(t *testing.T) {
 	}
 	
 	// Verify defaults are set
-	if config.MaxFileSizeBytes != 65536 {
-		t.Errorf("Expected MaxFileSizeBytes to be 65536, got %d", config.MaxFileSizeBytes)
-	}
-	if config.MaxTotalBytes != 262144 {
-		t.Errorf("Expected MaxTotalBytes to be 262144, got %d", config.MaxTotalBytes)
-	}
 	if config.DirectoryStrategy != "git" {
 		t.Errorf("Expected DirectoryStrategy to be 'git', got %s", config.DirectoryStrategy)
 	}
@@ -53,9 +47,7 @@ editor = "vim"
 default_pre = "custom_pre"
 default_post = "custom_post"
 fix_file = "/custom/fix.txt"
-max_file_size_bytes = 32768
-max_total_bytes = 131072
-allow_oversize = true
+
 directory_strategy = "filesystem"
 target = "stdout"
 `
@@ -78,12 +70,7 @@ target = "stdout"
 	if config.Editor != "vim" {
 		t.Errorf("Expected Editor to be 'vim', got %s", config.Editor)
 	}
-	if config.MaxFileSizeBytes != 32768 {
-		t.Errorf("Expected MaxFileSizeBytes to be 32768, got %d", config.MaxFileSizeBytes)
-	}
-	if config.AllowOversize != true {
-		t.Errorf("Expected AllowOversize to be true, got %v", config.AllowOversize)
-	}
+
 }
 
 func TestManager_Validate(t *testing.T) {
@@ -103,38 +90,14 @@ func TestManager_Validate(t *testing.T) {
 			name: "valid config",
 			config: &interfaces.Config{
 				PromptsLocation:   "/tmp/prompts",
-				MaxFileSizeBytes:  65536,
-				MaxTotalBytes:     262144,
 				DirectoryStrategy: "git",
 				Target:            "clipboard",
 			},
 			wantErr: false,
 		},
 		{
-			name: "negative max file size",
-			config: &interfaces.Config{
-				MaxFileSizeBytes:  -1,
-				MaxTotalBytes:     262144,
-				DirectoryStrategy: "git",
-				Target:            "clipboard",
-			},
-			wantErr: true,
-		},
-		{
-			name: "negative max total bytes",
-			config: &interfaces.Config{
-				MaxFileSizeBytes:  65536,
-				MaxTotalBytes:     -1,
-				DirectoryStrategy: "git",
-				Target:            "clipboard",
-			},
-			wantErr: true,
-		},
-		{
 			name: "invalid directory strategy",
 			config: &interfaces.Config{
-				MaxFileSizeBytes:  65536,
-				MaxTotalBytes:     262144,
 				DirectoryStrategy: "invalid",
 				Target:            "clipboard",
 			},
@@ -143,8 +106,6 @@ func TestManager_Validate(t *testing.T) {
 		{
 			name: "invalid target",
 			config: &interfaces.Config{
-				MaxFileSizeBytes:  65536,
-				MaxTotalBytes:     262144,
 				DirectoryStrategy: "git",
 				Target:            "invalid",
 			},
@@ -153,8 +114,6 @@ func TestManager_Validate(t *testing.T) {
 		{
 			name: "valid file target",
 			config: &interfaces.Config{
-				MaxFileSizeBytes:  65536,
-				MaxTotalBytes:     262144,
 				DirectoryStrategy: "git",
 				Target:            "file:/tmp/output.txt",
 			},
@@ -176,13 +135,13 @@ func TestManager_SetFlag(t *testing.T) {
 	manager := NewManager()
 	
 	manager.SetFlag("editor", "vim")
-	manager.SetFlag("max_file_size_bytes", int64(32768))
+	manager.SetFlag("target", "stdout")
 	
 	if manager.flags["editor"] != "vim" {
 		t.Errorf("Expected flag 'editor' to be 'vim', got %v", manager.flags["editor"])
 	}
-	if manager.flags["max_file_size_bytes"] != int64(32768) {
-		t.Errorf("Expected flag 'max_file_size_bytes' to be 32768, got %v", manager.flags["max_file_size_bytes"])
+	if manager.flags["target"] != "stdout" {
+		t.Errorf("Expected flag 'target' to be 'stdout', got %v", manager.flags["target"])
 	}
 }
 
@@ -193,7 +152,6 @@ func TestManager_Resolve_FlagPrecedence(t *testing.T) {
 	
 	configContent := `
 editor = "nano"
-max_file_size_bytes = 16384
 target = "stdout"
 `
 	
@@ -212,7 +170,7 @@ target = "stdout"
 	
 	// Set flags that should override config values
 	manager.SetFlag("editor", "vim")
-	manager.SetFlag("max_file_size_bytes", int64(32768))
+	// Don't set target flag so it remains from config
 	
 	// Resolve should apply flag precedence
 	config, err := manager.Resolve()
@@ -224,9 +182,7 @@ target = "stdout"
 	if config.Editor != "vim" {
 		t.Errorf("Expected Editor to be 'vim' (from flag), got %s", config.Editor)
 	}
-	if config.MaxFileSizeBytes != 32768 {
-		t.Errorf("Expected MaxFileSizeBytes to be 32768 (from flag), got %d", config.MaxFileSizeBytes)
-	}
+
 	// Target should remain from config since no flag was set
 	if config.Target != "stdout" {
 		t.Errorf("Expected Target to be 'stdout' (from config), got %s", config.Target)
@@ -236,10 +192,10 @@ target = "stdout"
 func TestManager_Resolve_EnvironmentVariables(t *testing.T) {
 	// Set environment variables
 	os.Setenv("PROMPTER_EDITOR", "emacs")
-	os.Setenv("PROMPTER_MAX_FILE_SIZE_BYTES", "8192")
+	os.Setenv("PROMPTER_TARGET", "stdout")
 	defer func() {
 		os.Unsetenv("PROMPTER_EDITOR")
-		os.Unsetenv("PROMPTER_MAX_FILE_SIZE_BYTES")
+		os.Unsetenv("PROMPTER_TARGET")
 	}()
 	
 	manager := NewManager()
@@ -253,18 +209,15 @@ func TestManager_Resolve_EnvironmentVariables(t *testing.T) {
 	if config.Editor != "emacs" {
 		t.Errorf("Expected Editor to be 'emacs' (from env), got %s", config.Editor)
 	}
-	if config.MaxFileSizeBytes != 8192 {
-		t.Errorf("Expected MaxFileSizeBytes to be 8192 (from env), got %d", config.MaxFileSizeBytes)
-	}
+
 }
 
 func TestManager_MergeConfig(t *testing.T) {
 	manager := NewManager()
 	
 	other := &interfaces.Config{
-		Editor:           "vim",
-		MaxFileSizeBytes: 32768,
-		Target:           "stdout",
+		Editor: "vim",
+		Target: "stdout",
 	}
 	
 	manager.MergeConfig(other)
@@ -274,9 +227,7 @@ func TestManager_MergeConfig(t *testing.T) {
 	if config.Editor != "vim" {
 		t.Errorf("Expected Editor to be 'vim', got %s", config.Editor)
 	}
-	if config.MaxFileSizeBytes != 32768 {
-		t.Errorf("Expected MaxFileSizeBytes to be 32768, got %d", config.MaxFileSizeBytes)
-	}
+
 	if config.Target != "stdout" {
 		t.Errorf("Expected Target to be 'stdout', got %s", config.Target)
 	}

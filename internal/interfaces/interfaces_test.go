@@ -12,9 +12,6 @@ func TestInterfaceCompilation(t *testing.T) {
 	config := &Config{
 		PromptsLocation:   "/test",
 		Editor:            "vim",
-		MaxFileSizeBytes:  1024,
-		MaxTotalBytes:     4096,
-		AllowOversize:     false,
 		DirectoryStrategy: "git",
 		Target:            "clipboard",
 	}
@@ -37,14 +34,8 @@ func TestInterfaceCompilation(t *testing.T) {
 		Content:  "package main",
 	}
 
-	contentLimits := &ContentLimits{
-		MaxFileSize:   1024,
-		MaxTotal:      4096,
-		AllowOversize: false,
-	}
-
 	// Verify structs are properly defined
-	if config == nil || templateData == nil || fileInfo == nil || contentLimits == nil {
+	if config == nil || templateData == nil || fileInfo == nil {
 		t.Error("Failed to create interface data structures")
 	}
 }

@@ -91,9 +91,6 @@ func NewContentCollectionError(path string, cause error) *PrompterError {
 	} else if strings.Contains(cause.Error(), "not found") || strings.Contains(cause.Error(), "does not exist") {
 		guidance = fmt.Sprintf("Path '%s' does not exist. Check the path spelling and ensure " +
 			"the file or directory exists.", path)
-	} else if strings.Contains(cause.Error(), "too large") {
-		guidance = fmt.Sprintf("Content from '%s' exceeds size limits. Consider using --allow-oversize " +
-			"or increase max_file_size_bytes/max_total_bytes in configuration.", path)
 	}
 	
 	return &PrompterError{

@@ -47,9 +47,6 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("default_pre", "")
 	v.SetDefault("default_post", "")
 	v.SetDefault("fix_file", "/tmp/prompter-fix.txt")
-	v.SetDefault("max_file_size_bytes", int64(65536))   // 64KB
-	v.SetDefault("max_total_bytes", int64(262144))      // 256KB
-	v.SetDefault("allow_oversize", false)
 	v.SetDefault("directory_strategy", "git")
 	v.SetDefault("target", "clipboard")
 }
@@ -138,23 +135,7 @@ func (m *Manager) applyFlagOverrides(config *interfaces.Config) {
 		}
 	}
 	
-	if val, exists := m.flags["max_file_size_bytes"]; exists && val != nil {
-		if i64, ok := val.(int64); ok {
-			config.MaxFileSizeBytes = i64
-		}
-	}
-	
-	if val, exists := m.flags["max_total_bytes"]; exists && val != nil {
-		if i64, ok := val.(int64); ok {
-			config.MaxTotalBytes = i64
-		}
-	}
-	
-	if val, exists := m.flags["allow_oversize"]; exists && val != nil {
-		if b, ok := val.(bool); ok {
-			config.AllowOversize = b
-		}
-	}
+
 	
 	if val, exists := m.flags["directory_strategy"]; exists && val != nil {
 		if str, ok := val.(string); ok && str != "" {
@@ -175,15 +156,7 @@ func (m *Manager) Validate(config *interfaces.Config) error {
 		return fmt.Errorf("config cannot be nil")
 	}
 	
-	// Validate max file size
-	if config.MaxFileSizeBytes < 0 {
-		return fmt.Errorf("max_file_size_bytes cannot be negative: %d", config.MaxFileSizeBytes)
-	}
-	
-	// Validate max total bytes
-	if config.MaxTotalBytes < 0 {
-		return fmt.Errorf("max_total_bytes cannot be negative: %d", config.MaxTotalBytes)
-	}
+
 	
 	// Validate directory strategy
 	validStrategies := map[string]bool{
@@ -227,9 +200,6 @@ func (m *Manager) getConfigFromViper() *interfaces.Config {
 		DefaultPre:        m.v.GetString("default_pre"),
 		DefaultPost:       m.v.GetString("default_post"),
 		FixFile:           expandPath(m.v.GetString("fix_file")),
-		MaxFileSizeBytes:  m.v.GetInt64("max_file_size_bytes"),
-		MaxTotalBytes:     m.v.GetInt64("max_total_bytes"),
-		AllowOversize:     m.v.GetBool("allow_oversize"),
 		DirectoryStrategy: m.v.GetString("directory_strategy"),
 		Target:            m.v.GetString("target"),
 	}
@@ -256,13 +226,7 @@ func (m *Manager) MergeConfig(other *interfaces.Config) {
 	if other.FixFile != "" {
 		m.v.Set("fix_file", other.FixFile)
 	}
-	if other.MaxFileSizeBytes > 0 {
-		m.v.Set("max_file_size_bytes", other.MaxFileSizeBytes)
-	}
-	if other.MaxTotalBytes > 0 {
-		m.v.Set("max_total_bytes", other.MaxTotalBytes)
-	}
-	m.v.Set("allow_oversize", other.AllowOversize)
+
 	if other.DirectoryStrategy != "" {
 		m.v.Set("directory_strategy", other.DirectoryStrategy)
 	}
