@@ -1,15 +1,25 @@
 package models
 
-// PromptRequest represents the main application state for a prompt generation request
+// PromptRequest represents the main application request with all user inputs
 type PromptRequest struct {
-	BasePrompt    string
-	PreTemplate   string
-	PostTemplate  string
-	Files         []string
-	Directory     string
-	FixMode       bool
-	FixFile       string
-	Target        string
-	Editor        string
-	Interactive   bool
+	BasePrompt      string   `json:"base_prompt"`
+	PreTemplate     string   `json:"pre_template"`
+	PostTemplate    string   `json:"post_template"`
+	Files           []string `json:"files"`
+	Directory       string   `json:"directory"`
+	FixMode         bool     `json:"fix_mode"`
+	FixFile         string   `json:"fix_file"`
+	Target          string   `json:"target"`
+	Editor          string   `json:"editor"`
+	EditorRequested bool     `json:"editor_requested"` // Track if --editor flag was explicitly used
+	Interactive     bool     `json:"interactive"`
+	ConfigPath      string   `json:"config_path"`
+}
+
+// NewPromptRequest creates a new PromptRequest with default values
+func NewPromptRequest() *PromptRequest {
+	return &PromptRequest{
+		Interactive: true, // Default to interactive mode
+		Files:       []string{},
+	}
 }
