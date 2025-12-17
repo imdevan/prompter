@@ -67,7 +67,7 @@ func TestBuildRequestFromFlags(t *testing.T) {
 			cmd.Flags().String("pre", "", "")
 			cmd.Flags().String("post", "", "")
 			cmd.Flags().StringSlice("file", []string{}, "")
-			cmd.Flags().String("directory", "", "")
+			cmd.Flags().BoolP("directory", "d", false, "")
 			cmd.Flags().String("target", "", "")
 			cmd.Flags().String("editor", "", "")
 			cmd.Flags().Bool("fix", false, "")
