@@ -1,0 +1,31 @@
+class Prompter < Formula
+  desc "CLI tool for assembling AI coding prompts"
+  homepage "https://github.com/YOUR_USERNAME/prompter-cli"
+  version "{{VERSION}}"
+
+  if OS.mac?
+    if Hardware::CPU.arm?
+      url "https://github.com/YOUR_USERNAME/prompter-cli/releases/download/v#{version}/prompter-darwin-arm64"
+      sha256 "{{SHA256_DARWIN_ARM64}}"
+    else
+      url "https://github.com/YOUR_USERNAME/prompter-cli/releases/download/v#{version}/prompter-darwin-amd64"
+      sha256 "{{SHA256_DARWIN_AMD64}}"
+    end
+  elsif OS.linux?
+    if Hardware::CPU.arm?
+      url "https://github.com/YOUR_USERNAME/prompter-cli/releases/download/v#{version}/prompter-linux-arm64"
+      sha256 "{{SHA256_LINUX_ARM64}}"
+    else
+      url "https://github.com/YOUR_USERNAME/prompter-cli/releases/download/v#{version}/prompter-linux-amd64"
+      sha256 "{{SHA256_LINUX_AMD64}}"
+    end
+  end
+
+  def install
+    bin.install "prompter-#{OS.kernel_name.downcase}-#{Hardware::CPU.arch}" => "prompter"
+  end
+
+  test do
+    system "#{bin}/prompter", "--version"
+  end
+end
