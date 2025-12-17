@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"prompter-cli/internal/config"
-	"prompter-cli/internal/content"
 	"prompter-cli/internal/interfaces"
 	"prompter-cli/internal/template"
 	"prompter-cli/pkg/models"
@@ -18,7 +17,6 @@ import (
 type Orchestrator struct {
 	configManager     interfaces.ConfigManager
 	templateProcessor interfaces.TemplateProcessor
-	contentCollector  interfaces.ContentCollector
 	outputHandler     interfaces.OutputHandler
 }
 
@@ -27,7 +25,6 @@ func New() *Orchestrator {
 	return &Orchestrator{
 		configManager:     config.NewManager(),
 		templateProcessor: template.NewProcessor(""),
-		contentCollector:  content.NewCollector(),
 		outputHandler:     NewOutputHandler(), // We'll implement this
 	}
 }
@@ -127,12 +124,9 @@ func (o *Orchestrator) generateNormalPrompt(request *models.PromptRequest, cfg *
 		promptParts = append(promptParts, request.BasePrompt)
 	}
 
-	// Collect and include file content
+	// Include file content
 	if len(request.Files) > 0 || request.Directory != "" {
-		contentPart, err := o.collectContent(request, cfg)
-		if err != nil {
-			return "", RecoverFromError(err)
-		}
+		contentPart := o.formatContent(request)
 		if contentPart != "" {
 			promptParts = append(promptParts, contentPart)
 		}
@@ -218,103 +212,41 @@ func (o *Orchestrator) processTemplate(templateName string, request *models.Prom
 	return result, nil
 }
 
-// collectContent collects file and directory content
-func (o *Orchestrator) collectContent(request *models.PromptRequest, cfg *interfaces.Config) (string, error) {
-	var allFiles []interfaces.FileInfo
-
-	// Collect individual files
-	if len(request.Files) > 0 {
-		files, err := o.contentCollector.CollectFiles(request.Files)
-		if err != nil {
-			// Create error for the first file that failed (for better error messages)
-			firstFile := request.Files[0]
-			if len(request.Files) > 0 {
-				firstFile = request.Files[0]
-			}
-			contentErr := NewContentCollectionError(firstFile, err)
-			return "", RecoverFromError(contentErr)
-		}
-		allFiles = append(allFiles, files...)
-	}
-
-	// Collect directory content
-	if request.Directory != "" {
-		strategy := cfg.DirectoryStrategy
-		if strategy == "" {
-			strategy = "git" // Default strategy
-		}
-		
-		files, err := o.contentCollector.CollectDirectory(request.Directory, strategy)
-		if err != nil {
-			contentErr := NewContentCollectionError(request.Directory, err)
-			return "", RecoverFromError(contentErr)
-		}
-		allFiles = append(allFiles, files...)
-	}
-
-	// Apply content filtering and limits
-	limits := interfaces.ContentLimits{
-		MaxFileSize:   cfg.MaxFileSizeBytes,
-		MaxTotal:      cfg.MaxTotalBytes,
-		AllowOversize: cfg.AllowOversize,
-	}
-
-	filteredFiles, err := o.contentCollector.FilterContent(allFiles, limits)
-	if err != nil {
-		contentErr := NewContentCollectionError("content filtering", err)
-		return "", RecoverFromError(contentErr)
-	}
-
-	// Format content for inclusion in prompt
-	return o.formatContentForPrompt(filteredFiles), nil
-}
-
-// formatContentForPrompt formats collected files for inclusion in the prompt
-func (o *Orchestrator) formatContentForPrompt(files []interfaces.FileInfo) string {
-	if len(files) == 0 {
-		return ""
-	}
-
+// formatContent formats files and directory for inclusion in the prompt
+func (o *Orchestrator) formatContent(request *models.PromptRequest) string {
 	var parts []string
-	
-	// Check if we have files or directories
-	var fileRefs []string
-	var dirRefs []string
-	
-	for _, file := range files {
-		// Check if this is a directory reference (directories have empty content and no extension typically)
-		stat, err := os.Stat(file.Path)
-		if err == nil && stat.IsDir() {
-			dirRefs = append(dirRefs, file.RelPath)
-		} else {
-			fileRefs = append(fileRefs, file.RelPath)
-		}
-	}
-	
-	// Format file references
-	if len(fileRefs) > 0 {
+
+	// Add file references
+	if len(request.Files) > 0 {
 		parts = append(parts, "Referencing files:")
-		for _, fileRef := range fileRefs {
-			parts = append(parts, fileRef)
+		for _, file := range request.Files {
+			parts = append(parts, file)
 		}
 	}
-	
-	// Format directory references
-	if len(dirRefs) > 0 {
+
+	// Add directory reference using current working directory
+	if request.Directory != "" {
 		parts = append(parts, "Referencing dir:")
-		for _, dirRef := range dirRefs {
-			// For directories, show the full path instead of relative path
-			for _, file := range files {
-				if file.RelPath == dirRef {
-					parts = append(parts, file.Path)
-					break
-				}
+		if request.Directory == "." {
+			if cwd, err := os.Getwd(); err == nil {
+				parts = append(parts, cwd)
+			} else {
+				parts = append(parts, request.Directory)
+			}
+		} else {
+			// Convert to absolute path
+			if absPath, err := filepath.Abs(request.Directory); err == nil {
+				parts = append(parts, absPath)
+			} else {
+				parts = append(parts, request.Directory)
 			}
 		}
 	}
 
 	return strings.Join(parts, "\n")
 }
+
+
 
 // buildTemplateData builds the template data context
 func (o *Orchestrator) buildTemplateData(request *models.PromptRequest, cfg *interfaces.Config) (*interfaces.TemplateData, error) {
@@ -368,7 +300,7 @@ func (o *Orchestrator) buildTemplateData(request *models.PromptRequest, cfg *int
 		Prompt: request.BasePrompt,
 		Now:    time.Now(),
 		CWD:    cwd,
-		Files:  []interfaces.FileInfo{}, // Will be populated when collecting content
+		Files:  []interfaces.FileInfo{}, // No longer used
 		Git:    gitInfo,
 		Config: configMap,
 		Env:    envMap,

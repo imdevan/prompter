@@ -78,19 +78,7 @@ func (m *mockTemplateProcessor) RegisterHelpers() error {
 	return nil
 }
 
-type mockContentCollector struct{}
 
-func (m *mockContentCollector) CollectFiles(paths []string) ([]FileInfo, error) {
-	return []FileInfo{}, nil
-}
-
-func (m *mockContentCollector) CollectDirectory(path string, strategy string) ([]FileInfo, error) {
-	return []FileInfo{}, nil
-}
-
-func (m *mockContentCollector) FilterContent(files []FileInfo, limits ContentLimits) ([]FileInfo, error) {
-	return files, nil
-}
 
 type mockOutputHandler struct{}
 
@@ -114,6 +102,5 @@ func (m *mockOutputHandler) OpenInEditor(content string, editor string) error {
 func TestInterfaceImplementations(t *testing.T) {
 	var _ ConfigManager = &mockConfigManager{}
 	var _ TemplateProcessor = &mockTemplateProcessor{}
-	var _ ContentCollector = &mockContentCollector{}
 	var _ OutputHandler = &mockOutputHandler{}
 }
