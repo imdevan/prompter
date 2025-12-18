@@ -170,19 +170,15 @@ func (o *Orchestrator) generateFixModePrompt(request *models.PromptRequest, cfg 
 
 	var promptParts []string
 
-	// Try to load fix.md template, fallback to default
-	fixTemplate := "fix"
-	preContent, err := o.processTemplate(fixTemplate, request, cfg, "pre")
+	// Try to load fix.md from prompts_location root, fallback to "Please fix"
+	fixPrompt, err := o.loadFixPrompt(cfg.PromptsLocation)
 	if err != nil {
-		// Use default fix template content (graceful fallback)
-		preContent = ""
+		// Fallback to default "Please fix" prompt
+		fixPrompt = "Please fix"
 	}
-	if preContent != "" {
-		promptParts = append(promptParts, preContent)
-	}
-
-	// Add "Please fix" as a separate part
-	promptParts = append(promptParts, "Please fix")
+	
+	// Add the fix prompt
+	promptParts = append(promptParts, fixPrompt)
 
 	// Add the captured content (command + output) as a separate part
 	promptParts = append(promptParts, fixContent)
@@ -799,6 +795,18 @@ func (o *Orchestrator) fallbackYesNoSelection(defaultValue bool) (bool, error) {
 	default:
 		return false, fmt.Errorf("invalid input: please enter 1 for Yes or 2 for No")
 	}
+}
+
+// loadFixPrompt loads the fix prompt from prompts_location/fix.md
+func (o *Orchestrator) loadFixPrompt(promptsLocation string) (string, error) {
+	fixPath := filepath.Join(promptsLocation, "fix.md")
+	
+	content, err := os.ReadFile(fixPath)
+	if err != nil {
+		return "", fmt.Errorf("fix.md not found at %s: %w", fixPath, err)
+	}
+	
+	return strings.TrimSpace(string(content)), nil
 }
 
 // resolveEditor resolves the editor using precedence rules
