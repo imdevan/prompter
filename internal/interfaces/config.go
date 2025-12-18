@@ -9,6 +9,7 @@ type Config struct {
 	FixFile           string `toml:"fix_file"`
 	DirectoryStrategy string `toml:"directory_strategy"`
 	Target            string `toml:"target"`
+	InteractiveDefault bool  `toml:"interactive_default"`
 }
 
 // ConfigManager handles configuration loading and resolution

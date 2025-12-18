@@ -28,7 +28,10 @@ directories, and captured command output.
 
 The base prompt can be provided as an argument, entered interactively, or read from 
 clipboard using --clipboard. When both an argument and --clipboard are provided, 
-the clipboard content is appended to the base prompt.`,
+the clipboard content is appended to the base prompt.
+
+Interactive mode can be controlled via config (interactive_default), overridden with 
+-i (force interactive) or -y (force non-interactive).`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Check if version flag is set
@@ -66,6 +69,7 @@ func init() {
 	// Global flags
 	rootCmd.PersistentFlags().StringP("config", "c", "", "config file path (default ~/.config/prompter/config.toml)")
 	rootCmd.PersistentFlags().BoolP("yes", "y", false, "noninteractive mode - use defaults without prompts")
+	rootCmd.PersistentFlags().BoolP("interactive", "i", false, "force interactive mode (overrides config default)")
 	rootCmd.PersistentFlags().BoolP("version", "v", false, "print version information")
 
 	// Main command flags
@@ -97,11 +101,22 @@ func buildRequestFromFlags(cmd *cobra.Command, args []string) (*models.PromptReq
 		return nil, fmt.Errorf("invalid config flag: %w", err)
 	}
 
-	if request.Interactive, err = cmd.Flags().GetBool("yes"); err != nil {
+	// Handle interactive mode flags
+	if request.ForceNonInteractive, err = cmd.Flags().GetBool("yes"); err != nil {
 		return nil, fmt.Errorf("invalid yes flag: %w", err)
 	}
-	// Invert the yes flag - yes means noninteractive
-	request.Interactive = !request.Interactive
+	
+	if request.ForceInteractive, err = cmd.Flags().GetBool("interactive"); err != nil {
+		return nil, fmt.Errorf("invalid interactive flag: %w", err)
+	}
+	
+	// Validate that both flags are not set
+	if request.ForceInteractive && request.ForceNonInteractive {
+		return nil, fmt.Errorf("cannot use both --interactive and --yes flags")
+	}
+	
+	// Set initial interactive mode (will be resolved after config loading)
+	request.Interactive = true // Default, will be overridden by config resolution
 
 	if request.PreTemplate, err = cmd.Flags().GetString("pre"); err != nil {
 		return nil, fmt.Errorf("invalid pre flag: %w", err)

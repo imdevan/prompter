@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"prompter-cli/internal/interfaces"
 	"prompter-cli/internal/interactive"
 	"prompter-cli/internal/orchestrator"
 	"prompter-cli/pkg/models"
@@ -20,6 +21,9 @@ func Run(request *models.PromptRequest) error {
 	if err != nil {
 		return fmt.Errorf("configuration error: %w", err)
 	}
+	
+	// Resolve interactive mode based on flags and config
+	resolveInteractiveMode(request, cfg)
 
 	// Create interactive prompter with the configured prompts location
 	prompter := interactive.NewPrompter(cfg.PromptsLocation)
@@ -41,6 +45,19 @@ func Run(request *models.PromptRequest) error {
 	}
 
 	return nil
+}
+
+// resolveInteractiveMode determines the final interactive mode based on flags and config
+func resolveInteractiveMode(request *models.PromptRequest, cfg *interfaces.Config) {
+	// Priority: explicit flags > config default
+	if request.ForceInteractive {
+		request.Interactive = true
+	} else if request.ForceNonInteractive {
+		request.Interactive = false
+	} else {
+		// Use config default
+		request.Interactive = cfg.InteractiveDefault
+	}
 }
 
 // getDefaultPromptsLocation returns the default prompts location

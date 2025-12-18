@@ -38,9 +38,10 @@ func TestBuildRequestFromFlags(t *testing.T) {
 				"yes": true,
 			},
 			expected: &models.PromptRequest{
-				BasePrompt:  "test prompt",
-				Interactive: false,
-				Files:       []string{},
+				BasePrompt:          "test prompt",
+				Interactive:         true, // Will be resolved later based on config
+				ForceNonInteractive: true,
+				Files:               []string{},
 			},
 		},
 		{
@@ -50,9 +51,10 @@ func TestBuildRequestFromFlags(t *testing.T) {
 				"yes": true,
 			},
 			expected: &models.PromptRequest{
-				FixMode:     true,
-				Interactive: false,
-				Files:       []string{},
+				FixMode:             true,
+				Interactive:         true, // Will be resolved later based on config
+				ForceNonInteractive: true,
+				Files:               []string{},
 			},
 		},
 		{
@@ -92,6 +94,27 @@ func TestBuildRequestFromFlags(t *testing.T) {
 				Files:         []string{},
 			},
 		},
+		{
+			name: "force interactive mode",
+			args: []string{"test prompt"},
+			boolFlags: map[string]bool{
+				"interactive": true,
+			},
+			expected: &models.PromptRequest{
+				BasePrompt:       "test prompt",
+				Interactive:      true,
+				ForceInteractive: true,
+				Files:            []string{},
+			},
+		},
+		{
+			name: "conflicting interactive flags should error",
+			boolFlags: map[string]bool{
+				"interactive": true,
+				"yes":         true,
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -111,6 +134,7 @@ func TestBuildRequestFromFlags(t *testing.T) {
 			cmd.Flags().String("fix-file", "", "")
 			cmd.Flags().BoolP("numbers", "n", false, "")
 			cmd.Flags().BoolP("clipboard", "b", false, "")
+			cmd.Flags().BoolP("interactive", "i", false, "")
 			
 			// Set flag values
 			for flag, value := range tt.flags {
@@ -162,6 +186,14 @@ func TestBuildRequestFromFlags(t *testing.T) {
 			
 			if result.FromClipboard != tt.expected.FromClipboard {
 				t.Errorf("FromClipboard = %v, expected %v", result.FromClipboard, tt.expected.FromClipboard)
+			}
+			
+			if result.ForceInteractive != tt.expected.ForceInteractive {
+				t.Errorf("ForceInteractive = %v, expected %v", result.ForceInteractive, tt.expected.ForceInteractive)
+			}
+			
+			if result.ForceNonInteractive != tt.expected.ForceNonInteractive {
+				t.Errorf("ForceNonInteractive = %v, expected %v", result.ForceNonInteractive, tt.expected.ForceNonInteractive)
 			}
 		})
 	}

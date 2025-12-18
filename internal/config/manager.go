@@ -49,6 +49,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("fix_file", "/tmp/prompter-fix.txt")
 	v.SetDefault("directory_strategy", "git")
 	v.SetDefault("target", "clipboard")
+	v.SetDefault("interactive_default", true)
 }
 
 // Load loads configuration from the specified path
@@ -148,6 +149,12 @@ func (m *Manager) applyFlagOverrides(config *interfaces.Config) {
 			config.Target = str
 		}
 	}
+	
+	if val, exists := m.flags["interactive_default"]; exists && val != nil {
+		if b, ok := val.(bool); ok {
+			config.InteractiveDefault = b
+		}
+	}
 }
 
 // Validate validates the configuration values
@@ -195,13 +202,14 @@ func (m *Manager) Validate(config *interfaces.Config) error {
 // This handles env > config > defaults precedence (flags are applied separately)
 func (m *Manager) getConfigFromViper() *interfaces.Config {
 	return &interfaces.Config{
-		PromptsLocation:   expandPath(m.v.GetString("prompts_location")),
-		Editor:            m.v.GetString("editor"),
-		DefaultPre:        m.v.GetString("default_pre"),
-		DefaultPost:       m.v.GetString("default_post"),
-		FixFile:           expandPath(m.v.GetString("fix_file")),
-		DirectoryStrategy: m.v.GetString("directory_strategy"),
-		Target:            m.v.GetString("target"),
+		PromptsLocation:    expandPath(m.v.GetString("prompts_location")),
+		Editor:             m.v.GetString("editor"),
+		DefaultPre:         m.v.GetString("default_pre"),
+		DefaultPost:        m.v.GetString("default_post"),
+		FixFile:            expandPath(m.v.GetString("fix_file")),
+		DirectoryStrategy:  m.v.GetString("directory_strategy"),
+		Target:             m.v.GetString("target"),
+		InteractiveDefault: m.v.GetBool("interactive_default"),
 	}
 }
 
@@ -233,6 +241,9 @@ func (m *Manager) MergeConfig(other *interfaces.Config) {
 	if other.Target != "" {
 		m.v.Set("target", other.Target)
 	}
+	
+	// Note: InteractiveDefault is a boolean, so we always set it
+	m.v.Set("interactive_default", other.InteractiveDefault)
 }
 
 // expandPath expands ~ to user home directory
