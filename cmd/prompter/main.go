@@ -60,18 +60,18 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 
 	// Global flags
-	rootCmd.PersistentFlags().String("config", "", "config file path (default ~/.config/prompter/config.toml)")
-	rootCmd.PersistentFlags().Bool("yes", false, "noninteractive mode - use defaults without prompts")
+	rootCmd.PersistentFlags().StringP("config", "c", "", "config file path (default ~/.config/prompter/config.toml)")
+	rootCmd.PersistentFlags().BoolP("yes", "y", false, "noninteractive mode - use defaults without prompts")
 	rootCmd.PersistentFlags().BoolP("version", "v", false, "print version information")
 
 	// Main command flags
-	rootCmd.Flags().String("pre", "", "pre-template name")
-	rootCmd.Flags().String("post", "", "post-template name")
+	rootCmd.Flags().StringP("pre", "p", "", "pre-template name")
+	rootCmd.Flags().StringP("post", "o", "", "post-template name")
 	rootCmd.Flags().StringSlice("file", []string{}, "files to include")
 	rootCmd.Flags().BoolP("directory", "d", false, "include current directory")
-	rootCmd.Flags().String("target", "", "output target (clipboard, stdout, file:/path)")
-	rootCmd.Flags().String("editor", "", "editor to open prompt in")
-	rootCmd.Flags().Bool("fix", false, "fix mode - process captured command output")
+	rootCmd.Flags().StringP("target", "t", "", "output target (clipboard, stdout, file:/path)")
+	rootCmd.Flags().StringP("editor", "e", "", "editor to open prompt in")
+	rootCmd.Flags().BoolP("fix", "f", false, "fix mode - process captured command output")
 	rootCmd.Flags().String("fix-file", "", "file containing command output to fix (overrides config)")
 	rootCmd.Flags().BoolP("numbers", "n", false, "enable number key selection for templates")
 }
