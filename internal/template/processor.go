@@ -14,18 +14,53 @@ import (
 // Processor implements the TemplateProcessor interface
 type Processor struct {
 	promptsLocation string
+	localPromptsLocation string // Additional location for local prompts
 }
 
 // NewProcessor creates a new template processor
 func NewProcessor(promptsLocation string) *Processor {
 	return &Processor{
 		promptsLocation: promptsLocation,
+		localPromptsLocation: "", // Will be set by SetLocalPromptsLocation
 	}
 }
 
 // SetPromptsLocation updates the prompts location
 func (p *Processor) SetPromptsLocation(location string) {
 	p.promptsLocation = location
+}
+
+// SetLocalPromptsLocation updates the local prompts location
+func (p *Processor) SetLocalPromptsLocation(location string) {
+	p.localPromptsLocation = location
+}
+
+// SetLocalPromptsFromConfig sets the local prompts location based on config
+func (p *Processor) SetLocalPromptsFromConfig(configLocation string) {
+	if configLocation != "" {
+		// Use the configured location
+		p.localPromptsLocation = configLocation
+	} else {
+		// Default: check for "prompts" directory in current working directory
+		if cwd, err := os.Getwd(); err == nil {
+			localPath := filepath.Join(cwd, "prompts")
+			if _, err := os.Stat(localPath); err == nil {
+				p.localPromptsLocation = localPath
+			} else {
+				p.localPromptsLocation = ""
+			}
+		}
+	}
+}
+
+// GetPromptLocations returns all prompt locations (local first, then configured)
+func (p *Processor) GetPromptLocations() []string {
+	var locations []string
+	if p.localPromptsLocation != "" {
+		locations = append(locations, p.localPromptsLocation)
+	}
+	locations = append(locations, p.promptsLocation)
+	return locations
 }
 
 // LoadTemplate loads a template from the specified path or discovers it by name
@@ -46,11 +81,23 @@ func (p *Processor) LoadTemplate(nameOrPath string) (*template.Template, error) 
 
 // discoverTemplate finds a template file by name (case-insensitive matching by stem)
 func (p *Processor) discoverTemplate(name string) (string, error) {
-	// Check both pre and post directories
-	directories := []string{
+	// Build list of directories to check
+	// Priority: local prompts first, then configured prompts location
+	var directories []string
+	
+	// Add local prompts directories if available
+	if p.localPromptsLocation != "" {
+		directories = append(directories,
+			filepath.Join(p.localPromptsLocation, "pre"),
+			filepath.Join(p.localPromptsLocation, "post"),
+		)
+	}
+	
+	// Add configured prompts location directories
+	directories = append(directories,
 		filepath.Join(p.promptsLocation, "pre"),
 		filepath.Join(p.promptsLocation, "post"),
-	}
+	)
 
 	for _, dir := range directories {
 		if _, err := os.Stat(dir); os.IsNotExist(err) {

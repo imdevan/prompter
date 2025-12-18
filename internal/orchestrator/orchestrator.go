@@ -65,6 +65,11 @@ func (o *Orchestrator) LoadConfiguration(configPath string) (*interfaces.Config,
 	return o.loadConfiguration(configPath)
 }
 
+// GetTemplateProcessor returns the template processor (exported for app layer)
+func (o *Orchestrator) GetTemplateProcessor() interfaces.TemplateProcessor {
+	return o.templateProcessor
+}
+
 // loadConfiguration loads and resolves configuration with precedence
 func (o *Orchestrator) loadConfiguration(configPath string) (*interfaces.Config, error) {
 	// Load configuration from file first
@@ -82,6 +87,12 @@ func (o *Orchestrator) loadConfiguration(configPath string) (*interfaces.Config,
 	// Validate configuration
 	if err := o.configManager.Validate(cfg); err != nil {
 		return nil, fmt.Errorf("invalid configuration: %w", err)
+	}
+
+	// Update template processor with the loaded configuration
+	if processor, ok := o.templateProcessor.(*template.Processor); ok {
+		processor.SetPromptsLocation(cfg.PromptsLocation)
+		processor.SetLocalPromptsFromConfig(cfg.LocalPromptsLocation)
 	}
 
 	return cfg, nil
@@ -191,6 +202,7 @@ func (o *Orchestrator) processTemplate(templateName string, request *models.Prom
 	// Update template processor with prompts location
 	if processor, ok := o.templateProcessor.(*template.Processor); ok {
 		processor.SetPromptsLocation(cfg.PromptsLocation)
+		processor.SetLocalPromptsFromConfig(cfg.LocalPromptsLocation)
 	}
 
 	// Load template using the template processor's discovery mechanism

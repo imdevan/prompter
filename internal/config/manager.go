@@ -43,6 +43,7 @@ func (m *Manager) SetConfigPath(path string) {
 // setDefaults sets the default configuration values
 func setDefaults(v *viper.Viper) {
 	v.SetDefault("prompts_location", "~/.config/prompter/prompts")
+	v.SetDefault("local_prompts_location", "")
 	v.SetDefault("editor", "nvim")
 	v.SetDefault("default_pre", "")
 	v.SetDefault("default_post", "")
@@ -107,6 +108,12 @@ func (m *Manager) applyFlagOverrides(config *interfaces.Config) {
 	if val, exists := m.flags["prompts_location"]; exists && val != nil {
 		if str, ok := val.(string); ok && str != "" {
 			config.PromptsLocation = expandPath(str)
+		}
+	}
+
+	if val, exists := m.flags["local_prompts_location"]; exists && val != nil {
+		if str, ok := val.(string); ok && str != "" {
+			config.LocalPromptsLocation = expandPath(str)
 		}
 	}
 
@@ -196,14 +203,15 @@ func (m *Manager) Validate(config *interfaces.Config) error {
 // This handles env > config > defaults precedence (flags are applied separately)
 func (m *Manager) getConfigFromViper() *interfaces.Config {
 	return &interfaces.Config{
-		PromptsLocation:    expandPath(m.v.GetString("prompts_location")),
-		Editor:             m.v.GetString("editor"),
-		DefaultPre:         m.v.GetString("default_pre"),
-		DefaultPost:        m.v.GetString("default_post"),
-		FixFile:            expandPath(m.v.GetString("fix_file")),
-		DirectoryStrategy:  m.v.GetString("directory_strategy"),
-		Target:             m.v.GetString("target"),
-		InteractiveDefault: m.v.GetBool("interactive_default"),
+		PromptsLocation:      expandPath(m.v.GetString("prompts_location")),
+		LocalPromptsLocation: expandPath(m.v.GetString("local_prompts_location")),
+		Editor:               m.v.GetString("editor"),
+		DefaultPre:           m.v.GetString("default_pre"),
+		DefaultPost:          m.v.GetString("default_post"),
+		FixFile:              expandPath(m.v.GetString("fix_file")),
+		DirectoryStrategy:    m.v.GetString("directory_strategy"),
+		Target:               m.v.GetString("target"),
+		InteractiveDefault:   m.v.GetBool("interactive_default"),
 	}
 }
 
@@ -215,6 +223,9 @@ func (m *Manager) MergeConfig(other *interfaces.Config) {
 
 	if other.PromptsLocation != "" {
 		m.v.Set("prompts_location", other.PromptsLocation)
+	}
+	if other.LocalPromptsLocation != "" {
+		m.v.Set("local_prompts_location", other.LocalPromptsLocation)
 	}
 	if other.Editor != "" {
 		m.v.Set("editor", other.Editor)

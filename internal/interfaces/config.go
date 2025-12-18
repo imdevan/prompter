@@ -2,14 +2,15 @@ package interfaces
 
 // Config represents the application configuration
 type Config struct {
-	PromptsLocation   string `toml:"prompts_location"`
-	Editor            string `toml:"editor"`
-	DefaultPre        string `toml:"default_pre"`
-	DefaultPost       string `toml:"default_post"`
-	FixFile           string `toml:"fix_file"`
-	DirectoryStrategy string `toml:"directory_strategy"`
-	Target            string `toml:"target"`
-	InteractiveDefault bool  `toml:"interactive_default"`
+	PromptsLocation      string `toml:"prompts_location"`
+	LocalPromptsLocation string `toml:"local_prompts_location"`
+	Editor               string `toml:"editor"`
+	DefaultPre           string `toml:"default_pre"`
+	DefaultPost          string `toml:"default_post"`
+	FixFile              string `toml:"fix_file"`
+	DirectoryStrategy    string `toml:"directory_strategy"`
+	Target               string `toml:"target"`
+	InteractiveDefault   bool   `toml:"interactive_default"`
 }
 
 // ConfigManager handles configuration loading and resolution

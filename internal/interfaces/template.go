@@ -51,4 +51,7 @@ type TemplateProcessor interface {
 	
 	// RegisterHelpers registers custom template helper functions
 	RegisterHelpers() error
+	
+	// GetPromptLocations returns all prompt locations being searched
+	GetPromptLocations() []string
 }

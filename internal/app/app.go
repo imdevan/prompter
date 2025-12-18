@@ -93,37 +93,77 @@ func ListTemplates(request *models.PromptRequest) error {
 		return fmt.Errorf("configuration error: %w", err)
 	}
 
-	// Display prompts location with ~ for home directory
-	displayPath := contractPath(cfg.PromptsLocation)
-	fmt.Printf("Prompts location: %s\n\n", displayPath)
+	// Create template processor to get all prompt locations
+	templateProcessor := orch.GetTemplateProcessor()
+	locations := templateProcessor.GetPromptLocations()
 
-	// List pre-templates
-	preDir := filepath.Join(cfg.PromptsLocation, "pre")
-	preTemplates, err := listTemplatesInDir(preDir)
-	if err != nil {
-		fmt.Printf("Pre-templates: (directory not found)\n")
-	} else if len(preTemplates) == 0 {
+	// Display all prompt locations
+	fmt.Printf("Prompt locations:\n")
+	for i, location := range locations {
+		displayPath := contractPath(location)
+		if i == 0 && len(locations) > 1 {
+			fmt.Printf("  - %s (local)\n", displayPath)
+		} else {
+			fmt.Printf("  - %s\n", displayPath)
+		}
+	}
+	fmt.Println()
+
+	// Collect all templates from all locations
+	allPreTemplates := make(map[string]string) // template name -> location
+	allPostTemplates := make(map[string]string)
+
+	for _, location := range locations {
+		// List pre-templates
+		preDir := filepath.Join(location, "pre")
+		preTemplates, err := listTemplatesInDir(preDir)
+		if err == nil {
+			for _, tmpl := range preTemplates {
+				if _, exists := allPreTemplates[tmpl]; !exists {
+					allPreTemplates[tmpl] = location
+				}
+			}
+		}
+
+		// List post-templates
+		postDir := filepath.Join(location, "post")
+		postTemplates, err := listTemplatesInDir(postDir)
+		if err == nil {
+			for _, tmpl := range postTemplates {
+				if _, exists := allPostTemplates[tmpl]; !exists {
+					allPostTemplates[tmpl] = location
+				}
+			}
+		}
+	}
+
+	// Display pre-templates
+	if len(allPreTemplates) == 0 {
 		fmt.Printf("Pre-templates: (none found)\n")
 	} else {
 		fmt.Printf("Pre-templates:\n")
-		for _, tmpl := range preTemplates {
-			fmt.Printf("  - %s\n", tmpl)
+		for tmpl, location := range allPreTemplates {
+			if len(locations) > 1 && location != cfg.PromptsLocation {
+				fmt.Printf("  - %s (local)\n", tmpl)
+			} else {
+				fmt.Printf("  - %s\n", tmpl)
+			}
 		}
 	}
 
 	fmt.Println()
 
-	// List post-templates
-	postDir := filepath.Join(cfg.PromptsLocation, "post")
-	postTemplates, err := listTemplatesInDir(postDir)
-	if err != nil {
-		fmt.Printf("Post-templates: (directory not found)\n")
-	} else if len(postTemplates) == 0 {
+	// Display post-templates
+	if len(allPostTemplates) == 0 {
 		fmt.Printf("Post-templates: (none found)\n")
 	} else {
 		fmt.Printf("Post-templates:\n")
-		for _, tmpl := range postTemplates {
-			fmt.Printf("  - %s\n", tmpl)
+		for tmpl, location := range allPostTemplates {
+			if len(locations) > 1 && location != cfg.PromptsLocation {
+				fmt.Printf("  - %s (local)\n", tmpl)
+			} else {
+				fmt.Printf("  - %s\n", tmpl)
+			}
 		}
 	}
 
