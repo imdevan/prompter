@@ -1,0 +1,25 @@
+# Example Prompter Configuration File
+# Copy this to ~/.config/prompter/config.toml to use
+
+# Location where prompt templates are stored
+prompts_location = "~/.config/prompter/prompts"
+
+# Default editor for opening prompts
+editor = "nvim"
+
+# Default pre and post templates (leave empty for none)
+default_pre = ""
+default_post = ""
+
+# File to store command output for fix mode
+fix_file = "/tmp/prompter-fix.txt"
+
+# Directory inclusion strategy: "git" or "filesystem"
+directory_strategy = "git"
+
+# Default output target: "clipboard", "stdout", or "file:/path"
+target = "clipboard"
+
+# Interactive mode default - set to false to default to non-interactive mode
+# Can be overridden with -i (force interactive) or -y (force non-interactive)
+interactive_default = true
