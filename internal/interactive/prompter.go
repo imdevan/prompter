@@ -29,15 +29,16 @@ func NewPrompter(promptsLocation string) *Prompter {
 
 // CollectMissingInputs prompts the user for any missing required inputs
 func (p *Prompter) CollectMissingInputs(request *models.PromptRequest) error {
-	if !request.Interactive {
-		return nil // Skip interactive prompts in noninteractive mode
-	}
-
 	// Handle clipboard reading - append to existing prompt or use as base prompt
+	// This should work in both interactive and non-interactive modes
 	if request.FromClipboard && !request.FixMode {
 		if err := p.appendClipboardToPrompt(request); err != nil {
 			return fmt.Errorf("failed to read from clipboard: %w", err)
 		}
+	}
+
+	if !request.Interactive {
+		return nil // Skip interactive prompts in noninteractive mode
 	}
 
 	// Collect base prompt if missing and not in fix mode (only in interactive mode)
