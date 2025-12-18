@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	"prompter-cli/internal/interactive"
 	"prompter-cli/internal/interfaces"
 	"prompter-cli/internal/orchestrator"
@@ -181,4 +182,120 @@ func contractPath(path string) string {
 	}
 
 	return path
+}
+// AddTemplate adds a new prompt template
+func AddTemplate(request *models.PromptRequest, content, preName, postName string, fromClipboard bool) error {
+	// Create orchestrator to load configuration
+	orch := orchestrator.New()
+
+	// Load configuration to get the prompts location
+	cfg, err := orch.LoadConfiguration(request.ConfigPath)
+	if err != nil {
+		return fmt.Errorf("configuration error: %w", err)
+	}
+
+	// Resolve interactive mode based on flags and config
+	resolveInteractiveMode(request, cfg)
+
+	// Determine template type and name
+	var templateType, templateName string
+	
+	// Check if both pre and post flags are provided (invalid)
+	if preName != "" && postName != "" {
+		return fmt.Errorf("cannot specify both --pre and --post flags")
+	}
+	
+	// If interactive mode is forced with -i, always go interactive regardless of flags
+	if request.ForceInteractive {
+		// Interactive mode - ask user for template type and name
+		prompter := interactive.NewPrompter(cfg.PromptsLocation)
+		templateType, templateName, err = prompter.CollectTemplateInfo()
+		if err != nil {
+			return fmt.Errorf("failed to collect template information: %w", err)
+		}
+	} else if preName != "" {
+		templateType = "pre"
+		templateName = preName
+	} else if postName != "" {
+		templateType = "post"
+		templateName = postName
+	} else if !request.Interactive {
+		return fmt.Errorf("must specify either --pre or --post flag in non-interactive mode")
+	} else {
+		// Interactive mode - ask user for template type and name
+		prompter := interactive.NewPrompter(cfg.PromptsLocation)
+		templateType, templateName, err = prompter.CollectTemplateInfo()
+		if err != nil {
+			return fmt.Errorf("failed to collect template information: %w", err)
+		}
+	}
+
+	// Get content
+	var templateContent string
+	if fromClipboard {
+		// Get content from clipboard
+		templateContent, err = getClipboardContent()
+		if err != nil {
+			return fmt.Errorf("failed to get clipboard content: %w", err)
+		}
+	} else if content != "" {
+		templateContent = content
+	} else if !request.Interactive {
+		return fmt.Errorf("must provide content as argument or use --clipboard flag in non-interactive mode")
+	} else {
+		// Interactive mode - ask user for content
+		prompter := interactive.NewPrompter(cfg.PromptsLocation)
+		templateContent, err = prompter.CollectTemplateContent()
+		if err != nil {
+			return fmt.Errorf("failed to collect template content: %w", err)
+		}
+	}
+
+	// Create the template file
+	templateDir := filepath.Join(cfg.PromptsLocation, templateType)
+	if err := os.MkdirAll(templateDir, 0755); err != nil {
+		return fmt.Errorf("failed to create template directory: %w", err)
+	}
+
+	templatePath := filepath.Join(templateDir, templateName+".md")
+	
+	// Check if file already exists
+	if _, err := os.Stat(templatePath); err == nil {
+		if request.Interactive {
+			prompter := interactive.NewPrompter(cfg.PromptsLocation)
+			overwrite, err := prompter.ConfirmOverwrite(templatePath)
+			if err != nil {
+				return fmt.Errorf("failed to get overwrite confirmation: %w", err)
+			}
+			if !overwrite {
+				fmt.Println("Template creation cancelled.")
+				return nil
+			}
+		} else {
+			return fmt.Errorf("template file already exists: %s", contractPath(templatePath))
+		}
+	}
+
+	// Write the template file
+	if err := os.WriteFile(templatePath, []byte(templateContent), 0644); err != nil {
+		return fmt.Errorf("failed to write template file: %w", err)
+	}
+
+	fmt.Printf("Created %s template: %s\n", templateType, contractPath(templatePath))
+	return nil
+}
+
+// getClipboardContent gets content from the system clipboard
+func getClipboardContent() (string, error) {
+	content, err := clipboard.ReadAll()
+	if err != nil {
+		return "", fmt.Errorf("failed to read from clipboard: %w", err)
+	}
+	
+	content = strings.TrimSpace(content)
+	if content == "" {
+		return "", fmt.Errorf("clipboard is empty")
+	}
+	
+	return content, nil
 }

@@ -553,3 +553,64 @@ func truncateString(s string, maxLen int) string {
 	}
 	return s[:maxLen-3] + "..."
 }
+// CollectTemplateInfo asks the user for template type and name
+func (p *Prompter) CollectTemplateInfo() (string, string, error) {
+	// Ask for template type
+	templateTypePrompt := &survey.Select{
+		Message: "Select template type:",
+		Options: []string{"pre", "post"},
+		Help:    "Pre-templates are added before your prompt, post-templates are added after",
+	}
+
+	var templateType string
+	if err := survey.AskOne(templateTypePrompt, &templateType); err != nil {
+		return "", "", err
+	}
+
+	// Ask for template name
+	namePrompt := &survey.Input{
+		Message: "Enter template name:",
+		Help:    "This will be the filename (without .md extension)",
+	}
+
+	var templateName string
+	if err := survey.AskOne(namePrompt, &templateName, survey.WithValidator(survey.Required)); err != nil {
+		return "", "", err
+	}
+
+	// Clean the template name (remove any .md extension if user added it)
+	templateName = strings.TrimSuffix(templateName, ".md")
+	templateName = strings.TrimSpace(templateName)
+
+	return templateType, templateName, nil
+}
+
+// CollectTemplateContent asks the user for template content
+func (p *Prompter) CollectTemplateContent() (string, error) {
+	contentPrompt := &survey.Multiline{
+		Message: "Enter template content:",
+		Help:    "Enter the template content. Press Ctrl+D (Unix) or Ctrl+Z (Windows) when finished",
+	}
+
+	var content string
+	if err := survey.AskOne(contentPrompt, &content, survey.WithValidator(survey.Required)); err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(content), nil
+}
+
+// ConfirmOverwrite asks the user if they want to overwrite an existing file
+func (p *Prompter) ConfirmOverwrite(filePath string) (bool, error) {
+	overwritePrompt := &survey.Confirm{
+		Message: fmt.Sprintf("Template file already exists: %s. Overwrite?", filePath),
+		Default: false,
+	}
+
+	var overwrite bool
+	if err := survey.AskOne(overwritePrompt, &overwrite); err != nil {
+		return false, err
+	}
+
+	return overwrite, nil
+}

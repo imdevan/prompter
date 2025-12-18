@@ -78,10 +78,61 @@ var listCmd = &cobra.Command{
 	},
 }
 
+var addCmd = &cobra.Command{
+	Use:   "add [content]",
+	Short: "Add a new prompt template",
+	Long:  "Add a new prompt template to the configured prompts directory. Use -p for pre-templates or -o for post-templates. If no flags are provided, interactive mode will ask for template type and name.",
+	Args:  cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		request := models.NewPromptRequest()
+		
+		// Get config path from flag
+		if configPath, err := cmd.Flags().GetString("config"); err == nil {
+			request.ConfigPath = configPath
+		}
+		
+		// Handle interactive mode flags
+		if forceNonInteractive, err := cmd.Flags().GetBool("yes"); err == nil {
+			request.ForceNonInteractive = forceNonInteractive
+		}
+		
+		if forceInteractive, err := cmd.Flags().GetBool("interactive"); err == nil {
+			request.ForceInteractive = forceInteractive
+		}
+		
+		// Validate that both flags are not set
+		if request.ForceInteractive && request.ForceNonInteractive {
+			return fmt.Errorf("cannot use both --interactive and --yes flags")
+		}
+		
+		// Set initial interactive mode (will be resolved after config loading)
+		request.Interactive = true // Default, will be overridden by config resolution
+		
+		// Get content from argument if provided
+		var content string
+		if len(args) > 0 {
+			content = args[0]
+		}
+		
+		// Get flags
+		preName, _ := cmd.Flags().GetString("pre")
+		postName, _ := cmd.Flags().GetString("post")
+		fromClipboard, _ := cmd.Flags().GetBool("clipboard")
+		
+		return app.AddTemplate(request, content, preName, postName, fromClipboard)
+	},
+}
+
 func init() {
 	// Add subcommands
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(addCmd)
+	
+	// Add command specific flags
+	addCmd.Flags().StringP("pre", "p", "", "create a pre-template with the specified name")
+	addCmd.Flags().StringP("post", "o", "", "create a post-template with the specified name")
+	addCmd.Flags().BoolP("clipboard", "b", false, "create template from clipboard content")
 
 	// Global flags
 	rootCmd.PersistentFlags().StringP("config", "c", "", "config file path (default ~/.config/prompter/config.toml)")
