@@ -70,8 +70,12 @@ See [example config](./example-config.toml) for what options are configurable.
 
 ## Prompt-Templates
 
-Prompt templates are by default saved in `~/.config/prompter/prompts`, 
+Prompter by default checks for tempaltes in `~/.config/prompter/prompts`, 
 but this can be changed with the `prompts_location` in the `config.toml`
+
+Prompter also checks the current local directory for a `prompts`. 
+This can be changed in the config with `local_prompts_location`.
+If both a local and global prompts are found, prompter will use both. 
 
 Prompt templates are broken up into two seperate categories. 
 
