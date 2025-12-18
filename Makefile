@@ -16,10 +16,14 @@ all: build
 
 # Build for current platform
 build:
-	@echo "Building prompter $(VERSION) for current platform..."
-	@mkdir -p $(BUILD_DIR)
-	CGO_ENABLED=0 go build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/prompter ./cmd/prompter
-	@echo "Build complete: $(BUILD_DIR)/prompter"
+	go build -o ./prompter ./cmd/prompter
+
+# build:
+# 	@echo "Building prompter $(VERSION) for current platform..."
+# 	@mkdir -p $(BUILD_DIR)
+# 	CGO_ENABLED=0 go build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/prompter ./cmd/prompter
+# 	@echo "Build complete: $(BUILD_DIR)/prompter"
+
 
 # Development build (no optimization)
 dev-build:
