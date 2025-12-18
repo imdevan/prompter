@@ -2,11 +2,14 @@ package orchestrator
 
 import (
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/AlecAivazis/survey/v2"
 	"prompter-cli/internal/config"
 	"prompter-cli/internal/interfaces"
 	"prompter-cli/internal/template"
@@ -93,7 +96,8 @@ func (o *Orchestrator) applyConfigDefaults(request *models.PromptRequest, cfg *i
 		request.Target = cfg.Target
 	}
 	// Don't set editor from config - only use when explicitly requested
-	if request.FixFile == "" && cfg.FixFile != "" {
+	// In fix mode, don't set fix file from config - let it read from stdin if not explicitly set
+	if !request.FixMode && request.FixFile == "" && cfg.FixFile != "" {
 		request.FixFile = cfg.FixFile
 	}
 }
@@ -154,12 +158,15 @@ func (o *Orchestrator) generateNormalPrompt(request *models.PromptRequest, cfg *
 
 // generateFixModePrompt generates a prompt in fix mode
 func (o *Orchestrator) generateFixModePrompt(request *models.PromptRequest, cfg *interfaces.Config) (string, error) {
-	// Load fix content
-	fixContent, err := o.loadFixContent(request.FixFile)
+	// Load fix content from file, re-run command, or stdin
+	fixContent, err := o.loadFixContent(request.FixFile, request.Interactive)
 	if err != nil {
 		fixErr := NewFixModeError(request.FixFile, err)
 		return "", RecoverFromError(fixErr)
 	}
+
+	// Prepend "Please fix" to the content
+	fixContentWithPrefix := "Please fix" + fixContent
 
 	var promptParts []string
 
@@ -168,14 +175,14 @@ func (o *Orchestrator) generateFixModePrompt(request *models.PromptRequest, cfg 
 	preContent, err := o.processTemplate(fixTemplate, request, cfg, "pre")
 	if err != nil {
 		// Use default fix template content (graceful fallback)
-		preContent = "Please help me fix this command that failed:\n"
+		preContent = ""
 	}
 	if preContent != "" {
 		promptParts = append(promptParts, preContent)
 	}
 
-	// Add fix content wrapped in markdown code block
-	wrappedContent := fmt.Sprintf("```text\n%s\n```", fixContent)
+	// Add fix content with "Please fix" prefix wrapped in markdown code block
+	wrappedContent := fmt.Sprintf("```\n%s\n```", fixContentWithPrefix)
 	promptParts = append(promptParts, wrappedContent)
 
 	return strings.Join(promptParts, "\n\n"), nil
@@ -280,7 +287,7 @@ func (o *Orchestrator) buildTemplateData(request *models.PromptRequest, cfg *int
 		Enabled: request.FixMode,
 	}
 	if request.FixMode && request.FixFile != "" {
-		if content, err := o.loadFixContent(request.FixFile); err == nil {
+		if content, err := o.loadFixContent(request.FixFile, request.Interactive); err == nil {
 			fixInfo.Raw = content
 			// Try to parse command and output (simple implementation)
 			lines := strings.Split(content, "\n")
@@ -324,23 +331,275 @@ func (o *Orchestrator) buildGitInfo() interfaces.GitInfo {
 	return gitInfo
 }
 
-// loadFixContent loads content from the fix file
-func (o *Orchestrator) loadFixContent(fixFile string) (string, error) {
-	if fixFile == "" {
-		return "", fmt.Errorf("fix file path not specified")
+// loadFixContent loads content from the fix file, re-runs last command, or reads from stdin
+func (o *Orchestrator) loadFixContent(fixFile string, interactive bool) (string, error) {
+	if fixFile != "" {
+		// Read from specified file
+		content, err := os.ReadFile(fixFile)
+		if err != nil {
+			return "", err // Let the caller wrap this with appropriate error type
+		}
+		
+		trimmedContent := strings.TrimSpace(string(content))
+		if trimmedContent == "" {
+			return "", fmt.Errorf("fix file is empty")
+		}
+		
+		return trimmedContent, nil
 	}
+	
+	// No fix file specified - try to re-run the last command
+	if interactive {
+		// Interactive mode: prompt user to re-run last command
+		return o.promptAndRerunLastCommand()
+	} else {
+		// Non-interactive mode: automatically re-run last command
+		return o.rerunLastCommand()
+	}
+}
 
-	content, err := os.ReadFile(fixFile)
+// readFromStdin reads all content from stdin
+func (o *Orchestrator) readFromStdin() ([]byte, error) {
+	return io.ReadAll(os.Stdin)
+}
+
+// captureTerminalOutput attempts to capture previous terminal output
+func (o *Orchestrator) captureTerminalOutput() (string, error) {
+	// Check if we can access terminal scroll buffer (advanced terminals)
+	if content, err := o.tryAdvancedTerminalCapture(); err == nil && content != "" {
+		return content, nil
+	}
+	
+	// Try to get recent shell history as fallback
+	if content, err := o.tryShellHistory(); err == nil && content != "" {
+		return content, nil
+	}
+	
+	// Provide helpful error message
+	return "", fmt.Errorf(`unable to capture terminal output automatically.
+
+For best results, use one of these methods:
+1. Pipe command output: command 2>&1 | ./prompter --fix --yes
+2. Save to file first: command 2>&1 | tee /tmp/output.txt && ./prompter --fix --yes
+3. Use terminal session recording tools like 'script' or 'asciinema'
+
+Current fallback captured recent shell history only.`)
+}
+
+// tryAdvancedTerminalCapture attempts advanced terminal output capture
+func (o *Orchestrator) tryAdvancedTerminalCapture() (string, error) {
+	// This would require terminal-specific implementations
+	// For now, return error to fall back to shell history
+	return "", fmt.Errorf("advanced terminal capture not available")
+}
+
+// tryShellHistory attempts to get recent commands and their context
+func (o *Orchestrator) tryShellHistory() (string, error) {
+	// Try to read recent shell history
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", err // Let the caller wrap this with appropriate error type
+		return "", err
 	}
-
-	trimmedContent := strings.TrimSpace(string(content))
-	if trimmedContent == "" {
-		return "", fmt.Errorf("fix file is empty")
+	
+	// Check for zsh history
+	historyFile := filepath.Join(homeDir, ".zsh_history")
+	if _, err := os.Stat(historyFile); err == nil {
+		return o.readRecentHistory(historyFile, "zsh")
 	}
+	
+	// Check for bash history
+	historyFile = filepath.Join(homeDir, ".bash_history")
+	if _, err := os.Stat(historyFile); err == nil {
+		return o.readRecentHistory(historyFile, "bash")
+	}
+	
+	return "", fmt.Errorf("no shell history found")
+}
 
-	return trimmedContent, nil
+
+
+// readRecentHistory reads recent commands from shell history
+func (o *Orchestrator) readRecentHistory(historyFile, shell string) (string, error) {
+	content, err := os.ReadFile(historyFile)
+	if err != nil {
+		return "", err
+	}
+	
+	lines := strings.Split(string(content), "\n")
+	if len(lines) < 2 {
+		return "", fmt.Errorf("insufficient history")
+	}
+	
+	// Get the last few commands, excluding the current prompter command
+	var recentLines []string
+	
+	// Work backwards through history to find recent commands
+	for i := len(lines) - 1; i >= 0 && len(recentLines) < 5; i-- {
+		line := strings.TrimSpace(lines[i])
+		if line == "" {
+			continue
+		}
+		
+		// For zsh, remove timestamp if present
+		if shell == "zsh" && strings.Contains(line, ":") {
+			parts := strings.SplitN(line, ";", 2)
+			if len(parts) == 2 {
+				line = parts[1]
+			}
+		}
+		
+		// Skip the current prompter command to avoid recursion
+		if strings.Contains(line, "prompter") && strings.Contains(line, "--fix") {
+			continue
+		}
+		
+		recentLines = append([]string{"$ " + line}, recentLines...)
+	}
+	
+	if len(recentLines) == 0 {
+		return "", fmt.Errorf("no recent commands found")
+	}
+	
+	// Add a note about output capture limitation
+	result := strings.Join(recentLines, "\n")
+	result += "\n\n# Note: Command output not captured. For full output capture, use: command 2>&1 | tee /tmp/output.txt && ./prompter --fix --yes"
+	
+	return result, nil
+}
+
+// promptAndRerunLastCommand prompts user to re-run the last command and captures output
+func (o *Orchestrator) promptAndRerunLastCommand() (string, error) {
+	// Get the last command from history
+	lastCmd, err := o.getLastCommand()
+	if err != nil {
+		return "", fmt.Errorf("failed to get last command: %w", err)
+	}
+	
+	// Prompt user to confirm re-running the command
+	prompt := &survey.Confirm{
+		Message: fmt.Sprintf("Re-run last command to capture output?\n  $ %s", lastCmd),
+		Default: true,
+	}
+	
+	var confirmed bool
+	if err := survey.AskOne(prompt, &confirmed); err != nil {
+		return "", fmt.Errorf("failed to get user confirmation: %w", err)
+	}
+	
+	if !confirmed {
+		return "", fmt.Errorf("user declined to re-run command")
+	}
+	
+	// Execute the command and capture output
+	return o.executeAndCaptureCommand(lastCmd)
+}
+
+// rerunLastCommand automatically re-runs the last command (non-interactive mode)
+func (o *Orchestrator) rerunLastCommand() (string, error) {
+	// Get the last command from history
+	lastCmd, err := o.getLastCommand()
+	if err != nil {
+		return "", fmt.Errorf("failed to get last command: %w", err)
+	}
+	
+	fmt.Printf("Re-running last command: %s\n", lastCmd)
+	
+	// Execute the command and capture output
+	return o.executeAndCaptureCommand(lastCmd)
+}
+
+// getLastCommand retrieves the last command from shell history
+func (o *Orchestrator) getLastCommand() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	
+	// Check for zsh history first
+	historyFile := filepath.Join(homeDir, ".zsh_history")
+	if _, err := os.Stat(historyFile); err == nil {
+		return o.getLastCommandFromHistory(historyFile, "zsh")
+	}
+	
+	// Check for bash history
+	historyFile = filepath.Join(homeDir, ".bash_history")
+	if _, err := os.Stat(historyFile); err == nil {
+		return o.getLastCommandFromHistory(historyFile, "bash")
+	}
+	
+	return "", fmt.Errorf("no shell history found")
+}
+
+// getLastCommandFromHistory extracts the last command from a history file
+func (o *Orchestrator) getLastCommandFromHistory(historyFile, shell string) (string, error) {
+	content, err := os.ReadFile(historyFile)
+	if err != nil {
+		return "", err
+	}
+	
+	lines := strings.Split(string(content), "\n")
+	
+	// Work backwards to find the last non-prompter command
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if line == "" {
+			continue
+		}
+		
+		// For zsh, remove timestamp if present
+		if shell == "zsh" && strings.Contains(line, ":") {
+			parts := strings.SplitN(line, ";", 2)
+			if len(parts) == 2 {
+				line = parts[1]
+			}
+		}
+		
+		// Skip prompter commands to avoid recursion
+		if strings.Contains(line, "prompter") && strings.Contains(line, "--fix") {
+			continue
+		}
+		
+		// Skip empty lines and comments
+		if line != "" && !strings.HasPrefix(line, "#") {
+			return line, nil
+		}
+	}
+	
+	return "", fmt.Errorf("no suitable command found in history")
+}
+
+// executeAndCaptureCommand executes a command and captures both stdout and stderr
+func (o *Orchestrator) executeAndCaptureCommand(command string) (string, error) {
+	// Create a temporary file to capture output
+	tmpFile, err := os.CreateTemp("", "prompter-capture-*.txt")
+	if err != nil {
+		return "", fmt.Errorf("failed to create temp file: %w", err)
+	}
+	defer os.Remove(tmpFile.Name())
+	defer tmpFile.Close()
+	
+	// Write the command to the output file first
+	fmt.Fprintf(tmpFile, "$ %s\n", command)
+	tmpFile.Sync()
+	
+	// Execute the command using the shell
+	cmd := exec.Command("sh", "-c", command)
+	
+	// Capture both stdout and stderr
+	output, err := cmd.CombinedOutput()
+	
+	// Write the output to the temp file
+	tmpFile.Write(output)
+	tmpFile.Sync()
+	
+	// Read the complete content (command + output)
+	tmpFile.Seek(0, 0)
+	fullContent, err := io.ReadAll(tmpFile)
+	if err != nil {
+		return "", fmt.Errorf("failed to read captured output: %w", err)
+	}
+	
+	return strings.TrimSpace(string(fullContent)), nil
 }
 
 // OutputPrompt handles the final output of the generated prompt

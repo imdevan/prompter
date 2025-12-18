@@ -71,6 +71,7 @@ func TestBuildRequestFromFlags(t *testing.T) {
 			cmd.Flags().String("target", "", "")
 			cmd.Flags().String("editor", "", "")
 			cmd.Flags().Bool("fix", false, "")
+			cmd.Flags().String("fix-file", "", "")
 			
 			// Set flag values
 			for flag, value := range tt.flags {
