@@ -62,9 +62,26 @@ var versionCmd = &cobra.Command{
 	},
 }
 
+var listCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List available prompt templates",
+	Long:  "List all available pre and post prompt templates from the configured prompts directory.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		request := models.NewPromptRequest()
+		
+		// Get config path from flag
+		if configPath, err := cmd.Flags().GetString("config"); err == nil {
+			request.ConfigPath = configPath
+		}
+		
+		return app.ListTemplates(request)
+	},
+}
+
 func init() {
-	// Add version subcommand
+	// Add subcommands
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(listCmd)
 
 	// Global flags
 	rootCmd.PersistentFlags().StringP("config", "c", "", "config file path (default ~/.config/prompter/config.toml)")

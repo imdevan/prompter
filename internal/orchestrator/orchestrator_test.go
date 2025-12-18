@@ -116,7 +116,7 @@ func TestPrompterError_Error(t *testing.T) {
 				Message:  "test message",
 				Guidance: "test guidance",
 			},
-			wantText: "validation error: test message\n\nSuggestion: test guidance",
+			wantText: "validation error: test message\n\ntest guidance",
 		},
 		{
 			name: "error without guidance",
