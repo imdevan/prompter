@@ -1,0 +1,7 @@
+local_prompts_location = "local-prompts"
+target = "stdout"
+include_agents = "all"
+editor = "nvim"
+
+[remap_short_flags]
+directory = "D"
