@@ -1,4 +1,4 @@
-.PHONY: build dev-build cross-platform install test clean
+.PHONY: build dev-build cross-platform install test test-verbose clean
 
 build:
 	go build -o bin/prompter ./cmd/prompter
@@ -14,6 +14,9 @@ install:
 
 test:
 	go test ./...
+
+test-verbose:
+	go test -v ./...
 
 clean:
 	rm -rf bin
