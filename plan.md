@@ -16,7 +16,7 @@ Status key: pending, in-progress, blocked, completed
 - Notes: Config manager, defaults, precedence, validation.
 
 4) Template system
-- Status: pending
+- Status: completed
 - Notes: Template repository, processing, frontmatter, custom flags.
 
 5) Prompt generation workflow
@@ -45,3 +45,5 @@ Status key: pending, in-progress, blocked, completed
 - 2025-01-29: Scaffolded repository structure and baseline files.
 - 2025-01-29: Started configuration and path resolution implementation.
 - 2025-01-29: Implemented config defaults, XDG path helpers, and TOML loading with precedence.
+- 2025-01-29: Started template system implementation.
+- 2025-01-29: Implemented filesystem template repository, frontmatter parsing, and template rendering helpers.
