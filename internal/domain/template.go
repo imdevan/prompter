@@ -9,4 +9,5 @@ type Template struct {
 	Flag        string
 	Shorthand   string
 	Pinned      bool
+	Location    string
 }
