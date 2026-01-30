@@ -1,0 +1,11 @@
+class Prompter < Formula
+  desc "Prompt assembly tool for AI coding agents"
+  homepage "https://github.com/imdevan/prompter"
+  url "__URL__"
+  sha256 "__SHA256__"
+  version "__VERSION__"
+
+  def install
+    bin.install "prompter"
+  end
+end

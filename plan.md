@@ -8,8 +8,8 @@ Status key: pending, in-progress, blocked, completed
 - Notes: v2_Prompt.md is authoritative; UI uses Lip Gloss for layouts with Bubble Tea/Bubbles; config precedence local -> global -> defaults; include_agents default "all"; output targets include named "editor".
 
 2) Repo scaffolding
-- Status: pending
-- Notes: Go module, directories, Makefile/scripts, CI placeholders.
+- Status: completed
+- Notes: Go module initialized; directories and placeholder files created; Makefile, scripts, and CI placeholders added.
 
 3) Configuration and path resolution
 - Status: pending
@@ -42,3 +42,4 @@ Status key: pending, in-progress, blocked, completed
 ## Progress Log
 - 2025-01-29: Created plan.md with milestones and status tracking.
 - 2025-01-29: Confirmed scope with UI/layout expectations and default include_agents behavior.
+- 2025-01-29: Scaffolded repository structure and baseline files.

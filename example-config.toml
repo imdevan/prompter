@@ -1,0 +1,14 @@
+prompts_location = "$XDG_DATA_HOME/prompter/prompts"
+history_location = "$XDG_CACHE_HOME/prompter/history"
+local_prompts_location = "prompts"
+include_agents = "all"
+editor = "nvim"
+directory_strategy = "git"
+target = "clipboard"
+interactive_default = true
+include_builtin_shorthand = true
+history_clear_cycle = "never"
+history_file_format = "month-day_eu"
+
+[remap_short_flags]
+# example = "x"
