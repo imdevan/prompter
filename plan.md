@@ -12,7 +12,7 @@ Status key: pending, in-progress, blocked, completed
 - Notes: Go module initialized; directories and placeholder files created; Makefile, scripts, and CI placeholders added.
 
 3) Configuration and path resolution
-- Status: pending
+- Status: completed
 - Notes: Config manager, defaults, precedence, validation.
 
 4) Template system
@@ -43,3 +43,5 @@ Status key: pending, in-progress, blocked, completed
 - 2025-01-29: Created plan.md with milestones and status tracking.
 - 2025-01-29: Confirmed scope with UI/layout expectations and default include_agents behavior.
 - 2025-01-29: Scaffolded repository structure and baseline files.
+- 2025-01-29: Started configuration and path resolution implementation.
+- 2025-01-29: Implemented config defaults, XDG path helpers, and TOML loading with precedence.
