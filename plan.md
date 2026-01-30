@@ -20,7 +20,7 @@ Status key: pending, in-progress, blocked, completed
 - Notes: Template repository, processing, frontmatter, custom flags.
 
 5) Prompt generation workflow
-- Status: pending
+- Status: in-progress
 - Notes: Inputs, file/dir inclusion, fix mode, output targets.
 
 6) Interactive UI
@@ -47,3 +47,4 @@ Status key: pending, in-progress, blocked, completed
 - 2025-01-29: Implemented config defaults, XDG path helpers, and TOML loading with precedence.
 - 2025-01-29: Started template system implementation.
 - 2025-01-29: Implemented filesystem template repository, frontmatter parsing, and template rendering helpers.
+- 2025-01-29: Started prompt generation workflow implementation.
