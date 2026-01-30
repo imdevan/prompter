@@ -19,7 +19,7 @@ Both modes should:
 3. Accept flags
 4. Accept piped in values
 5. Optionally save prompts in history_location
-6. Output the assembled prompt to clipboard, stdout, file, or editor
+6. Output the assembled prompt to clipboard, stdout, or editor
 
 ### Interactive
 
@@ -189,7 +189,7 @@ prompter-cli/
 
 **Template structure:**
 - Templates are stored as `.md` files
-- Post-templates: `{location}/post/{name}.md`
+- `Template location{prompts_location}/{name}.md`
 - Special templates: 
   - `{location}/index.md` included before any other flags or templates, included by default
   - `{location}/fix.md` (used in fix mode) [questioning]
@@ -360,7 +360,7 @@ prompter fix
 ```
 #### `prompter list`
 
-- Lists all available pre and post templates from all locations
+- Lists all available templates from all locations
 - Groups templates by local, global, or custom
 - Use bubletea output to make it look pretty. 
 
@@ -399,8 +399,7 @@ prompter fix
 2. **Resolve Interactive Mode**: Based on flags (`-i`, `-y`) or config default
 3. **Collect Inputs** (if interactive):
    - Base prompt (if not provided)
-   - Pre-template selection
-   - Post-template selection
+   - Template selection
 4. **Collect Contentenable")**:
    - Base prompt (from arg, clipboard, or interactive)
    - Files (read and include)
@@ -411,14 +410,16 @@ prompter fix
    - Load post-template if specified
    - Load fix template if in fix mode
 6. **Process Templates**:
-   - Process pre-template with context data
-   - Process post-template with context data
-   - Combine: pre-template + base prompt + files/directory + post-template
+   - Process template with context data
+   - Flags and arguments are processed in the order in which they are received. prompter --template --template2 [base-prompt] is different than prompter --template [base-prompt ]--template2 
+
 7. **Output Prompt**:
-   - To clipboard (default)
+all show atheistically pleasing output via bubbletea+bubbles+lipgloss
+
+   - To clipboard (default) Still shows atheistically pleasing output via bubbletea+bubbles+lipgloss
    - To stdout
-   - To file
-   - To editor
+   - file - outputs to file location if provided
+   - To editor - opens prompt in prompt_history locaion in configed editor
 
 ## Directory Inclusion
 
