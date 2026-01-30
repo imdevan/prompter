@@ -9,7 +9,15 @@ type FixInput struct {
 
 // Request describes a prompt generation request.
 type Request struct {
-	BasePrompt string
+	BasePrompt        string
+	TemplateNames     []string
+	Files             []string
+	IncludeDirectory  bool
+	DirectoryPath     string
+	DirectoryStrategy string
+	Fix               FixInput
+	CWD               string
+	Env               map[string]string
 }
 
 // Validate checks that the request is well-formed.
