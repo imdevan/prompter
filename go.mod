@@ -4,6 +4,7 @@ go 1.25.6
 
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0
+	github.com/atotto/clipboard v0.1.4
 	github.com/pelletier/go-toml/v2 v2.2.4
 )
 
