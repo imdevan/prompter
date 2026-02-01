@@ -16,6 +16,7 @@ type Request struct {
 	DirectoryPath     string
 	DirectoryStrategy string
 	Fix               FixInput
+	Target            string
 	CWD               string
 	Env               map[string]string
 }
