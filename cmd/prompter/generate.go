@@ -60,6 +60,11 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		if err != nil {
 			return err
 		}
+		if agentTemplate, err := agentTemplateForSelection(cwd); err != nil {
+			return err
+		} else if agentTemplate != nil {
+			allTemplates = append(allTemplates, *agentTemplate)
+		}
 		prompter := interactive.New(bubbletea.Adapter{})
 		note := ""
 		if opts.clipboard {
@@ -95,11 +100,28 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		req.Fix.Enabled = true
 		req.Fix.Output = piped
 	}
+	if opts.agents {
+		req.TemplateNames = append(req.TemplateNames, "agents.md")
+	}
 
 	handler := output.NewHandler(cmd.OutOrStdout(), clip, editor.New(cfg.Editor))
 	service := workflow.New(repo, handler)
 	_, err = service.Generate(req, cfg)
 	return err
+}
+
+func agentTemplateForSelection(cwd string) (*domain.Template, error) {
+	path := filepath.Join(cwd, "AGENTS.md")
+	if _, err := os.Stat(path); err == nil {
+		return &domain.Template{
+			Name:        "agents.md",
+			Title:       "Agent instructions",
+			Description: "From AGENTS.md",
+		}, nil
+	} else if !os.IsNotExist(err) {
+		return nil, err
+	}
+	return nil, nil
 }
 
 func shouldInteractive(opts *rootOptions, cfg domain.Config) bool {

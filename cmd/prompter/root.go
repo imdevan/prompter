@@ -19,6 +19,7 @@ type rootOptions struct {
 	target       string
 	fix          bool
 	clipboard    bool
+	agents       bool
 	interactive  bool
 	yes          bool
 	editorTarget bool
@@ -56,6 +57,7 @@ func newRootCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&opts.target, "target", "t", "", "output target (clipboard, stdout, file:/path, editor)")
 	cmd.Flags().BoolVarP(&opts.fix, "fix", "f", false, "fix mode")
 	cmd.Flags().BoolVarP(&opts.clipboard, "clipboard", "b", false, "use clipboard input")
+	cmd.Flags().BoolVarP(&opts.agents, "agents", "a", false, "include AGENTS.md/.cursor/.kiro templates")
 	cmd.Flags().BoolVarP(&opts.interactive, "interactive", "i", false, "force interactive mode")
 	cmd.Flags().BoolVarP(&opts.yes, "yes", "y", false, "non-interactive mode")
 	cmd.Flags().BoolVarP(&opts.editorTarget, "editor", "e", false, "open output in editor")

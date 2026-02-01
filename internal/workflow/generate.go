@@ -92,6 +92,19 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 		return "", err
 	}
 
+	agentTemplates, err := collectAgentTemplates(cwd, req.TemplateNames)
+	if err != nil {
+		return "", err
+	}
+	for _, content := range agentTemplates {
+		data.Prompt = strings.Join(parts, "\n\n")
+		rendered, err := template.Render(content, data)
+		if err != nil {
+			return "", err
+		}
+		appendPart(rendered)
+	}
+
 	if req.Fix.Enabled {
 		fixContent := defaultFixTemplate
 		if fixTemplate, err := g.Repo.Get("fix"); err == nil {
@@ -279,6 +292,39 @@ func collectGitIgnoredFiles(root string) ([]FileContent, error) {
 		})
 	}
 	return files, nil
+}
+
+func collectAgentTemplates(cwd string, templateNames []string) ([]string, error) {
+	if !containsTemplate(templateNames, "agents.md") {
+		return nil, nil
+	}
+	var templates []string
+	if content, err := readOptionalTemplate(filepath.Join(cwd, "AGENTS.md")); err != nil {
+		return nil, err
+	} else if content != "" {
+		templates = append(templates, content)
+	}
+	return templates, nil
+}
+
+func containsTemplate(names []string, match string) bool {
+	for _, name := range names {
+		if strings.EqualFold(strings.TrimSpace(name), match) {
+			return true
+		}
+	}
+	return false
+}
+
+func readOptionalTemplate(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", nil
+		}
+		return "", err
+	}
+	return string(data), nil
 }
 
 func formatFiles(label string, files []FileContent) string {
