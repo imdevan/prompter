@@ -1,7 +1,123 @@
 package main
 
-// Execute is the CLI entrypoint; cobra wiring will live here.
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+)
+
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
+type rootOptions struct {
+	configPath   string
+	files        []string
+	includeDir   bool
+	target       string
+	fix          bool
+	clipboard    bool
+	interactive  bool
+	yes          bool
+	editorTarget bool
+	templates    []string
+	showVersion  bool
+}
+
+var rootCmd = newRootCmd()
+
+// Execute is the CLI entrypoint.
 func Execute() error {
-	// TODO: wire root command and subcommands.
-	return nil
+	return rootCmd.Execute()
+}
+
+func newRootCmd() *cobra.Command {
+	opts := &rootOptions{}
+	cmd := &cobra.Command{
+		Use:   "prompter [base-prompt]",
+		Short: "Assemble prompts for AI coding agents",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if opts.showVersion {
+				cmd.Printf("version=%s commit=%s date=%s\n", version, commit, date)
+				return nil
+			}
+			if opts.editorTarget {
+				opts.target = "editor"
+			}
+			return runGenerate(cmd, opts, args)
+		},
+	}
+
+	cmd.Flags().StringVar(&opts.configPath, "config", "", "config file path")
+	cmd.Flags().StringSliceVar(&opts.files, "file", nil, "files to include")
+	cmd.Flags().BoolVarP(&opts.includeDir, "directory", "d", false, "include current directory")
+	cmd.Flags().StringVarP(&opts.target, "target", "t", "", "output target (clipboard, stdout, file:/path, editor)")
+	cmd.Flags().BoolVarP(&opts.fix, "fix", "f", false, "fix mode")
+	cmd.Flags().BoolVarP(&opts.clipboard, "clipboard", "b", false, "use clipboard input")
+	cmd.Flags().BoolVarP(&opts.interactive, "interactive", "i", false, "force interactive mode")
+	cmd.Flags().BoolVarP(&opts.yes, "yes", "y", false, "non-interactive mode")
+	cmd.Flags().BoolVarP(&opts.editorTarget, "editor", "e", false, "open output in editor")
+	cmd.Flags().StringSliceVar(&opts.templates, "template", nil, "template names to include")
+	cmd.Flags().BoolVarP(&opts.showVersion, "version", "v", false, "print version information")
+
+	cmd.AddCommand(newConfigCmd())
+	cmd.AddCommand(newListCmd())
+	cmd.AddCommand(newAddCmd())
+	cmd.AddCommand(newEditCmd())
+
+	return cmd
+}
+
+func newConfigCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "config",
+		Short: "View or edit configuration",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fmt.Errorf("config command not implemented")
+		},
+	}
+	cmd.AddCommand(newConfigInitCmd())
+	return cmd
+}
+
+func newConfigInitCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "init",
+		Short: "Generate a default config file",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fmt.Errorf("config init command not implemented")
+		},
+	}
+}
+
+func newListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List available templates",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fmt.Errorf("list command not implemented")
+		},
+	}
+}
+
+func newAddCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "add [name] [content]",
+		Short: "Add a new template",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fmt.Errorf("add command not implemented")
+		},
+	}
+}
+
+func newEditCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "edit [name]",
+		Short: "Edit an existing template",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fmt.Errorf("edit command not implemented")
+		},
+	}
 }

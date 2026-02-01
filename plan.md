@@ -20,15 +20,15 @@ Status key: pending, in-progress, blocked, completed
 - Notes: Template repository, processing, frontmatter, custom flags.
 
 5) Prompt generation workflow
-- Status: in-progress
+- Status: completed
 - Notes: Inputs, file/dir inclusion, fix mode, output targets.
 
 6) Interactive UI
-- Status: pending
+- Status: completed
 - Notes: Bubble Tea/Bubbles prompts and selection lists.
 
 7) CLI commands and flags
-- Status: pending
+- Status: in-progress
 - Notes: Cobra commands, completion, version, help text.
 
 8) Testing and QA
@@ -48,3 +48,6 @@ Status key: pending, in-progress, blocked, completed
 - 2025-01-29: Started template system implementation.
 - 2025-01-29: Implemented filesystem template repository, frontmatter parsing, and template rendering helpers.
 - 2025-01-29: Started prompt generation workflow implementation.
+- 2025-01-29: Completed prompt generation workflow and started interactive UI work.
+- 2025-01-29: Implemented Bubble Tea/Bubbles interactive base prompt and template selection UI.
+- 2025-01-29: Started CLI wiring with Cobra root command and generate flow.

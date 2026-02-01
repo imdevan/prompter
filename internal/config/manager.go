@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 
@@ -19,6 +20,22 @@ type ManagerImpl struct {
 // NewManager returns a config manager rooted at the provided cwd.
 func NewManager(cwd string) *ManagerImpl {
 	return &ManagerImpl{cwd: cwd}
+}
+
+// LoadWithOverride loads config from a specific path, layered on defaults.
+func (m *ManagerImpl) LoadWithOverride(path string) (domain.Config, error) {
+	config := domain.DefaultConfig()
+	if strings.TrimSpace(path) == "" {
+		return m.Load()
+	}
+	partial, err := readConfig(path)
+	if err != nil {
+		return domain.Config{}, err
+	}
+	if partial != nil {
+		applyPartial(&config, partial)
+	}
+	return config, nil
 }
 
 // Load reads config with precedence: defaults < global < local.

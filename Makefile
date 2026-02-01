@@ -1,10 +1,13 @@
 .PHONY: build dev-build cross-platform install test test-verbose clean
 
 build:
-	go build -o bin/prompter ./cmd/prompter
+	GOCACHE=$(CURDIR)/.gocache go build -o bin/prompter ./cmd/prompter	
+
+build-run:
+	GOCACHE=$(CURDIR)/.gocache go build -o bin/prompter ./cmd/prompter	&& ./bin/prompter
 
 dev-build:
-	go build -gcflags "all=-N -l" -o bin/prompter ./cmd/prompter
+	GOCACHE=$(CURDIR)/.gocache go build -gcflags "all=-N -l" -o bin/prompter ./cmd/prompter
 
 cross-platform:
 	./scripts/build.sh

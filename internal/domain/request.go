@@ -17,6 +17,7 @@ type Request struct {
 	DirectoryStrategy string
 	Fix               FixInput
 	Target            string
+	PipedInput        string
 	CWD               string
 	Env               map[string]string
 }
