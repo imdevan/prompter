@@ -79,6 +79,56 @@ func TestGeneratorRunFixModeDefaultTemplate(t *testing.T) {
 	}
 }
 
+func TestGeneratorIncludeAgents(t *testing.T) {
+	root := t.TempDir()
+	templatesDir := filepath.Join(root, "templates")
+	if err := os.MkdirAll(templatesDir, 0o755); err != nil {
+		t.Fatalf("mkdir templates: %v", err)
+	}
+
+	agentsPath := filepath.Join(root, "AGENTS.md")
+	if err := os.WriteFile(agentsPath, []byte("Agent guidance"), 0o644); err != nil {
+		t.Fatalf("write agents: %v", err)
+	}
+	cursorDir := filepath.Join(root, ".cursor", "commands")
+	if err := os.MkdirAll(cursorDir, 0o755); err != nil {
+		t.Fatalf("mkdir cursor: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(cursorDir, "cmd.md"), []byte("Cursor command"), 0o644); err != nil {
+		t.Fatalf("write cursor: %v", err)
+	}
+	kiroDir := filepath.Join(root, ".kiro", "steering")
+	if err := os.MkdirAll(kiroDir, 0o755); err != nil {
+		t.Fatalf("mkdir kiro: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(kiroDir, "guide.md"), []byte("Kiro guidance"), 0o644); err != nil {
+		t.Fatalf("write kiro: %v", err)
+	}
+
+	repo := template.NewRepository(templatesDir)
+	gen := NewGenerator(repo)
+	req := domain.Request{
+		BasePrompt: "Check agent content.",
+		CWD:        root,
+	}
+	cfg := domain.DefaultConfig()
+	cfg.IncludeAgents = "all"
+
+	out, err := gen.Run(req, cfg)
+	if err != nil {
+		t.Fatalf("run generator: %v", err)
+	}
+	if !strings.Contains(out, "Agent guidance") {
+		t.Fatalf("expected agents content, got %q", out)
+	}
+	if !strings.Contains(out, "Cursor command") {
+		t.Fatalf("expected cursor content, got %q", out)
+	}
+	if !strings.Contains(out, "Kiro guidance") {
+		t.Fatalf("expected kiro content, got %q", out)
+	}
+}
+
 func copyFile(src, dst string) error {
 	data, err := os.ReadFile(src)
 	if err != nil {

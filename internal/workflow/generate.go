@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"prompter-cli/internal/domain"
@@ -90,6 +91,19 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 		appendPart(rendered)
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return "", err
+	}
+
+	agentTemplates, err := collectAgentTemplates(cwd, cfg.IncludeAgents)
+	if err != nil {
+		return "", err
+	}
+	for _, content := range agentTemplates {
+		data.Prompt = strings.Join(parts, "\n\n")
+		rendered, err := template.Render(content, data)
+		if err != nil {
+			return "", err
+		}
+		appendPart(rendered)
 	}
 
 	if req.Fix.Enabled {
@@ -217,12 +231,19 @@ func collectGitFiles(root string) ([]FileContent, error) {
 }
 
 func collectFilesystemFiles(root string) ([]FileContent, error) {
+	if files, err := collectGitIgnoredFiles(root); err == nil {
+		return files, nil
+	}
+
 	var files []FileContent
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if entry.IsDir() {
+			if entry.Name() == ".git" {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 		data, err := os.ReadFile(path)
@@ -243,6 +264,120 @@ func collectFilesystemFiles(root string) ([]FileContent, error) {
 		return nil, err
 	}
 	return files, nil
+}
+
+func collectGitIgnoredFiles(root string) ([]FileContent, error) {
+	cmd := exec.Command("git", "-C", root, "ls-files", "-co", "--exclude-standard")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	var files []FileContent
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		path := filepath.Join(root, line)
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, FileContent{
+			Path:    line,
+			Content: string(data),
+		})
+	}
+	return files, nil
+}
+
+func collectAgentTemplates(cwd, includeAgents string) ([]string, error) {
+	flags := parseIncludeAgents(includeAgents)
+	if len(flags) == 0 {
+		return nil, nil
+	}
+	var templates []string
+	addTemplateFile := func(path string) error {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				return nil
+			}
+			return err
+		}
+		templates = append(templates, string(data))
+		return nil
+	}
+	addTemplateDir := func(path string) error {
+		entries, err := os.ReadDir(path)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				return nil
+			}
+			return err
+		}
+		var names []string
+		for _, entry := range entries {
+			if entry.IsDir() {
+				continue
+			}
+			names = append(names, entry.Name())
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			data, err := os.ReadFile(filepath.Join(path, name))
+			if err != nil {
+				return err
+			}
+			templates = append(templates, string(data))
+		}
+		return nil
+	}
+
+	if flags["all"] || flags["agents.md"] || flags["agents"] {
+		if err := addTemplateFile(filepath.Join(cwd, "AGENTS.md")); err != nil {
+			return nil, err
+		}
+		if err := addTemplateFile(filepath.Join(cwd, "agents.md")); err != nil {
+			return nil, err
+		}
+	}
+	if flags["all"] || flags["cursor"] {
+		if err := addTemplateDir(filepath.Join(cwd, ".cursor", "commands")); err != nil {
+			return nil, err
+		}
+	}
+	if flags["all"] || flags["kiro"] {
+		if err := addTemplateDir(filepath.Join(cwd, ".kiro", "steering")); err != nil {
+			return nil, err
+		}
+	}
+
+	return templates, nil
+}
+
+func parseIncludeAgents(value string) map[string]bool {
+	value = strings.TrimSpace(strings.ToLower(value))
+	if value == "" || value == "none" {
+		return nil
+	}
+	parts := strings.FieldsFunc(value, func(r rune) bool {
+		return r == ',' || r == ' ' || r == ';'
+	})
+	flags := make(map[string]bool, len(parts))
+	for _, part := range parts {
+		if part == "" {
+			continue
+		}
+		flags[part] = true
+	}
+	if flags["all"] {
+		flags["agents.md"] = true
+		flags["cursor"] = true
+		flags["kiro"] = true
+	}
+	return flags
 }
 
 func formatFiles(label string, files []FileContent) string {
