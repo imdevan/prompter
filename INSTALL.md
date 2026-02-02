@@ -7,6 +7,6 @@ brew install imdevan/prompter/prompter
 
 ## Manual
 ```bash
-make build
-sudo make install
+just build
+sudo just install
 ```

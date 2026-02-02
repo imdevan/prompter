@@ -9,8 +9,8 @@ prompter "explain this output"
 
 ## Development
 ```bash
-make build
-make test
+just build
+just test
 ```
 
 See `INSTALL.md` for installation options and `example-config.toml` for configuration.
