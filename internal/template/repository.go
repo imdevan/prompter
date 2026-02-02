@@ -29,33 +29,40 @@ func (r *RepositoryFS) List() ([]domain.Template, error) {
 		if location == "" {
 			continue
 		}
-		entries, err := os.ReadDir(location)
+		err := filepath.WalkDir(location, func(path string, entry os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if entry.IsDir() {
+				return nil
+			}
+			if filepath.Ext(entry.Name()) != ".md" {
+				return nil
+			}
+			rel, err := filepath.Rel(location, path)
+			if err != nil {
+				return err
+			}
+			name := strings.TrimSuffix(rel, filepath.Ext(rel))
+			name = filepath.ToSlash(name)
+			if _, ok := seen[name]; ok {
+				return nil
+			}
+			tmpl, err := loadTemplateFile(path)
+			if err != nil {
+				return err
+			}
+			tmpl.Name = name
+			tmpl.Location = location
+			templates = append(templates, tmpl)
+			seen[name] = struct{}{}
+			return nil
+		})
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
 			}
 			return nil, err
-		}
-		for _, entry := range entries {
-			if entry.IsDir() {
-				continue
-			}
-			name := entry.Name()
-			if filepath.Ext(name) != ".md" {
-				continue
-			}
-			stem := strings.TrimSuffix(name, ".md")
-			if _, ok := seen[stem]; ok {
-				continue
-			}
-			path := filepath.Join(location, name)
-			template, err := loadTemplateFile(path)
-			if err != nil {
-				return nil, err
-			}
-			template.Location = location
-			templates = append(templates, template)
-			seen[stem] = struct{}{}
 		}
 	}
 
