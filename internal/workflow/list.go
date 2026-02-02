@@ -26,11 +26,13 @@ func ListTemplates(cwd string, cfg domain.Config) ([]TemplateGroup, error) {
 		if err != nil {
 			return nil, err
 		}
-		groups = append(groups, TemplateGroup{
-			Label:     "Local",
-			Location:  localPath,
-			Templates: templates,
-		})
+		if len(templates) > 0 {
+			groups = append(groups, TemplateGroup{
+				Label:     "Local",
+				Location:  localPath,
+				Templates: templates,
+			})
+		}
 	}
 
 	if cfg.PromptsLocation != "" {
@@ -38,11 +40,13 @@ func ListTemplates(cwd string, cfg domain.Config) ([]TemplateGroup, error) {
 		if err != nil {
 			return nil, err
 		}
-		groups = append(groups, TemplateGroup{
-			Label:     "Global",
-			Location:  cfg.PromptsLocation,
-			Templates: templates,
-		})
+		if len(templates) > 0 {
+			groups = append(groups, TemplateGroup{
+				Label:     "Global",
+				Location:  cfg.PromptsLocation,
+				Templates: templates,
+			})
+		}
 	}
 
 	if includeAgents(cfg.IncludeAgents) {
