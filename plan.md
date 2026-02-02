@@ -32,17 +32,17 @@ Status key: pending, in-progress, blocked, completed
 - Notes: Cobra commands, completion, version, help text.
 
 ### Subcommands
-- [ ] config
-  - [ ] init  
+- [x] config
+  - [x] init  
   flags:
     - [x] editor, e - open in editor
     - [x] force, f - replaces existing template
 
-- [ ] add
+- [x] add
   - [ ] adds template to prompts_location
   flags:
-    - [ ] editor, e - open in editor
-    - [ ] force, f - replaces existing template
+    - [x] editor, e - open in editor
+    - [x] force, f - replaces existing template
     - [ ] interactive, i - force itneractive
     - [ ] yes, y - force noninterctive
 
