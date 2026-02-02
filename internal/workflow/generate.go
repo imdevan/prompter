@@ -83,7 +83,7 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 
 	if indexTemplate, err := g.Repo.Get("index"); err == nil {
 		data.Prompt = strings.Join(parts, "\n\n")
-		rendered, err := template.Render(stripFrontmatter(indexTemplate.Content), data)
+		rendered, err := template.Render(template.StripFrontmatter(indexTemplate.Content), data)
 		if err != nil {
 			return "", err
 		}
@@ -98,7 +98,7 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 	}
 	for _, content := range agentTemplates {
 		data.Prompt = strings.Join(parts, "\n\n")
-		rendered, err := template.Render(stripFrontmatter(content), data)
+		rendered, err := template.Render(template.StripFrontmatter(content), data)
 		if err != nil {
 			return "", err
 		}
@@ -113,7 +113,7 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 			return "", err
 		}
 		data.Prompt = strings.Join(parts, "\n\n")
-		rendered, err := template.Render(stripFrontmatter(fixContent), data)
+		rendered, err := template.Render(template.StripFrontmatter(fixContent), data)
 		if err != nil {
 			return "", err
 		}
@@ -132,7 +132,7 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 			return "", err
 		}
 		data.Prompt = strings.Join(parts, "\n\n")
-		rendered, err := template.Render(stripFrontmatter(tmpl.Content), data)
+		rendered, err := template.Render(template.StripFrontmatter(tmpl.Content), data)
 		if err != nil {
 			return "", err
 		}
@@ -342,15 +342,4 @@ func formatFiles(label string, files []FileContent) string {
 		builder.WriteString("\n")
 	}
 	return strings.TrimSpace(builder.String())
-}
-
-func stripFrontmatter(content string) string {
-	if !strings.HasPrefix(content, "---\n") {
-		return content
-	}
-	parts := strings.SplitN(content, "\n---\n", 2)
-	if len(parts) != 2 {
-		return content
-	}
-	return strings.TrimLeft(parts[1], "\n")
 }

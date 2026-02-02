@@ -3,6 +3,7 @@ package template
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -61,6 +62,39 @@ func TestRepositoryListAndGet(t *testing.T) {
 	}
 	if index.Location != globalDir {
 		t.Fatalf("expected global location, got %q", index.Location)
+	}
+}
+
+func TestRepositoryParsesFrontmatterWithCRLF(t *testing.T) {
+	root := t.TempDir()
+	templatesDir := filepath.Join(root, "templates")
+	if err := os.MkdirAll(templatesDir, 0o755); err != nil {
+		t.Fatalf("mkdir templates: %v", err)
+	}
+
+	content := strings.Join([]string{
+		"---",
+		"title: Question",
+		"description: Question - no code no output",
+		"pin: true",
+		"---",
+		"",
+		"The following is a question. No Code.",
+	}, "\r\n")
+	if err := os.WriteFile(filepath.Join(templatesDir, "question.md"), []byte(content), 0o644); err != nil {
+		t.Fatalf("write template: %v", err)
+	}
+
+	repo := NewRepository(templatesDir)
+	tmpl, err := repo.Get("question")
+	if err != nil {
+		t.Fatalf("get question: %v", err)
+	}
+	if tmpl.Description != "Question - no code no output" {
+		t.Fatalf("expected description from frontmatter, got %q", tmpl.Description)
+	}
+	if strings.Contains(tmpl.Content, "description:") {
+		t.Fatalf("expected frontmatter stripped from content, got %q", tmpl.Content)
 	}
 }
 

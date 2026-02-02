@@ -119,16 +119,11 @@ func loadTemplateFile(path string) (domain.Template, error) {
 }
 
 func parseFrontmatter(template domain.Template) (domain.Template, error) {
-	content := template.Content
-	if !strings.HasPrefix(content, "---\n") {
+	header, body, ok := splitFrontmatter(template.Content)
+	if !ok {
 		return template, nil
 	}
-	parts := strings.SplitN(content, "\n---\n", 2)
-	if len(parts) != 2 {
-		return template, nil
-	}
-	header := strings.TrimPrefix(parts[0], "---\n")
-	template.Content = strings.TrimLeft(parts[1], "\n")
+	template.Content = body
 
 	for _, line := range strings.Split(header, "\n") {
 		line = strings.TrimSpace(line)
@@ -157,4 +152,35 @@ func parseFrontmatter(template domain.Template) (domain.Template, error) {
 	}
 
 	return template, nil
+}
+
+// StripFrontmatter removes YAML frontmatter from a template's content.
+func StripFrontmatter(content string) string {
+	_, body, ok := splitFrontmatter(content)
+	if !ok {
+		return content
+	}
+	return body
+}
+
+func splitFrontmatter(content string) (string, string, bool) {
+	trimmed := strings.TrimLeft(content, "\ufeff\r\n\t ")
+	lines := strings.Split(trimmed, "\n")
+	if len(lines) == 0 || strings.TrimRight(lines[0], "\r") != "---" {
+		return "", content, false
+	}
+	end := -1
+	for i := 1; i < len(lines); i++ {
+		if strings.TrimRight(lines[i], "\r") == "---" {
+			end = i
+			break
+		}
+	}
+	if end == -1 {
+		return "", content, false
+	}
+	header := strings.Join(lines[1:end], "\n")
+	body := strings.Join(lines[end+1:], "\n")
+	body = strings.TrimLeft(body, "\r\n")
+	return header, body, true
 }
