@@ -31,10 +31,39 @@ Status key: pending, in-progress, blocked, completed
 - Status: in-progress
 - Notes: Cobra commands, completion, version, help text.
 
+### Subcommands
+- [ ] config
+  - [ ] init  
+  flags:
+    - [ ] editor, e - open in editor
+    - [x] force, f - replaces existing template
+
+- [ ] add
+  - [ ] adds template to prompts_location
+  flags:
+    - [ ] editor, e - open in editor
+    - [ ] force, f - replaces existing template
+    - [ ] interactive, i - force itneractive
+    - [ ] yes, y - force noninterctive
+
+- [ ] fix
+flags:
+  - [ ] editor, e - open in editor
+  - [ ] force, f - replaces existing template
+  - [ ] interactive, i - force itneractive
+  - [ ] yes, y - force noninterctive
+
+- [ ] list
+  - [ ] list available templates use bubbles and lip gloss
+
+- [ ] edit
+  - [ ] no args: open prompts_location in editor
+  - [ ] 1 arg: edits template in prompts_location
+  - [ ] if not found prompt user to add using bubbles confirm
+
 8) Testing and QA
 - Status: pending
 - Notes: Unit/property tests, integration tests, coverage gaps.
-
 9) Release readiness
 - Status: pending
 - Notes: Cross-platform build, Homebrew template, docs updates.
