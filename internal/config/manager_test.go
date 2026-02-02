@@ -142,6 +142,36 @@ func TestManagerExists(t *testing.T) {
 	}
 }
 
+func TestManagerExpandsPromptsLocationEnv(t *testing.T) {
+	root := t.TempDir()
+	cwd := filepath.Join(root, "project")
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "config"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
+	if err := os.MkdirAll(cwd, 0o755); err != nil {
+		t.Fatalf("mkdir cwd: %v", err)
+	}
+
+	configPath := utils.ConfigPathGlobal()
+	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
+		t.Fatalf("mkdir config dir: %v", err)
+	}
+	data := []byte("prompts_location = \"$XDG_DATA_HOME/custom-prompts\"\n")
+	if err := os.WriteFile(configPath, data, 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	manager := NewManager(cwd)
+	got, err := manager.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+
+	want := filepath.Join(os.Getenv("XDG_DATA_HOME"), "custom-prompts")
+	if got.PromptsLocation != want {
+		t.Fatalf("expected prompts_location to expand env, got %q", got.PromptsLocation)
+	}
+}
+
 func copyFile(src, dst string) error {
 	data, err := os.ReadFile(src)
 	if err != nil {

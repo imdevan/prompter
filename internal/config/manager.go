@@ -116,10 +116,10 @@ func readConfig(path string) (*partialConfig, error) {
 
 func applyPartial(config *domain.Config, partial *partialConfig) {
 	if partial.PromptsLocation != nil {
-		config.PromptsLocation = *partial.PromptsLocation
+		config.PromptsLocation = expandPath(*partial.PromptsLocation)
 	}
 	if partial.HistoryLocation != nil {
-		config.HistoryLocation = *partial.HistoryLocation
+		config.HistoryLocation = expandPath(*partial.HistoryLocation)
 	}
 	if partial.HistoryClearCycle != nil {
 		config.HistoryClearCycle = *partial.HistoryClearCycle
@@ -128,7 +128,7 @@ func applyPartial(config *domain.Config, partial *partialConfig) {
 		config.HistoryFileFormat = *partial.HistoryFileFormat
 	}
 	if partial.LocalPromptsLocation != nil {
-		config.LocalPromptsLocation = *partial.LocalPromptsLocation
+		config.LocalPromptsLocation = expandPath(*partial.LocalPromptsLocation)
 	}
 	if partial.IncludeAgents != nil {
 		config.IncludeAgents = *partial.IncludeAgents
@@ -151,6 +151,25 @@ func applyPartial(config *domain.Config, partial *partialConfig) {
 	if partial.RemapShortFlags != nil {
 		config.RemapShortFlags = partial.RemapShortFlags
 	}
+}
+
+func expandPath(value string) string {
+	expanded := os.ExpandEnv(value)
+	if expanded == "" {
+		return expanded
+	}
+	if expanded == "~" {
+		if home, err := os.UserHomeDir(); err == nil {
+			return home
+		}
+		return expanded
+	}
+	if strings.HasPrefix(expanded, "~/") {
+		if home, err := os.UserHomeDir(); err == nil {
+			return filepath.Join(home, strings.TrimPrefix(expanded, "~/"))
+		}
+	}
+	return expanded
 }
 
 func fileExists(path string) (bool, error) {
