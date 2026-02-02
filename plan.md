@@ -35,7 +35,7 @@ Status key: pending, in-progress, blocked, completed
 - [ ] config
   - [ ] init  
   flags:
-    - [ ] editor, e - open in editor
+    - [x] editor, e - open in editor
     - [x] force, f - replaces existing template
 
 - [ ] add
