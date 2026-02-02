@@ -39,6 +39,7 @@ func newRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "prompter [base-prompt]",
 		Short: "Assemble prompts for AI coding agents",
+		Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if opts.showVersion {
 				cmd.Printf("version=%s commit=%s date=%s\n", version, commit, date)
