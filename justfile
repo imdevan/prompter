@@ -7,8 +7,8 @@ build-run:
 	go build -o bin/prompter ./cmd/prompter && ./bin/prompter
 
 watch:
-  # entr package required
 	@rg --files | entr -r sh -c 'sleep 10; go build -o bin/prompter ./cmd/prompter'
+  # entr package required
 
 dev-build:
 	go build -gcflags "all=-N -l" -o bin/prompter ./cmd/prompter
