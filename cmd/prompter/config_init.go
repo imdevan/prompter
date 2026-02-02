@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -42,9 +44,43 @@ func runConfigInit(cmd *cobra.Command, opts *configInitOptions) error {
 		return fmt.Errorf("config already exists at %s (use --force to overwrite)", utils.ConfigPathGlobal())
 	}
 	cfg := domain.DefaultConfig()
-	if err := manager.Save(cfg); err != nil {
+	path := utils.ConfigPathGlobal()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	content := renderConfigTemplate(cfg)
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		return err
 	}
 	cmd.Printf("Wrote config to %s\n", utils.ConfigPathGlobal())
 	return nil
+}
+
+func renderConfigTemplate(cfg domain.Config) string {
+	var builder strings.Builder
+	builder.WriteString("# Locations\n")
+	builder.WriteString(fmt.Sprintf("prompts_location = %q\n", cfg.PromptsLocation))
+	builder.WriteString(fmt.Sprintf("history_location = %q\n", cfg.HistoryLocation))
+	builder.WriteString(fmt.Sprintf("local_prompts_location = %q\n", cfg.LocalPromptsLocation))
+	builder.WriteString("\n# Templates & agents\n")
+	builder.WriteString("# include_agents options: all, none, agents, kiro, cursor\n")
+	builder.WriteString(fmt.Sprintf("include_agents = %q\n", cfg.IncludeAgents))
+	builder.WriteString(fmt.Sprintf("editor = %q\n", cfg.Editor))
+	builder.WriteString("# directory_strategy options: git (tracked files), filesystem (walk directory, uses .gitignore when present)\n")
+	builder.WriteString(fmt.Sprintf("directory_strategy = %q\n", cfg.DirectoryStrategy))
+	builder.WriteString("\n# Output\n")
+	builder.WriteString("# target options: clipboard, stdout, file:/path, editor\n")
+	builder.WriteString(fmt.Sprintf("target = %q\n", cfg.Target))
+	builder.WriteString("\n# CLI behavior\n")
+	builder.WriteString(fmt.Sprintf("interactive_default = %t\n", cfg.InteractiveDefault))
+	builder.WriteString(fmt.Sprintf("include_builtin_shorthand = %t\n", cfg.IncludeBuiltinShorthand))
+	builder.WriteString("\n# History\n")
+	builder.WriteString("# history_clear_cycle options: never, 1, 7, 31 (days)\n")
+	builder.WriteString(fmt.Sprintf("history_clear_cycle = %q\n", cfg.HistoryClearCycle))
+	builder.WriteString(fmt.Sprintf("history_file_format = %q\n", cfg.HistoryFileFormat))
+	builder.WriteString("\n[remap_short_flags]\n")
+	builder.WriteString("# Map long flags to a custom short flag (single letter).\n")
+	builder.WriteString("# Existing short flags: a b d e f i t v y\n")
+	builder.WriteString("# Example: directory = \"D\"\n")
+	return builder.String()
 }

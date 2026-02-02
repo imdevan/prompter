@@ -1,14 +1,29 @@
+# Locations
 prompts_location = "$XDG_DATA_HOME/prompter/prompts"
 history_location = "$XDG_CACHE_HOME/prompter/history"
 local_prompts_location = "prompts"
+
+# Templates & agents
+# include_agents options: all, none, agents, kiro, cursor
 include_agents = "all"
 editor = "nvim"
+# directory_strategy options: git (tracked files), filesystem (walk directory, uses .gitignore when present)
 directory_strategy = "git"
+
+# Output
+# target options: clipboard, stdout, file:/path, editor
 target = "clipboard"
+
+# CLI behavior
 interactive_default = true
 include_builtin_shorthand = true
+
+# History
+# history_clear_cycle options: never, 1, 7, 31 (days)
 history_clear_cycle = "never"
 history_file_format = "month-day_eu"
 
 [remap_short_flags]
-# example = "x"
+# Map long flags to a custom short flag (single letter).
+# Existing short flags: a b d e f i t v y
+# Example: directory = "D"
