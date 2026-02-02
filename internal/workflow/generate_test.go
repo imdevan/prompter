@@ -87,7 +87,11 @@ func TestGeneratorIncludeAgents(t *testing.T) {
 	}
 
 	agentsPath := filepath.Join(root, "AGENTS.md")
-	if err := os.WriteFile(agentsPath, []byte("Agent guidance"), 0o644); err != nil {
+	agentsContent := "---\n" +
+		"title: Agent Instructions\n" +
+		"---\n" +
+		"Agent guidance"
+	if err := os.WriteFile(agentsPath, []byte(agentsContent), 0o644); err != nil {
 		t.Fatalf("write agents: %v", err)
 	}
 	repo := template.NewRepository(templatesDir)
@@ -104,6 +108,47 @@ func TestGeneratorIncludeAgents(t *testing.T) {
 	}
 	if !strings.Contains(out, "Agent guidance") {
 		t.Fatalf("expected agents content, got %q", out)
+	}
+	if strings.Contains(out, "title: Agent Instructions") {
+		t.Fatalf("expected frontmatter stripped from agents content, got %q", out)
+	}
+}
+
+func TestGeneratorStripsTemplateFrontmatter(t *testing.T) {
+	root := t.TempDir()
+	templatesDir := filepath.Join(root, "templates")
+	if err := os.MkdirAll(templatesDir, 0o755); err != nil {
+		t.Fatalf("mkdir templates: %v", err)
+	}
+
+	templateContent := "---\n" +
+		"title: Question\n" +
+		"description: Question - no code no output\n" +
+		"pin: true\n" +
+		"---\n" +
+		"\n" +
+		"The following is a question. No Code.\n"
+	templatePath := filepath.Join(templatesDir, "question.md")
+	if err := os.WriteFile(templatePath, []byte(templateContent), 0o644); err != nil {
+		t.Fatalf("write template: %v", err)
+	}
+
+	repo := template.NewRepository(templatesDir)
+	gen := NewGenerator(repo)
+	req := domain.Request{
+		BasePrompt:    "Does frontmatter get stripped?",
+		TemplateNames: []string{"question"},
+	}
+
+	out, err := gen.Run(req, domain.DefaultConfig())
+	if err != nil {
+		t.Fatalf("run generator: %v", err)
+	}
+	if !strings.Contains(out, "The following is a question. No Code.") {
+		t.Fatalf("expected template content, got %q", out)
+	}
+	if strings.Contains(out, "title: Question") {
+		t.Fatalf("expected frontmatter stripped from template content, got %q", out)
 	}
 }
 
