@@ -44,7 +44,6 @@ Status key: pending, in-progress, blocked, completed
     - [x] editor, e - open in editor
     - [x] force, f - replaces existing template
     - [ ] interactive, i - force itneractive
-    - [ ] yes, y - force noninterctive
 
 - [ ] fix
 flags:

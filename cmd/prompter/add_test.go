@@ -28,7 +28,7 @@ func TestAddCommandWritesTemplate(t *testing.T) {
 	buf := &bytes.Buffer{}
 	cmd := &cobra.Command{}
 	cmd.SetOut(buf)
-	opts := &addOptions{yes: true}
+	opts := &addOptions{}
 
 	args := []string{"question", "Hello {{ .BasePrompt }}"}
 	if err := runAdd(cmd, opts, args); err != nil {
@@ -69,7 +69,7 @@ func TestAddCommandRejectsOverwrite(t *testing.T) {
 	}
 
 	cmd := &cobra.Command{}
-	opts := &addOptions{yes: true}
+	opts := &addOptions{}
 	args := []string{"question", "Hello {{ .BasePrompt }}"}
 	if err := runAdd(cmd, opts, args); err == nil {
 		t.Fatal("expected error when template already exists")

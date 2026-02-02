@@ -23,7 +23,6 @@ type addOptions struct {
 	force        bool
 	openInEditor bool
 	interactive  bool
-	yes          bool
 }
 
 func newAddCmd() *cobra.Command {
@@ -39,7 +38,6 @@ func newAddCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&opts.openInEditor, "editor", "e", false, "open template in editor after creation")
 	cmd.Flags().BoolVarP(&opts.force, "force", "f", false, "overwrite existing template")
 	cmd.Flags().BoolVarP(&opts.interactive, "interactive", "i", false, "prompt for template name and content")
-	cmd.Flags().BoolVarP(&opts.yes, "yes", "y", false, "disable prompts and require arguments")
 	return cmd
 }
 
@@ -59,7 +57,7 @@ func runAdd(cmd *cobra.Command, opts *addOptions, args []string) error {
 		return err
 	}
 
-	if opts.interactive || (!opts.yes && (strings.TrimSpace(name) == "" || strings.TrimSpace(content) == "")) {
+	if opts.interactive {
 		name, content, err = promptAddTemplate(name, content)
 		if err != nil {
 			return err
@@ -68,11 +66,11 @@ func runAdd(cmd *cobra.Command, opts *addOptions, args []string) error {
 
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return errors.New("template name is required")
+		return errors.New("template name is required (use --interactive to enter it)")
 	}
 	name = strings.TrimSuffix(name, ".md")
 	if strings.TrimSpace(content) == "" {
-		return errors.New("template content is required")
+		return errors.New("template content is required (use --interactive or pipe content)")
 	}
 	if cfg.PromptsLocation == "" {
 		return errors.New("prompts_location is not configured")
