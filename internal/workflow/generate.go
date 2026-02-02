@@ -71,9 +71,8 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 		Env:        req.Env,
 		Config:     cfg,
 	}
-# index template
-
-asdf parts []string
+	// index template
+	var parts []string
 	appendPart := func(text string) {
 		text = strings.TrimSpace(text)
 		if text == "" {
