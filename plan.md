@@ -39,11 +39,11 @@ Status key: pending, in-progress, blocked, completed
     - [x] force, f - replaces existing template
 
 - [x] add
-  - [ ] adds template to prompts_location
+  - [x] adds template to prompts_location
   flags:
     - [x] editor, e - open in editor
     - [x] force, f - replaces existing template
-    - [ ] interactive, i - force interactive
+    - [x] interactive, i - force interactive
 
 - [ ] fix
 flags:
