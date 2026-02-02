@@ -8,13 +8,15 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"prompter-cli/internal/adapters/editor"
 	"prompter-cli/internal/config"
 	"prompter-cli/internal/domain"
 	"prompter-cli/internal/utils"
 )
 
 type configInitOptions struct {
-	force bool
+	force        bool
+	openInEditor bool
 }
 
 func newConfigInitCmd() *cobra.Command {
@@ -27,6 +29,7 @@ func newConfigInitCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVarP(&opts.force, "force", "f", false, "overwrite existing config")
+	cmd.Flags().BoolVarP(&opts.openInEditor, "editor", "e", false, "open config in editor after creation")
 	return cmd
 }
 
@@ -51,6 +54,12 @@ func runConfigInit(cmd *cobra.Command, opts *configInitOptions) error {
 	content := renderConfigTemplate(cfg)
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		return err
+	}
+	if opts.openInEditor {
+		editorAdapter := editor.New(cfg.Editor)
+		if err := editorAdapter.Open(path); err != nil {
+			return err
+		}
 	}
 	cmd.Printf("Wrote config to %s\n", utils.ConfigPathGlobal())
 	return nil
