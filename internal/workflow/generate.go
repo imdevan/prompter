@@ -71,8 +71,9 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 		Env:        req.Env,
 		Config:     cfg,
 	}
+# index template
 
-	var parts []string
+asdf parts []string
 	appendPart := func(text string) {
 		text = strings.TrimSpace(text)
 		if text == "" {
@@ -122,6 +123,9 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 
 	for _, name := range req.TemplateNames {
 		if name == "" {
+			continue
+		}
+		if strings.EqualFold(strings.TrimSpace(name), "agents.md") {
 			continue
 		}
 		tmpl, err := g.Repo.Get(name)
