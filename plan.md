@@ -5,7 +5,7 @@ Status key: pending, in-progress, blocked, completed
 ## Milestones
 1) Confirm scope and requirements
 - Status: completed
-- Notes: v2_Prompt.md is authoritative; UI uses Lip Gloss for layouts with Bubble Tea/Bubbles; config precedence local -> global -> defaults; include_agents default "all"; output targets include named "editor".
+- Notes: source_of_truth.md is authoritative; Bubble Tea/Bubbles inline UI; prefer green/pink; config precedence local -> global -> defaults; include_agents default "all"; output targets include "editor".
 
 2) Repo scaffolding
 - Status: completed
@@ -29,7 +29,7 @@ Status key: pending, in-progress, blocked, completed
 
 7) CLI commands and flags
 - Status: in-progress
-- Notes: Cobra commands, completion, version, help text.
+- Notes: Cobra commands, completion, version, help text, dynamic template flags from config.
 
 ### Subcommands
 - [x] config
@@ -58,6 +58,15 @@ flags:
   - [ ] no args: open prompts_location in editor
   - [ ] 1 arg: edits template in prompts_location
   - [ ] if not found prompt user to add using bubbles confirm
+
+- [ ] prompts
+  - [ ] open prompts directory in configured editor
+
+- [ ] version
+  - [ ] print version/commit/date/go/platform
+
+- [ ] completion
+  - [ ] generate shell completion scripts via cobra
 
 8) Testing and QA
 - Status: pending
