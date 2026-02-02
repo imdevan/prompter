@@ -38,6 +38,7 @@ Status key: pending, in-progress, blocked, completed
 
 ### Subcommands
 - [x] config
+  - [ ] no args: open config location in editor
   - [x] init  
   flags:
     - [x] editor, e - open in editor
@@ -72,6 +73,9 @@ flags:
 
 - [ ] completion
   - [ ] generate shell completion scripts via cobra
+
+## Queue
+
 
 8) Testing and QA
 - Status: pending
