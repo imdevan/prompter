@@ -38,7 +38,7 @@ Status key: pending, in-progress, blocked, completed
 
 ### Subcommands
 - [x] config
-  - [ ] no args: open config location in editor
+  - [x] no args: open config location in editor
   - [x] init  
   flags:
     - [x] editor, e - open in editor
