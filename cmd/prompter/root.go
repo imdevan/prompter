@@ -75,18 +75,6 @@ func newRootCmd() *cobra.Command {
 	return cmd
 }
 
-func newConfigCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "config",
-		Short: "View or edit configuration",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("config command not implemented")
-		},
-	}
-	cmd.AddCommand(newConfigInitCmd())
-	return cmd
-}
-
 func newEditCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "edit [name]",
