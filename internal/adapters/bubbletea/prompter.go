@@ -2,6 +2,7 @@ package bubbletea
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -30,8 +31,8 @@ func (Adapter) AskBasePrompt(defaultValue, note string) (string, error) {
 }
 
 // SelectTemplates prompts for template selection.
-func (Adapter) SelectTemplates(templates []domain.Template) ([]domain.Template, error) {
-	model := newTemplateSelectModel(templates)
+func (Adapter) SelectTemplates(templates []domain.Template, basePrompt string) ([]domain.Template, error) {
+	model := newTemplateSelectModel(templates, basePrompt)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
@@ -100,20 +101,35 @@ func (m textInputModel) View() string {
 }
 
 type templateSelectModel struct {
-	list      list.Model
-	templates []domain.Template
-	selecteds map[int]bool
+	list       list.Model
+	templates  []domain.Template
+	selecteds  map[int]bool
+	basePrompt string
+	barIndex   int
+	focus      focusArea
 }
 
-func newTemplateSelectModel(templates []domain.Template) templateSelectModel {
+type focusArea int
+
+const (
+	focusList focusArea = iota
+	focusBar
+)
+
+func newTemplateSelectModel(templates []domain.Template, basePrompt string) templateSelectModel {
 	items := make([]list.Item, 0, len(templates))
 	for i, tmpl := range templates {
 		items = append(items, templateItem{template: tmpl, index: i})
 	}
 
-	delegate := list.NewDefaultDelegate()
-	delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.Foreground(lipgloss.Color("2")).Bold(true)
-	delegate.Styles.SelectedDesc = delegate.Styles.SelectedDesc.Foreground(lipgloss.Color("5"))
+	selecteds := make(map[int]bool)
+	defaultDelegate := list.NewDefaultDelegate()
+	defaultDelegate.Styles.SelectedTitle = defaultDelegate.Styles.SelectedTitle.Foreground(lipgloss.Color("2")).Bold(true)
+	defaultDelegate.Styles.SelectedDesc = defaultDelegate.Styles.SelectedDesc.Foreground(lipgloss.Color("5"))
+	delegate := templateItemDelegate{
+		DefaultDelegate: defaultDelegate,
+		selecteds:       selecteds,
+	}
 
 	l := list.New(items, delegate, 80, 20)
 	l.Title = "Select templates"
@@ -123,9 +139,12 @@ func newTemplateSelectModel(templates []domain.Template) templateSelectModel {
 	l.Styles.Title = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
 
 	return templateSelectModel{
-		list:      l,
-		templates: templates,
-		selecteds: make(map[int]bool),
+		list:       l,
+		templates:  templates,
+		selecteds:  selecteds,
+		basePrompt: strings.TrimSpace(basePrompt),
+		barIndex:   0,
+		focus:      focusList,
 	}
 }
 
@@ -139,11 +158,33 @@ func (m templateSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
+		case tea.KeyTab:
+			if m.focus == focusList {
+				m.focus = focusBar
+			} else {
+				m.focus = focusList
+			}
+			return m, nil
 		case tea.KeyEnter:
 			return m, tea.Quit
 		case tea.KeySpace:
+			if m.focus == focusBar {
+				m.toggleFocusedSelection()
+				return m, nil
+			}
 			if item, ok := m.list.SelectedItem().(templateItem); ok {
 				m.selecteds[item.index] = !m.selecteds[item.index]
+				m.clampBarIndex()
+			}
+		case tea.KeyLeft, tea.KeyRight:
+			if m.focus == focusBar {
+				m.moveBarIndex(msg.Type)
+				return m, nil
+			}
+		case tea.KeyBackspace, tea.KeyDelete:
+			if m.focus == focusBar {
+				m.toggleFocusedSelection()
+				return m, nil
 			}
 		}
 	}
@@ -156,12 +197,13 @@ func (m templateSelectModel) View() string {
 	if len(m.templates) == 0 {
 		return "No templates available."
 	}
-	header := lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("Space to toggle, Enter to continue.")
+	header := lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("Space to toggle, Tab to focus summary, Enter to continue.")
+	summary := m.renderSelectionBar()
 	return lipgloss.NewStyle().
 		Padding(1, 2).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("#444")).
-		Render(header + "\n\n" + m.list.View())
+		Render(header + "\n\n" + summary + "\n\n" + m.list.View())
 }
 
 func (m templateSelectModel) selected() []domain.Template {
@@ -172,6 +214,153 @@ func (m templateSelectModel) selected() []domain.Template {
 		}
 	}
 	return selected
+}
+
+func (m *templateSelectModel) moveBarIndex(key tea.KeyType) {
+	entries := m.selectionEntries()
+	if len(entries) == 0 {
+		m.barIndex = 0
+		return
+	}
+	switch key {
+	case tea.KeyLeft:
+		m.barIndex--
+	case tea.KeyRight:
+		m.barIndex++
+	}
+	if m.barIndex < 0 {
+		m.barIndex = 0
+	}
+	if m.barIndex >= len(entries) {
+		m.barIndex = len(entries) - 1
+	}
+}
+
+func (m *templateSelectModel) clampBarIndex() {
+	entries := m.selectionEntries()
+	if len(entries) == 0 {
+		m.barIndex = 0
+		return
+	}
+	if m.barIndex >= len(entries) {
+		m.barIndex = len(entries) - 1
+	}
+}
+
+func (m *templateSelectModel) toggleFocusedSelection() {
+	entries := m.selectionEntries()
+	if len(entries) == 0 || m.barIndex >= len(entries) {
+		return
+	}
+	entry := entries[m.barIndex]
+	if entry.templateIndex < 0 {
+		return
+	}
+	m.selecteds[entry.templateIndex] = !m.selecteds[entry.templateIndex]
+	m.clampBarIndex()
+}
+
+type selectionEntry struct {
+	label         string
+	templateIndex int
+}
+
+func (m templateSelectModel) selectionEntries() []selectionEntry {
+	entries := make([]selectionEntry, 0, len(m.selecteds)+1)
+	for i, tmpl := range m.templates {
+		if !m.selecteds[i] {
+			continue
+		}
+		label := tmpl.Name
+		entries = append(entries, selectionEntry{
+			label:         label,
+			templateIndex: i,
+		})
+	}
+	if summary := summarizePrompt(m.basePrompt); summary != "" {
+		entries = append(entries, selectionEntry{
+			label:         summary,
+			templateIndex: -1,
+		})
+	}
+	return entries
+}
+
+func (m templateSelectModel) renderSelectionBar() string {
+	entries := m.selectionEntries()
+	if len(entries) == 0 {
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("No templates selected yet.")
+	}
+	normal := lipgloss.NewStyle().
+		Padding(0, 1).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("7")).
+		Foreground(lipgloss.Color("7"))
+	focused := lipgloss.NewStyle().
+		Padding(0, 1).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("2")).
+		Foreground(lipgloss.Color("0")).
+		Background(lipgloss.Color("2")).
+		Bold(true)
+	parts := make([]string, 0, len(entries))
+	for i, entry := range entries {
+		chip := entry.label
+		if m.focus == focusBar && i == m.barIndex {
+			parts = append(parts, focused.Render(chip))
+		} else {
+			parts = append(parts, normal.Render(chip))
+		}
+	}
+	return lipgloss.JoinHorizontal(lipgloss.Top, parts...)
+}
+
+func summarizePrompt(prompt string) string {
+	text := strings.Join(strings.Fields(prompt), " ")
+	if text == "" {
+		return ""
+	}
+	runes := []rune(text)
+	const maxLen = 15
+	if len(runes) <= maxLen {
+		return fmt.Sprintf("%q", text)
+	}
+	return fmt.Sprintf("%q", string(runes[:maxLen])+"...")
+}
+
+type templateItemDelegate struct {
+	list.DefaultDelegate
+	selecteds map[int]bool
+}
+
+func (d templateItemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
+	item, ok := listItem.(templateItem)
+	if !ok {
+		return
+	}
+	isSelected := d.selecteds[item.index]
+	cursor := " "
+	if index == m.Index() {
+		cursor = ">"
+	}
+	marker := "[ ]"
+	if isSelected {
+		marker = "[x]"
+	}
+	titleStyle := d.Styles.NormalTitle
+	descStyle := d.Styles.NormalDesc
+	if index == m.Index() {
+		titleStyle = d.Styles.SelectedTitle
+		descStyle = d.Styles.SelectedDesc
+	}
+
+	title := titleStyle.Render(fmt.Sprintf("%s %s %s", cursor, marker, item.Title()))
+	if desc := item.Description(); desc != "" {
+		desc = descStyle.Render("    " + desc)
+		fmt.Fprintf(w, "%s\n%s", title, desc)
+		return
+	}
+	fmt.Fprint(w, title)
 }
 
 type templateItem struct {
