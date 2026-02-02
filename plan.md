@@ -31,6 +31,11 @@ Status key: pending, in-progress, blocked, completed
 - Status: in-progress
 - Notes: Cobra commands, completion, version, help text, dynamic template flags from config.
 
+### Dynamic template flag registration
+- [ ] load templates + frontmatter during config init to derive flags/shorthands
+- [ ] register cobra flags before command parsing
+- [ ] map flag usage to template selection order in request
+
 ### Subcommands
 - [x] config
   - [x] init  
