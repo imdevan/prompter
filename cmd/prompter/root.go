@@ -84,16 +84,6 @@ func newConfigCmd() *cobra.Command {
 	return cmd
 }
 
-func newConfigInitCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "init",
-		Short: "Generate a default config file",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("config init command not implemented")
-		},
-	}
-}
-
 func newListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
