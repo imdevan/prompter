@@ -5,6 +5,7 @@ Prompter assembles high-quality prompts for AI coding agents by combining base p
 ## Quick start
 ```bash
 prompter "explain this output"
+go test ./... 2>&1 | prompter fix
 ```
 
 ## Development

@@ -47,10 +47,10 @@ Status key: pending, in-progress, blocked, completed
 
 - [ ] fix
 flags:
-  - [ ] editor, e - open in editor
+  - [x] editor, e - open in editor
   - [ ] force, f - replaces existing template
-  - [ ] interactive, i - force interactive
-  - [ ] yes, y - force non interactive
+  - [x] interactive, i - force interactive
+  - [x] yes, y - force non interactive
 
 - [ ] list
   - [ ] list available templates use bubbles and lip gloss

@@ -151,7 +151,9 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 		appendPart(fmt.Sprintf("Command Output:\n%s", strings.TrimSpace(req.Fix.Output)))
 	}
 	if strings.TrimSpace(req.PipedInput) != "" {
-		appendPart(strings.TrimSpace(req.PipedInput))
+		if !req.Fix.Enabled || strings.TrimSpace(req.PipedInput) != strings.TrimSpace(req.Fix.Output) {
+			appendPart(strings.TrimSpace(req.PipedInput))
+		}
 	}
 
 	return strings.Join(parts, "\n\n"), nil

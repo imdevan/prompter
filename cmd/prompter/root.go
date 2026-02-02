@@ -25,6 +25,7 @@ type rootOptions struct {
 	editorTarget bool
 	templates    []string
 	showVersion  bool
+	fixOutput    string
 }
 
 var rootCmd = newRootCmd()
@@ -69,6 +70,7 @@ func newRootCmd() *cobra.Command {
 	cmd.AddCommand(newListCmd())
 	cmd.AddCommand(newAddCmd())
 	cmd.AddCommand(newEditCmd())
+	cmd.AddCommand(newFixCmd())
 
 	return cmd
 }

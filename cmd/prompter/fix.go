@@ -1,0 +1,237 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
+	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/stopwatch"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/spf13/cobra"
+)
+
+func newFixCmd() *cobra.Command {
+	opts := &rootOptions{}
+	cmd := &cobra.Command{
+		Use:   "fix",
+		Short: "Generate a fix prompt from command output",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			piped, err := readStdinIfPiped(os.Stdin)
+			if err != nil {
+				return err
+			}
+			output := strings.TrimSpace(piped)
+			if output == "" {
+				lastCommand, err := lastShellCommand()
+				if err != nil {
+					return err
+				}
+				output, err = runCommandWithStatus(cmd.OutOrStdout(), lastCommand)
+				if err != nil {
+					return err
+				}
+			}
+			opts.fix = true
+			opts.yes = true
+			opts.interactive = false
+			opts.fixOutput = output
+			if opts.editorTarget {
+				opts.target = "editor"
+			}
+			return runGenerate(cmd, opts, nil)
+		},
+	}
+
+	cmd.Flags().StringVar(&opts.configPath, "config", "", "config file path")
+	cmd.Flags().StringSliceVar(&opts.files, "file", nil, "files to include")
+	cmd.Flags().BoolVarP(&opts.includeDir, "directory", "d", false, "include current directory")
+	cmd.Flags().StringVarP(&opts.target, "target", "t", "", "output target (clipboard, stdout, file:/path, editor)")
+	cmd.Flags().BoolVarP(&opts.clipboard, "clipboard", "b", false, "use clipboard input")
+	cmd.Flags().BoolVarP(&opts.agents, "agents", "a", false, "include AGENTS.md/.cursor/.kiro templates")
+	cmd.Flags().BoolVarP(&opts.interactive, "interactive", "i", false, "force interactive mode")
+	cmd.Flags().BoolVarP(&opts.yes, "yes", "y", false, "non-interactive mode")
+	cmd.Flags().BoolVarP(&opts.editorTarget, "editor", "e", false, "open output in editor")
+	cmd.Flags().StringSliceVar(&opts.templates, "template", nil, "template names to include")
+
+	return cmd
+}
+
+type fixCommandResultMsg struct {
+	output string
+	err    error
+}
+
+type fixRunModel struct {
+	command string
+	spinner spinner.Model
+	watch   stopwatch.Model
+	output  string
+	err     error
+	done    bool
+}
+
+func runCommandWithStatus(out io.Writer, command string) (string, error) {
+	model := newFixRunModel(command)
+	program := tea.NewProgram(model, tea.WithOutput(out), tea.WithoutSignalHandler())
+	result, err := program.Run()
+	if err != nil {
+		return "", err
+	}
+	if m, ok := result.(fixRunModel); ok {
+		if m.err != nil && strings.TrimSpace(m.output) == "" {
+			return "", m.err
+		}
+		return m.output, nil
+	}
+	return "", errors.New("unexpected model result")
+}
+
+func newFixRunModel(command string) fixRunModel {
+	spin := spinner.New(spinner.WithSpinner(spinner.Line))
+	spin.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
+	return fixRunModel{
+		command: command,
+		spinner: spin,
+		watch:   stopwatch.New(),
+	}
+}
+
+func (m fixRunModel) Init() tea.Cmd {
+	return tea.Batch(m.spinner.Tick, m.watch.Init(), runShellCommand(m.command))
+}
+
+func (m fixRunModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyCtrlC, tea.KeyEsc:
+			return m, tea.Quit
+		}
+	case fixCommandResultMsg:
+		m.output = msg.output
+		m.err = msg.err
+		m.done = true
+		return m, tea.Quit
+	}
+
+	var cmds []tea.Cmd
+	var cmd tea.Cmd
+	m.spinner, cmd = m.spinner.Update(msg)
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+	m.watch, cmd = m.watch.Update(msg)
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+	return m, tea.Batch(cmds...)
+}
+
+func (m fixRunModel) View() string {
+	commandStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("7"))
+	timeStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
+	title := "Running previous command"
+	if m.done {
+		title = "Finished running previous command"
+	}
+	line := fmt.Sprintf("%s %s", m.spinner.View(), title)
+	return strings.Join([]string{
+		line,
+		commandStyle.Render(m.command),
+		timeStyle.Render("Elapsed: " + m.watch.View()),
+	}, "\n")
+}
+
+func runShellCommand(command string) tea.Cmd {
+	return func() tea.Msg {
+		shell := os.Getenv("SHELL")
+		if strings.TrimSpace(shell) == "" {
+			shell = "/bin/sh"
+		}
+		cmd := exec.Command(shell, "-lc", command)
+		out, err := cmd.CombinedOutput()
+		return fixCommandResultMsg{output: string(out), err: err}
+	}
+}
+
+func lastShellCommand() (string, error) {
+	shell := os.Getenv("SHELL")
+	if strings.TrimSpace(shell) == "" {
+		shell = "/bin/sh"
+	}
+
+	last, err := historyLookup(shell, "fc -ln -1")
+	if err != nil || last == "" {
+		last, _ = historyLookup(shell, "history -p !!")
+	}
+	last = strings.TrimSpace(last)
+	if last == "" {
+		last = strings.TrimSpace(lastCommandFromHistoryFile(shell))
+	}
+	if strings.HasPrefix(last, "prompter fix") {
+		return "", errors.New("previous command is prompter fix; try piping output into prompter fix")
+	}
+	if last == "" {
+		return "", errors.New("unable to determine previous command; try piping output into prompter fix")
+	}
+	return last, nil
+}
+
+func historyLookup(shell, query string) (string, error) {
+	cmd := exec.Command(shell, "-lc", query)
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
+func lastCommandFromHistoryFile(shell string) string {
+	historyPath := os.Getenv("HISTFILE")
+	if historyPath == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return ""
+		}
+		switch filepath.Base(shell) {
+		case "zsh":
+			historyPath = filepath.Join(home, ".zsh_history")
+		case "bash":
+			historyPath = filepath.Join(home, ".bash_history")
+		default:
+			historyPath = filepath.Join(home, ".bash_history")
+		}
+	}
+
+	data, err := os.ReadFile(historyPath)
+	if err != nil {
+		return ""
+	}
+	lines := strings.Split(strings.TrimRight(string(data), "\n"), "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if line == "" {
+			continue
+		}
+		if filepath.Base(shell) == "zsh" && strings.HasPrefix(line, ":") {
+			if idx := strings.Index(line, ";"); idx != -1 && idx+1 < len(line) {
+				line = strings.TrimSpace(line[idx+1:])
+			}
+		}
+		if line == "" {
+			continue
+		}
+		if strings.HasPrefix(line, "prompter fix") {
+			continue
+		}
+		return line
+	}
+	return ""
+}

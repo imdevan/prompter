@@ -47,6 +47,9 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 	if err != nil {
 		return err
 	}
+	if strings.TrimSpace(opts.fixOutput) != "" {
+		piped = opts.fixOutput
+	}
 
 	localPrompts := ""
 	if cfg.LocalPromptsLocation != "" {
