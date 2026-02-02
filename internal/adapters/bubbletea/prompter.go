@@ -104,6 +104,7 @@ type templateSelectModel struct {
 	list       list.Model
 	templates  []domain.Template
 	selecteds  map[int]bool
+	order      []int
 	basePrompt string
 	barIndex   int
 	focus      focusArea
@@ -142,6 +143,7 @@ func newTemplateSelectModel(templates []domain.Template, basePrompt string) temp
 		list:       l,
 		templates:  templates,
 		selecteds:  selecteds,
+		order:      make([]int, 0),
 		basePrompt: strings.TrimSpace(basePrompt),
 		barIndex:   0,
 		focus:      focusList,
@@ -173,8 +175,7 @@ func (m templateSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			if item, ok := m.list.SelectedItem().(templateItem); ok {
-				m.selecteds[item.index] = !m.selecteds[item.index]
-				m.clampBarIndex()
+				m.toggleSelection(item.index)
 			}
 		case tea.KeyLeft, tea.KeyRight:
 			if m.focus == focusBar {
@@ -207,8 +208,8 @@ func (m templateSelectModel) View() string {
 }
 
 func (m templateSelectModel) selected() []domain.Template {
-	selected := make([]domain.Template, 0, len(m.selecteds))
-	for idx := range m.selecteds {
+	selected := make([]domain.Template, 0, len(m.order))
+	for _, idx := range m.order {
 		if m.selecteds[idx] {
 			selected = append(selected, m.templates[idx])
 		}
@@ -256,8 +257,27 @@ func (m *templateSelectModel) toggleFocusedSelection() {
 	if entry.templateIndex < 0 {
 		return
 	}
-	m.selecteds[entry.templateIndex] = !m.selecteds[entry.templateIndex]
+	m.toggleSelection(entry.templateIndex)
+}
+
+func (m *templateSelectModel) toggleSelection(index int) {
+	if m.selecteds[index] {
+		m.selecteds[index] = false
+		m.removeFromOrder(index)
+	} else {
+		m.selecteds[index] = true
+		m.order = append(m.order, index)
+	}
 	m.clampBarIndex()
+}
+
+func (m *templateSelectModel) removeFromOrder(index int) {
+	for i, value := range m.order {
+		if value == index {
+			m.order = append(m.order[:i], m.order[i+1:]...)
+			return
+		}
+	}
 }
 
 type selectionEntry struct {
@@ -266,15 +286,16 @@ type selectionEntry struct {
 }
 
 func (m templateSelectModel) selectionEntries() []selectionEntry {
-	entries := make([]selectionEntry, 0, len(m.selecteds)+1)
-	for i, tmpl := range m.templates {
-		if !m.selecteds[i] {
+	entries := make([]selectionEntry, 0, len(m.order)+1)
+	for _, idx := range m.order {
+		if !m.selecteds[idx] {
 			continue
 		}
+		tmpl := m.templates[idx]
 		label := tmpl.Name
 		entries = append(entries, selectionEntry{
 			label:         label,
-			templateIndex: i,
+			templateIndex: idx,
 		})
 	}
 	if summary := summarizePrompt(m.basePrompt); summary != "" {
