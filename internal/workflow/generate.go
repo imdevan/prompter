@@ -327,7 +327,7 @@ func readOptionalTemplate(path string) (string, error) {
 		}
 		return "", err
 	}
-	return stripFrontmatter(string(data)), nil
+	return template.StripFrontmatter(string(data)), nil
 }
 
 func formatFiles(label string, files []FileContent) string {
