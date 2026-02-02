@@ -95,16 +95,6 @@ func newListCmd() *cobra.Command {
 	}
 }
 
-func newAddCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "add [name] [content]",
-		Short: "Add a new template",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("add command not implemented")
-		},
-	}
-}
-
 func newEditCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "edit [name]",
