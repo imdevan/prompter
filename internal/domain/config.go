@@ -7,18 +7,18 @@ import (
 
 // Config describes the resolved configuration.
 type Config struct {
-	PromptsLocation         string
-	HistoryLocation         string
-	HistoryClearCycle       string
-	HistoryFileFormat       string
-	LocalPromptsLocation    string
-	IncludeAgents           string
-	Editor                  string
-	DirectoryStrategy       string
-	Target                  string
-	InteractiveDefault      bool
-	IncludeBuiltinShorthand bool
-	RemapShortFlags         map[string]string
+	PromptsLocation         string            `toml:"prompts_location"`
+	HistoryLocation         string            `toml:"history_location"`
+	HistoryClearCycle       string            `toml:"history_clear_cycle"`
+	HistoryFileFormat       string            `toml:"history_file_format"`
+	LocalPromptsLocation    string            `toml:"local_prompts_location"`
+	IncludeAgents           string            `toml:"include_agents"`
+	Editor                  string            `toml:"editor"`
+	DirectoryStrategy       string            `toml:"directory_strategy"`
+	Target                  string            `toml:"target"`
+	InteractiveDefault      bool              `toml:"interactive_default"`
+	IncludeBuiltinShorthand bool              `toml:"include_builtin_shorthand"`
+	RemapShortFlags         map[string]string `toml:"remap_short_flags"`
 }
 
 // DefaultConfig returns the default configuration values.
