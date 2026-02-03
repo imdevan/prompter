@@ -32,7 +32,7 @@ func TestHandlerWriteStdout(t *testing.T) {
 	handler := NewHandler(&buf, nil, nil)
 	cfg := domain.DefaultConfig()
 
-	if err := handler.Write("stdout", "hello", cfg); err != nil {
+	if err := handler.Write(domain.Request{Target: "stdout"}, "hello", cfg); err != nil {
 		t.Fatalf("write stdout: %v", err)
 	}
 	if buf.String() != "hello" {
@@ -46,7 +46,7 @@ func TestHandlerWriteFile(t *testing.T) {
 	cfg := domain.DefaultConfig()
 
 	target := "file:" + filepath.Join(root, "output.md")
-	if err := handler.Write(target, "file content", cfg); err != nil {
+	if err := handler.Write(domain.Request{Target: target}, "file content", cfg); err != nil {
 		t.Fatalf("write file: %v", err)
 	}
 	data, err := os.ReadFile(filepath.Join(root, "output.md"))
@@ -63,7 +63,7 @@ func TestHandlerWriteClipboard(t *testing.T) {
 	handler := NewHandler(&bytes.Buffer{}, clipboard, nil)
 	cfg := domain.DefaultConfig()
 
-	if err := handler.Write("clipboard", "clip", cfg); err != nil {
+	if err := handler.Write(domain.Request{Target: "clipboard"}, "clip", cfg); err != nil {
 		t.Fatalf("write clipboard: %v", err)
 	}
 	if clipboard.content != "clip" {
@@ -78,7 +78,7 @@ func TestHandlerWriteEditor(t *testing.T) {
 	cfg := domain.DefaultConfig()
 	cfg.HistoryLocation = root
 
-	if err := handler.Write("editor", "editor content", cfg); err != nil {
+	if err := handler.Write(domain.Request{Target: "editor", HistorySuffix: "q-t"}, "editor content", cfg); err != nil {
 		t.Fatalf("write editor: %v", err)
 	}
 	if editor.path == "" {

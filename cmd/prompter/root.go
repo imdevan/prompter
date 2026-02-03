@@ -36,6 +36,7 @@ type rootOptions struct {
 	fixOutput             string
 	templateFlagName      map[string]string
 	templateFlagShorthand map[string]string
+	templateShortByName   map[string]string
 }
 
 var rootCmd = newRootCmd()
@@ -149,6 +150,9 @@ func registerTemplateFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Con
 	if opts.templateFlagShorthand == nil {
 		opts.templateFlagShorthand = make(map[string]string)
 	}
+	if opts.templateShortByName == nil {
+		opts.templateShortByName = make(map[string]string)
+	}
 	usedShort := map[string]bool{}
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		if flag.Shorthand != "" {
@@ -190,6 +194,7 @@ func registerTemplateFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Con
 		opts.templateFlagName[flagName] = tmpl.Name
 		if shorthand != "" {
 			opts.templateFlagShorthand[shorthand] = tmpl.Name
+			opts.templateShortByName[tmpl.Name] = shorthand
 		}
 		if flag := cmd.Flags().Lookup(flagName); flag != nil {
 			if flag.Annotations == nil {
@@ -273,8 +278,9 @@ func templateShorthandFromName(name string, used map[string]bool) string {
 	return ""
 }
 
-func resolveTemplateOrder(args []string, opts *rootOptions, cfg domain.Config) ([]string, int) {
-	order := make([]string, 0)
+func resolveTemplateOrder(args []string, opts *rootOptions, cfg domain.Config) ([]string, int, []string) {
+	templates := make([]string, 0)
+	shorts := make([]string, 0)
 	baseIndex := -1
 
 	longFlagsWithValue := map[string]bool{
@@ -296,6 +302,19 @@ func resolveTemplateOrder(args []string, opts *rootOptions, cfg domain.Config) (
 		}
 	}
 
+	addTemplate := func(name string, shorthand string) {
+		if name == "" {
+			return
+		}
+		templates = append(templates, name)
+		if shorthand == "" {
+			shorthand = opts.templateShortByName[name]
+		}
+		if shorthand != "" {
+			shorts = append(shorts, shorthand)
+		}
+	}
+
 	addTemplatesFromValue := func(value string) {
 		parts := strings.Split(value, ",")
 		for _, part := range parts {
@@ -303,7 +322,7 @@ func resolveTemplateOrder(args []string, opts *rootOptions, cfg domain.Config) (
 			if name == "" {
 				continue
 			}
-			order = append(order, name)
+			addTemplate(name, "")
 		}
 	}
 
@@ -311,8 +330,7 @@ func resolveTemplateOrder(args []string, opts *rootOptions, cfg domain.Config) (
 		arg := args[i]
 		if arg == "--" {
 			if baseIndex == -1 {
-				baseIndex = len(order)
-				order = append(order, domain.BasePromptToken)
+				baseIndex = len(templates)
 			}
 			break
 		}
@@ -335,20 +353,20 @@ func resolveTemplateOrder(args []string, opts *rootOptions, cfg domain.Config) (
 				continue
 			}
 			if tmplName, ok := opts.templateFlagName[name]; ok {
-				order = append(order, tmplName)
+				addTemplate(tmplName, opts.templateShortByName[tmplName])
 			}
 			continue
 		}
 		if strings.HasPrefix(arg, "-") && arg != "-" {
-			shorts := strings.TrimPrefix(arg, "-")
-			shorts, value, hasValue := strings.Cut(shorts, "=")
-			for idx, r := range shorts {
+			shortsArg := strings.TrimPrefix(arg, "-")
+			shortsArg, value, hasValue := strings.Cut(shortsArg, "=")
+			for idx, r := range shortsArg {
 				short := string(r)
 				if tmplName, ok := opts.templateFlagShorthand[short]; ok {
-					order = append(order, tmplName)
+					addTemplate(tmplName, short)
 					continue
 				}
-				if short == templateShort && idx == len(shorts)-1 {
+				if short == templateShort && idx == len(shortsArg)-1 {
 					if hasValue {
 						addTemplatesFromValue(value)
 					} else if i+1 < len(args) {
@@ -358,7 +376,7 @@ func resolveTemplateOrder(args []string, opts *rootOptions, cfg domain.Config) (
 					break
 				}
 				if shortFlagsWithValue[short] {
-					if idx == len(shorts)-1 && !hasValue && i+1 < len(args) {
+					if idx == len(shortsArg)-1 && !hasValue && i+1 < len(args) {
 						i++
 					}
 					break
@@ -367,19 +385,11 @@ func resolveTemplateOrder(args []string, opts *rootOptions, cfg domain.Config) (
 			continue
 		}
 		if baseIndex == -1 {
-			baseIndex = len(order)
-			order = append(order, domain.BasePromptToken)
+			baseIndex = len(templates)
 		}
 	}
 
-	templates := make([]string, 0, len(order))
-	for _, entry := range order {
-		if entry == domain.BasePromptToken {
-			continue
-		}
-		templates = append(templates, entry)
-	}
-	return templates, baseIndex
+	return templates, baseIndex, shorts
 }
 
 func builtinShortFlag(cfg domain.Config, longName, defaultShort string) string {

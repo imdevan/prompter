@@ -12,6 +12,7 @@ type Request struct {
 	BasePrompt        string
 	TemplateNames     []string
 	TemplateOrder     []string
+	HistorySuffix     string
 	Files             []string
 	IncludeDirectory  bool
 	DirectoryPath     string

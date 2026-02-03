@@ -61,10 +61,12 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 	if cmd.Name() != "prompter" {
 		argv = stripSubcommand(argv, cmd.Name())
 	}
-	orderedTemplates, baseIndex := resolveTemplateOrder(argv, opts, cfg)
+	orderedTemplates, baseIndex, orderedShorthands := resolveTemplateOrder(argv, opts, cfg)
 	templates := orderedTemplates
+	shorthands := orderedShorthands
 	if len(templates) == 0 {
 		templates = append([]string{}, opts.templates...)
+		shorthands = templateShorthandsForNames(templates, opts.templateShortByName)
 	}
 	if shouldInteractive(opts, cfg) {
 		allTemplates, err := repo.List()
@@ -101,6 +103,7 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		BasePrompt:        basePrompt,
 		TemplateNames:     templates,
 		TemplateOrder:     buildTemplateOrder(templates, baseIndex),
+		HistorySuffix:     buildHistorySuffix(shorthands),
 		Files:             opts.files,
 		IncludeDirectory:  opts.includeDir,
 		DirectoryStrategy: cfg.DirectoryStrategy,
@@ -137,6 +140,26 @@ func buildTemplateOrder(templates []string, baseIndex int) []string {
 		order = append(order, domain.BasePromptToken)
 	}
 	return order
+}
+
+func templateShorthandsForNames(names []string, mapping map[string]string) []string {
+	if len(names) == 0 || len(mapping) == 0 {
+		return nil
+	}
+	shorts := make([]string, 0, len(names))
+	for _, name := range names {
+		if shorthand := strings.TrimSpace(mapping[name]); shorthand != "" {
+			shorts = append(shorts, shorthand)
+		}
+	}
+	return shorts
+}
+
+func buildHistorySuffix(shorts []string) string {
+	if len(shorts) == 0 {
+		return ""
+	}
+	return strings.Join(shorts, "-")
 }
 
 func stripSubcommand(args []string, name string) []string {

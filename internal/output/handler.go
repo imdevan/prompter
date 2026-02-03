@@ -30,7 +30,8 @@ func NewHandler(stdout io.Writer, clipboard Clipboard, editor Editor) *Handler {
 }
 
 // Write sends content to the requested target, falling back to config.Target.
-func (h *Handler) Write(target, content string, cfg domain.Config) error {
+func (h *Handler) Write(req domain.Request, content string, cfg domain.Config) error {
+	target := req.Target
 	if target == "" {
 		target = cfg.Target
 	}
@@ -47,7 +48,7 @@ func (h *Handler) Write(target, content string, cfg domain.Config) error {
 		}
 		return h.Clipboard.WriteText(content)
 	case target == "editor":
-		return h.openInEditor(content, cfg)
+		return h.openInEditor(content, cfg, req.HistorySuffix)
 	case strings.HasPrefix(target, "file:"):
 		path := strings.TrimPrefix(target, "file:")
 		if strings.TrimSpace(path) == "" {
@@ -59,7 +60,7 @@ func (h *Handler) Write(target, content string, cfg domain.Config) error {
 	}
 }
 
-func (h *Handler) openInEditor(content string, cfg domain.Config) error {
+func (h *Handler) openInEditor(content string, cfg domain.Config, suffix string) error {
 	if h.Editor == nil {
 		return errors.New("editor adapter is required")
 	}
@@ -70,7 +71,11 @@ func (h *Handler) openInEditor(content string, cfg domain.Config) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
-	filename := fmt.Sprintf("prompt-%s.md", time.Now().Format("20060102-150405"))
+	filename := fmt.Sprintf("prompt-%s", time.Now().Format("20060102-150405"))
+	if strings.TrimSpace(suffix) != "" {
+		filename = filename + "-" + strings.TrimSpace(suffix)
+	}
+	filename += ".md"
 	path := filepath.Join(dir, filename)
 	if err := writeFile(path, content); err != nil {
 		return err

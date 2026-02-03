@@ -32,7 +32,7 @@ func (s *Service) Generate(req domain.Request, cfg domain.Config) (string, error
 		return "", err
 	}
 	if s.Output != nil {
-		if err := s.Output.Write(req.Target, content, cfg); err != nil {
+		if err := s.Output.Write(req, content, cfg); err != nil {
 			return "", err
 		}
 	}
