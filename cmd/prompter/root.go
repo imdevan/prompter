@@ -1,10 +1,6 @@
 package main
 
-import (
-	"fmt"
-
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
 var (
 	version = "dev"
@@ -73,14 +69,4 @@ func newRootCmd() *cobra.Command {
 	cmd.AddCommand(newFixCmd())
 
 	return cmd
-}
-
-func newEditCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "edit [name]",
-		Short: "Edit an existing template",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("edit command not implemented")
-		},
-	}
 }
