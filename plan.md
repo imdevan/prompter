@@ -51,6 +51,10 @@ Status key: pending, in-progress, blocked, completed
     - [x] force, f - replaces existing template
     - [x] interactive, i - force interactive
 
+- [ ] history
+  - [ ] no args opens history in editor
+  - [ ] number provided: output the generated prompt however many steps back
+
 - [x] fix
 flags:
   - [x] editor, e - open in editor
