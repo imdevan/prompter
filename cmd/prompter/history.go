@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -20,11 +21,11 @@ import (
 func newHistoryCmd() *cobra.Command {
 	opts := &historyOptions{}
 	cmd := &cobra.Command{
-		Use:   "history",
+		Use:   "history [index]",
 		Short: "List saved prompt history",
-		Args:  cobra.NoArgs,
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runHistory(cmd, opts)
+			return runHistory(cmd, opts, args)
 		},
 	}
 	cmd.Flags().BoolVarP(&opts.clear, "clear", "c", false, "clear prompt history")
@@ -35,7 +36,7 @@ type historyOptions struct {
 	clear bool
 }
 
-func runHistory(cmd *cobra.Command, opts *historyOptions) error {
+func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -60,6 +61,18 @@ func runHistory(cmd *cobra.Command, opts *historyOptions) error {
 	if err != nil {
 		return err
 	}
+	if len(args) == 1 {
+		index, err := parseHistoryIndex(args[0])
+		if err != nil {
+			return err
+		}
+		if index <= 0 || index > len(entries) {
+			return fmt.Errorf("history index out of range (1-%d)", len(entries))
+		}
+		editorAdapter := editor.New(cfg.Editor)
+		return editorAdapter.Open(entries[index-1].Path)
+	}
+
 	model := newHistoryModel(entries, cfg.HistoryLocation)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
@@ -164,6 +177,18 @@ func clearHistory(dir string) error {
 		}
 	}
 	return nil
+}
+
+func parseHistoryIndex(value string) (int, error) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return 0, fmt.Errorf("history index is required")
+	}
+	index, err := strconv.Atoi(trimmed)
+	if err != nil {
+		return 0, fmt.Errorf("invalid history index %q", value)
+	}
+	return index, nil
 }
 
 type historyModel struct {
