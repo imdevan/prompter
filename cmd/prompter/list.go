@@ -15,16 +15,23 @@ import (
 )
 
 func newListCmd() *cobra.Command {
-	return &cobra.Command{
+	opts := &listOptions{}
+	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List available templates",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runList(cmd)
+			return runList(cmd, opts)
 		},
 	}
+	cmd.Flags().BoolVarP(&opts.includeAgents, "agents", "a", false, "include agent templates")
+	return cmd
 }
 
-func runList(cmd *cobra.Command) error {
+type listOptions struct {
+	includeAgents bool
+}
+
+func runList(cmd *cobra.Command, opts *listOptions) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -35,7 +42,9 @@ func runList(cmd *cobra.Command) error {
 		return err
 	}
 
-	groups, err := workflow.ListTemplates(cwd, cfg)
+	groups, err := workflow.ListTemplates(cwd, cfg, workflow.ListOptions{
+		IncludeAgents: opts.includeAgents,
+	})
 	if err != nil {
 		return err
 	}

@@ -4,7 +4,7 @@ history_location = "$XDG_CACHE_HOME/prompter/history"
 local_prompts_location = "prompts"
 
 # Templates & agents
-# include_agents options: all, none, agents, kiro, cursor
+# include_agents options: all, none, agents, kiro, cursor, opencode
 include_agents = "all"
 editor = "nvim"
 # directory_strategy options: git (tracked files), filesystem (walk directory, uses .gitignore when present)

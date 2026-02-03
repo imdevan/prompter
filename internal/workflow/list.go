@@ -7,6 +7,7 @@ import (
 
 	"prompter-cli/internal/domain"
 	"prompter-cli/internal/template"
+	"prompter-cli/internal/utils"
 )
 
 // TemplateGroup groups templates by location for listing.
@@ -16,8 +17,13 @@ type TemplateGroup struct {
 	Templates []domain.Template
 }
 
+// ListOptions configures list behavior.
+type ListOptions struct {
+	IncludeAgents bool
+}
+
 // ListTemplates collects templates grouped by local and global locations.
-func ListTemplates(cwd string, cfg domain.Config) ([]TemplateGroup, error) {
+func ListTemplates(cwd string, cfg domain.Config, opts ListOptions) ([]TemplateGroup, error) {
 	var groups []TemplateGroup
 
 	if cfg.LocalPromptsLocation != "" {
@@ -49,8 +55,8 @@ func ListTemplates(cwd string, cfg domain.Config) ([]TemplateGroup, error) {
 		}
 	}
 
-	if includeAgents(cfg.IncludeAgents) {
-		agents, err := collectAgentTemplatesForList(cwd, cfg.IncludeAgents)
+	if includeAgents(cfg.IncludeAgents) || opts.IncludeAgents {
+		agents, err := collectAgentTemplatesForList(cwd, cfg.IncludeAgents, opts.IncludeAgents)
 		if err != nil {
 			return nil, err
 		}
@@ -66,9 +72,9 @@ func ListTemplates(cwd string, cfg domain.Config) ([]TemplateGroup, error) {
 	return groups, nil
 }
 
-func collectAgentTemplatesForList(cwd, includeAgentsValue string) ([]domain.Template, error) {
+func collectAgentTemplatesForList(cwd, includeAgentsValue string, includeAll bool) ([]domain.Template, error) {
 	var templates []domain.Template
-	if shouldIncludeAgent(includeAgentsValue, "agents") || shouldIncludeAgent(includeAgentsValue, "agents.md") {
+	if includeAll || shouldIncludeAgent(includeAgentsValue, "agents") || shouldIncludeAgent(includeAgentsValue, "agents.md") {
 		if tmpl, err := agentTemplateFromFile(cwd, "AGENTS.md"); err != nil {
 			return nil, err
 		} else if tmpl != nil {
@@ -78,6 +84,30 @@ func collectAgentTemplatesForList(cwd, includeAgentsValue string) ([]domain.Temp
 		} else if tmpl != nil {
 			templates = append(templates, *tmpl)
 		}
+	}
+	if includeAll || shouldIncludeAgent(includeAgentsValue, "cursor") {
+		cursorDir := filepath.Join(cwd, ".cursor", "commands")
+		cursorTemplates, err := collectTemplatesFromDir(cursorDir, "cursor/commands")
+		if err != nil {
+			return nil, err
+		}
+		templates = append(templates, cursorTemplates...)
+	}
+	if includeAll || shouldIncludeAgent(includeAgentsValue, "kiro") {
+		kiroDir := filepath.Join(cwd, ".kiro", "steering")
+		kiroTemplates, err := collectTemplatesFromDir(kiroDir, "kiro/steering")
+		if err != nil {
+			return nil, err
+		}
+		templates = append(templates, kiroTemplates...)
+	}
+	if includeAll || shouldIncludeAgent(includeAgentsValue, "opencode") {
+		opencodeDir := filepath.Join(utils.XDGConfigHome(), "opencode", "commands")
+		opencodeTemplates, err := collectTemplatesFromDir(opencodeDir, "opencode/commands")
+		if err != nil {
+			return nil, err
+		}
+		templates = append(templates, opencodeTemplates...)
 	}
 	return templates, nil
 }
@@ -98,7 +128,14 @@ func agentTemplateFromFile(cwd, filename string) (*domain.Template, error) {
 }
 
 func includeAgents(value string) bool {
-	return !shouldIncludeAgent(value, "none")
+	value = strings.TrimSpace(strings.ToLower(value))
+	if value == "" {
+		return false
+	}
+	if value == "none" {
+		return false
+	}
+	return true
 }
 
 func shouldIncludeAgent(value, token string) bool {
@@ -122,4 +159,41 @@ func splitConfigList(value string) []string {
 	return strings.FieldsFunc(value, func(r rune) bool {
 		return r == ',' || r == ';' || r == ' ' || r == '\n' || r == '\t'
 	})
+}
+
+func collectTemplatesFromDir(root, labelPrefix string) ([]domain.Template, error) {
+	info, err := os.Stat(root)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if !info.IsDir() {
+		return nil, nil
+	}
+	var templates []domain.Template
+	err = filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		name := filepath.ToSlash(filepath.Join(labelPrefix, rel))
+		templates = append(templates, domain.Template{
+			Name:        name,
+			Description: "From " + labelPrefix,
+			Location:    path,
+		})
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return templates, nil
 }

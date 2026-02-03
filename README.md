@@ -8,6 +8,12 @@ prompter "explain this output"
 go test ./... 2>&1 | prompter fix
 ```
 
+## Commands
+```bash
+prompter list
+prompter list -a # include agent templates (AGENTS.md, .cursor/commands, .kiro/steering, opencode)
+```
+
 ## Development
 ```bash
 just build
