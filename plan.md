@@ -80,6 +80,12 @@ flags:
 - Status: pending
 - Notes: Cross-platform build, Homebrew template, docs updates.
 
+9. Clean up 
+- [ ] interactive ui reflects template processing
+  - [ ] templates with {{.Prompt}} before any other white space are put at the end of of the visual list
+  - [ ] templates with {{.Prompt}} in the middle of their copy should visual wrap templates it will wrap in the process
+- [ ] base prompt is color5
+
 ## Progress Log
 - 2025-01-29: Created plan.md with milestones and status tracking.
 - 2025-01-29: Confirmed scope with UI/layout expectations and default include_agents behavior.
