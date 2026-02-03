@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/list"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 
+	"prompter-cli/internal/adapters/editor"
 	"prompter-cli/internal/config"
 )
 
@@ -58,9 +60,21 @@ func runHistory(cmd *cobra.Command, opts *historyOptions) error {
 	if err != nil {
 		return err
 	}
-	content := renderHistory(entries, cfg.HistoryLocation)
-	_, err = fmt.Fprintln(cmd.OutOrStdout(), content)
-	return err
+	model := newHistoryModel(entries, cfg.HistoryLocation)
+	program := tea.NewProgram(model, tea.WithoutSignalHandler())
+	result, err := program.Run()
+	if err != nil {
+		return err
+	}
+	m, ok := result.(historyModel)
+	if !ok {
+		return fmt.Errorf("unexpected history model result")
+	}
+	if strings.TrimSpace(m.selectedPath) == "" {
+		return nil
+	}
+	editorAdapter := editor.New(cfg.Editor)
+	return editorAdapter.Open(m.selectedPath)
 }
 
 type historyEntry struct {
@@ -98,56 +112,6 @@ func readHistoryEntries(dir string) ([]historyEntry, error) {
 		return items[i].ModTime.After(items[j].ModTime)
 	})
 	return items, nil
-}
-
-func renderHistory(entries []historyEntry, location string) string {
-	var builder strings.Builder
-	titleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
-	pathStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
-	descStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("7"))
-
-	builder.WriteString(titleStyle.Render("History"))
-	if strings.TrimSpace(location) != "" {
-		builder.WriteString("\n")
-		builder.WriteString(pathStyle.Render(location))
-	}
-	builder.WriteString("\n\n")
-
-	if len(entries) == 0 {
-		builder.WriteString(descStyle.Render("No history entries found."))
-		return builder.String()
-	}
-
-	items := make([]list.Item, 0, len(entries))
-	for _, entry := range entries {
-		items = append(items, historyListItem{entry: entry})
-	}
-	delegate := list.NewDefaultDelegate()
-	delegate.Styles.SelectedTitle = delegate.Styles.NormalTitle
-	delegate.Styles.SelectedDesc = delegate.Styles.NormalDesc
-	delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.Foreground(lipgloss.Color("5")).Bold(true)
-	delegate.Styles.NormalDesc = delegate.Styles.NormalDesc.Foreground(lipgloss.Color("7"))
-	model := list.New(items, delegate, 80, len(items)+2)
-	model.SetShowHelp(false)
-	model.SetShowStatusBar(false)
-	model.SetShowPagination(false)
-	model.DisableQuitKeybindings()
-	model.SetFilteringEnabled(false)
-	model.Title = ""
-	model.Select(0)
-
-	for i, item := range items {
-		if i > 0 {
-			builder.WriteString("\n")
-		}
-		delegate.Render(&builder, model, i, item)
-		if entry, ok := item.(historyListItem); ok {
-			if strings.TrimSpace(entry.Description()) != "" && i < len(items)-1 {
-				builder.WriteString("\n")
-			}
-		}
-	}
-	return strings.TrimRight(builder.String(), "\n")
 }
 
 type historyListItem struct {
@@ -200,4 +164,84 @@ func clearHistory(dir string) error {
 		}
 	}
 	return nil
+}
+
+type historyModel struct {
+	list         list.Model
+	location     string
+	selectedPath string
+}
+
+func newHistoryModel(entries []historyEntry, location string) historyModel {
+	items := make([]list.Item, 0, len(entries))
+	for _, entry := range entries {
+		items = append(items, historyListItem{entry: entry})
+	}
+	delegate := list.NewDefaultDelegate()
+	delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.Foreground(lipgloss.Color("2")).Bold(true)
+	delegate.Styles.SelectedDesc = delegate.Styles.SelectedDesc.Foreground(lipgloss.Color("5"))
+	delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.Foreground(lipgloss.Color("7")).Bold(true)
+	delegate.Styles.NormalDesc = delegate.Styles.NormalDesc.Foreground(lipgloss.Color("8"))
+	model := list.New(items, delegate, 80, 20)
+	model.Title = "History"
+	model.Styles.Title = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
+	model.SetShowStatusBar(false)
+	model.SetShowHelp(false)
+	model.SetFilteringEnabled(true)
+	return historyModel{
+		list:     model,
+		location: location,
+	}
+}
+
+func (m historyModel) Init() tea.Cmd {
+	return nil
+}
+
+func (m historyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.Type {
+		case tea.KeyCtrlC, tea.KeyEsc:
+			return m, tea.Quit
+		case tea.KeyEnter:
+			item, ok := m.list.SelectedItem().(historyListItem)
+			if !ok || item.entry.Path == "" {
+				return m, tea.Quit
+			}
+			m.selectedPath = item.entry.Path
+			return m, tea.Quit
+		}
+	case tea.WindowSizeMsg:
+		width := msg.Width - 4
+		height := msg.Height - 6
+		if width < 40 {
+			width = 40
+		}
+		if height < 8 {
+			height = 8
+		}
+		m.list.SetSize(width, height)
+	}
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
+	return m, cmd
+}
+
+func (m historyModel) View() string {
+	if len(m.list.Items()) == 0 {
+		empty := lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Render("No history entries found.")
+		return empty
+	}
+	help := lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Render("Enter to open, Esc to exit.")
+	pathStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
+	header := ""
+	if strings.TrimSpace(m.location) != "" {
+		header = pathStyle.Render(m.location) + "\n\n"
+	}
+	frame := lipgloss.NewStyle().
+		Padding(1, 2).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#444"))
+	return frame.Render(header + m.list.View() + "\n\n" + help)
 }
