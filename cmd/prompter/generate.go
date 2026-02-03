@@ -158,7 +158,7 @@ func buildHistorySuffix(shorts []string) string {
 	if len(shorts) == 0 {
 		return ""
 	}
-	return strings.Join(shorts, "-")
+	return strings.Join(shorts, "")
 }
 
 func stripSubcommand(args []string, name string) []string {
