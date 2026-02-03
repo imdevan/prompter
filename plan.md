@@ -57,8 +57,8 @@ flags:
   - [x] interactive, i - force interactive
   - [x] yes, y - force non interactive
 
-- [ ] list
-  - [ ] list available templates use bubbles and lip gloss
+- [x] list
+  - [x] list available templates use bubbles and lip gloss
 
 - [ ] edit
   - [ ] no args: open prompts_location in editor
