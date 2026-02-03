@@ -65,8 +65,8 @@ flags:
   - [x] 1 arg: edits template in prompts_location
   - [x] if not found prompt user to add using bubbles confirm
 
-- [ ] completion
-  - [ ] generate shell completion scripts via cobra
+- [x] completion
+  - [x] generate shell completion scripts via cobra
 
 ## Queue
 
