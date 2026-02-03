@@ -126,9 +126,15 @@ type templateListItem struct {
 func (t templateListItem) Title() string {
 	nameStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true)
 	metaStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("13"))
-	parts := []string{nameStyle.Render(t.template.Name)}
-	if strings.TrimSpace(t.template.Title) != "" {
-		parts = append(parts, metaStyle.Render("("+t.template.Title+")"))
+	title := strings.TrimSpace(t.template.Title)
+	name := strings.TrimSpace(t.template.Name)
+	display := name
+	if title != "" {
+		display = title
+	}
+	parts := []string{nameStyle.Render(display)}
+	if title != "" && name != "" {
+		parts = append(parts, metaStyle.Render("("+name+")"))
 	}
 	flags := []string{}
 	if strings.TrimSpace(t.template.Flag) != "" {

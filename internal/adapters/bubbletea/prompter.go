@@ -406,10 +406,15 @@ type templateItem struct {
 }
 
 func (t templateItem) Title() string {
-	if t.template.Title != "" {
-		return fmt.Sprintf("%s (%s)", t.template.Name, t.template.Title)
+	title := strings.TrimSpace(t.template.Title)
+	name := strings.TrimSpace(t.template.Name)
+	if title == "" {
+		return name
 	}
-	return t.template.Name
+	if name == "" {
+		return title
+	}
+	return fmt.Sprintf("%s (%s)", title, name)
 }
 
 func (t templateItem) Description() string {
