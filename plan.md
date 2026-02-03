@@ -72,8 +72,6 @@ flags:
 - [x] completion
   - [x] generate shell completion scripts via cobra
 
-## Queue
-
 
 8) Testing and QA
 - Status: pending
