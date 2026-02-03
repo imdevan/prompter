@@ -53,7 +53,7 @@ Status key: pending, in-progress, blocked, completed
 
 - [x] history
   - [x] no args opens history in editor
-  - [ ] number provided: output the generated prompt however many steps back
+  - [x] number provided: output the generated prompt however many steps back
 
 - [x] fix
 flags:
