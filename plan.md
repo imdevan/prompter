@@ -34,7 +34,7 @@ Status key: pending, in-progress, blocked, completed
 ### Dynamic template flag registration
 - [x] load templates + frontmatter during config init to derive flags/shorthands
 - [x] register cobra flags before command parsing
-- [ ] map flag usage to template selection order in request
+- [x] map flag usage to template selection order in request
 
 ### Subcommands
 - [x] config
