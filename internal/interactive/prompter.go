@@ -9,7 +9,7 @@ import (
 // UI describes the interactive prompt surface.
 type UI interface {
 	AskBasePrompt(defaultValue, note string) (string, error)
-	SelectTemplates(templates []domain.Template, basePrompt string) ([]domain.Template, error)
+	SelectTemplates(templates []domain.Template, basePrompt string, preselected []string) ([]domain.Template, error)
 }
 
 // Prompter collects interactive input to build a request.
@@ -23,7 +23,7 @@ func New(ui UI) *Prompter {
 }
 
 // Collect gathers base prompt and template selections.
-func (p *Prompter) Collect(basePrompt string, templates []domain.Template, forcePrompt bool, note string) (domain.Request, error) {
+func (p *Prompter) Collect(basePrompt string, templates []domain.Template, preselected []string, forcePrompt bool, note string) (domain.Request, error) {
 	if p.UI == nil {
 		return domain.Request{}, nil
 	}
@@ -40,7 +40,7 @@ func (p *Prompter) Collect(basePrompt string, templates []domain.Template, force
 	selected := make([]domain.Template, 0)
 	if len(templates) > 0 {
 		var err error
-		selected, err = p.UI.SelectTemplates(templates, prompt)
+		selected, err = p.UI.SelectTemplates(templates, prompt, preselected)
 		if err != nil {
 			return domain.Request{}, err
 		}

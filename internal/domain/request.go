@@ -11,6 +11,7 @@ type FixInput struct {
 type Request struct {
 	BasePrompt        string
 	TemplateNames     []string
+	TemplateOrder     []string
 	Files             []string
 	IncludeDirectory  bool
 	DirectoryPath     string
@@ -21,6 +22,9 @@ type Request struct {
 	CWD               string
 	Env               map[string]string
 }
+
+// BasePromptToken marks where the base prompt should be inserted in TemplateOrder.
+const BasePromptToken = "__base_prompt__"
 
 // Validate checks that the request is well-formed.
 func (r Request) Validate() error {

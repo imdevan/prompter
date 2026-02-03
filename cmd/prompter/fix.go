@@ -18,6 +18,7 @@ import (
 
 func newFixCmd() *cobra.Command {
 	opts := &rootOptions{}
+	cfg := loadConfigForFlagRegistration()
 	cmd := &cobra.Command{
 		Use:   "fix",
 		Short: "Generate a fix prompt from command output",
@@ -49,16 +50,12 @@ func newFixCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&opts.configPath, "config", "", "config file path")
-	cmd.Flags().StringSliceVar(&opts.files, "file", nil, "files to include")
-	cmd.Flags().BoolVarP(&opts.includeDir, "directory", "d", false, "include current directory")
-	cmd.Flags().StringVarP(&opts.target, "target", "t", "", "output target (clipboard, stdout, file:/path, editor)")
-	cmd.Flags().BoolVarP(&opts.clipboard, "clipboard", "b", false, "use clipboard input")
-	cmd.Flags().BoolVarP(&opts.agents, "agents", "a", false, "include AGENTS.md/.cursor/.kiro templates")
-	cmd.Flags().BoolVarP(&opts.interactive, "interactive", "i", false, "force interactive mode")
-	cmd.Flags().BoolVarP(&opts.yes, "yes", "y", false, "non-interactive mode")
-	cmd.Flags().BoolVarP(&opts.editorTarget, "editor", "e", false, "open output in editor")
-	cmd.Flags().StringSliceVar(&opts.templates, "template", nil, "template names to include")
+	addRootFlags(cmd, opts, cfg, rootFlagOptions{
+		includeFix:     false,
+		includeVersion: false,
+	})
+	registerTemplateFlags(cmd, opts, cfg)
+	setTemplateHelp(cmd)
 
 	return cmd
 }

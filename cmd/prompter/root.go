@@ -1,6 +1,18 @@
 package main
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+
+	"prompter-cli/internal/config"
+	"prompter-cli/internal/domain"
+	"prompter-cli/internal/template"
+)
 
 var (
 	version = "dev"
@@ -9,19 +21,21 @@ var (
 )
 
 type rootOptions struct {
-	configPath   string
-	files        []string
-	includeDir   bool
-	target       string
-	fix          bool
-	clipboard    bool
-	agents       bool
-	interactive  bool
-	yes          bool
-	editorTarget bool
-	templates    []string
-	showVersion  bool
-	fixOutput    string
+	configPath            string
+	files                 []string
+	includeDir            bool
+	target                string
+	fix                   bool
+	clipboard             bool
+	agents                bool
+	interactive           bool
+	yes                   bool
+	editorTarget          bool
+	templates             []string
+	showVersion           bool
+	fixOutput             string
+	templateFlagName      map[string]string
+	templateFlagShorthand map[string]string
 }
 
 var rootCmd = newRootCmd()
@@ -33,6 +47,7 @@ func Execute() error {
 
 func newRootCmd() *cobra.Command {
 	opts := &rootOptions{}
+	cfg := loadConfigForFlagRegistration()
 	cmd := &cobra.Command{
 		Use:   "prompter [base-prompt]",
 		Short: "Assemble prompts for AI coding agents",
@@ -49,18 +64,12 @@ func newRootCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&opts.configPath, "config", "", "config file path")
-	cmd.Flags().StringSliceVar(&opts.files, "file", nil, "files to include")
-	cmd.Flags().BoolVarP(&opts.includeDir, "directory", "d", false, "include current directory")
-	cmd.Flags().StringVarP(&opts.target, "target", "t", "", "output target (clipboard, stdout, file:/path, editor)")
-	cmd.Flags().BoolVarP(&opts.fix, "fix", "f", false, "fix mode")
-	cmd.Flags().BoolVarP(&opts.clipboard, "clipboard", "b", false, "use clipboard input")
-	cmd.Flags().BoolVarP(&opts.agents, "agents", "a", false, "include AGENTS.md/.cursor/.kiro templates")
-	cmd.Flags().BoolVarP(&opts.interactive, "interactive", "i", false, "force interactive mode")
-	cmd.Flags().BoolVarP(&opts.yes, "yes", "y", false, "non-interactive mode")
-	cmd.Flags().BoolVarP(&opts.editorTarget, "editor", "e", false, "open output in editor")
-	cmd.Flags().StringSliceVar(&opts.templates, "template", nil, "template names to include")
-	cmd.Flags().BoolVarP(&opts.showVersion, "version", "v", false, "print version information")
+	addRootFlags(cmd, opts, cfg, rootFlagOptions{
+		includeFix:     true,
+		includeVersion: true,
+	})
+	registerTemplateFlags(cmd, opts, cfg)
+	setTemplateHelp(cmd)
 
 	cmd.AddCommand(newConfigCmd())
 	cmd.AddCommand(newListCmd())
@@ -70,4 +79,344 @@ func newRootCmd() *cobra.Command {
 	cmd.AddCommand(newCompletionCmd())
 
 	return cmd
+}
+
+type rootFlagOptions struct {
+	includeFix     bool
+	includeVersion bool
+}
+
+func addRootFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Config, options rootFlagOptions) {
+	addString := func(longName, defaultShort, usage string, target *string) {
+		if shorthand := builtinShortFlag(cfg, longName, defaultShort); shorthand != "" {
+			cmd.Flags().StringVarP(target, longName, shorthand, "", usage)
+		} else {
+			cmd.Flags().StringVar(target, longName, "", usage)
+		}
+	}
+	addBool := func(longName, defaultShort, usage string, target *bool) {
+		if shorthand := builtinShortFlag(cfg, longName, defaultShort); shorthand != "" {
+			cmd.Flags().BoolVarP(target, longName, shorthand, false, usage)
+		} else {
+			cmd.Flags().BoolVar(target, longName, false, usage)
+		}
+	}
+	addStringSlice := func(longName, defaultShort, usage string, target *[]string) {
+		if shorthand := builtinShortFlag(cfg, longName, defaultShort); shorthand != "" {
+			cmd.Flags().StringSliceVarP(target, longName, shorthand, nil, usage)
+		} else {
+			cmd.Flags().StringSliceVar(target, longName, nil, usage)
+		}
+	}
+
+	addString("config", "", "config file path", &opts.configPath)
+	addStringSlice("file", "", "files to include", &opts.files)
+	addBool("directory", "d", "include current directory", &opts.includeDir)
+	addString("target", "t", "output target (clipboard, stdout, file:/path, editor)", &opts.target)
+	if options.includeFix {
+		addBool("fix", "f", "fix mode", &opts.fix)
+	}
+	addBool("clipboard", "b", "use clipboard input", &opts.clipboard)
+	addBool("agents", "a", "include AGENTS.md/.cursor/.kiro templates", &opts.agents)
+	addBool("interactive", "i", "force interactive mode", &opts.interactive)
+	addBool("yes", "y", "non-interactive mode", &opts.yes)
+	addBool("editor", "e", "open output in editor", &opts.editorTarget)
+	addStringSlice("template", "", "template names to include", &opts.templates)
+	if options.includeVersion {
+		addBool("version", "v", "print version information", &opts.showVersion)
+	}
+}
+
+func registerTemplateFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Config) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return
+	}
+	localPrompts := ""
+	if cfg.LocalPromptsLocation != "" {
+		localPrompts = filepath.Join(cwd, cfg.LocalPromptsLocation)
+	}
+	repo := template.NewRepository(localPrompts, cfg.PromptsLocation)
+	templates, err := repo.List()
+	if err != nil {
+		return
+	}
+
+	if opts.templateFlagName == nil {
+		opts.templateFlagName = make(map[string]string)
+	}
+	if opts.templateFlagShorthand == nil {
+		opts.templateFlagShorthand = make(map[string]string)
+	}
+
+	for _, tmpl := range templates {
+		flagName := strings.TrimSpace(tmpl.Flag)
+		if flagName == "" {
+			flagName = defaultTemplateFlagName(tmpl.Name)
+		}
+		if flagName == "" {
+			continue
+		}
+		if cmd.Flags().Lookup(flagName) != nil {
+			continue
+		}
+		shorthand := strings.TrimSpace(tmpl.Shorthand)
+		if shorthand != "" && len([]rune(shorthand)) != 1 {
+			shorthand = ""
+		}
+		usage := strings.TrimSpace(tmpl.Description)
+		if usage == "" {
+			usage = "include template " + tmpl.Name
+		}
+		if shorthand != "" {
+			cmd.Flags().BoolP(flagName, shorthand, false, usage)
+		} else {
+			cmd.Flags().Bool(flagName, false, usage)
+		}
+		opts.templateFlagName[flagName] = tmpl.Name
+		if shorthand != "" {
+			opts.templateFlagShorthand[shorthand] = tmpl.Name
+		}
+		if flag := cmd.Flags().Lookup(flagName); flag != nil {
+			if flag.Annotations == nil {
+				flag.Annotations = make(map[string][]string)
+			}
+			flag.Annotations["template"] = []string{"true"}
+		}
+	}
+}
+
+func loadConfigForFlagRegistration() domain.Config {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return domain.DefaultConfig()
+	}
+	manager := config.NewManager(cwd)
+	configPath := extractConfigPath(os.Args[1:])
+	if configPath != "" {
+		if cfg, err := manager.LoadWithOverride(configPath); err == nil {
+			return cfg
+		}
+	}
+	if cfg, err := manager.Load(); err == nil {
+		return cfg
+	}
+	return domain.DefaultConfig()
+}
+
+func extractConfigPath(args []string) string {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if strings.HasPrefix(arg, "--config=") {
+			return strings.TrimPrefix(arg, "--config=")
+		}
+		if arg == "--config" && i+1 < len(args) {
+			return args[i+1]
+		}
+	}
+	return ""
+}
+
+func defaultTemplateFlagName(name string) string {
+	name = strings.TrimSpace(strings.ToLower(name))
+	if name == "" {
+		return ""
+	}
+	var builder strings.Builder
+	lastDash := false
+	for _, r := range name {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			builder.WriteRune(r)
+			lastDash = false
+			continue
+		}
+		if !lastDash {
+			builder.WriteRune('-')
+			lastDash = true
+		}
+	}
+	flagName := strings.Trim(builder.String(), "-")
+	return flagName
+}
+
+func resolveTemplateOrder(args []string, opts *rootOptions, cfg domain.Config) ([]string, int) {
+	order := make([]string, 0)
+	baseIndex := -1
+
+	longFlagsWithValue := map[string]bool{
+		"config":   true,
+		"file":     true,
+		"target":   true,
+		"template": true,
+	}
+	shortFlagsWithValue := make(map[string]bool)
+	templateShort := builtinShortFlag(cfg, "template", "")
+	for long, def := range map[string]string{
+		"config":   "",
+		"file":     "",
+		"target":   "t",
+		"template": "",
+	} {
+		if shorthand := builtinShortFlag(cfg, long, def); shorthand != "" {
+			shortFlagsWithValue[shorthand] = true
+		}
+	}
+
+	addTemplatesFromValue := func(value string) {
+		parts := strings.Split(value, ",")
+		for _, part := range parts {
+			name := strings.TrimSpace(part)
+			if name == "" {
+				continue
+			}
+			order = append(order, name)
+		}
+	}
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--" {
+			if baseIndex == -1 {
+				baseIndex = len(order)
+				order = append(order, domain.BasePromptToken)
+			}
+			break
+		}
+		if strings.HasPrefix(arg, "--") && len(arg) > 2 {
+			nameVal := strings.TrimPrefix(arg, "--")
+			name, value, hasValue := strings.Cut(nameVal, "=")
+			if name == "template" {
+				if hasValue {
+					addTemplatesFromValue(value)
+				} else if i+1 < len(args) {
+					i++
+					addTemplatesFromValue(args[i])
+				}
+				continue
+			}
+			if longFlagsWithValue[name] {
+				if !hasValue && i+1 < len(args) {
+					i++
+				}
+				continue
+			}
+			if tmplName, ok := opts.templateFlagName[name]; ok {
+				order = append(order, tmplName)
+			}
+			continue
+		}
+		if strings.HasPrefix(arg, "-") && arg != "-" {
+			shorts := strings.TrimPrefix(arg, "-")
+			shorts, value, hasValue := strings.Cut(shorts, "=")
+			for idx, r := range shorts {
+				short := string(r)
+				if tmplName, ok := opts.templateFlagShorthand[short]; ok {
+					order = append(order, tmplName)
+					continue
+				}
+				if short == templateShort && idx == len(shorts)-1 {
+					if hasValue {
+						addTemplatesFromValue(value)
+					} else if i+1 < len(args) {
+						i++
+						addTemplatesFromValue(args[i])
+					}
+					break
+				}
+				if shortFlagsWithValue[short] {
+					if idx == len(shorts)-1 && !hasValue && i+1 < len(args) {
+						i++
+					}
+					break
+				}
+			}
+			continue
+		}
+		if baseIndex == -1 {
+			baseIndex = len(order)
+			order = append(order, domain.BasePromptToken)
+		}
+	}
+
+	templates := make([]string, 0, len(order))
+	for _, entry := range order {
+		if entry == domain.BasePromptToken {
+			continue
+		}
+		templates = append(templates, entry)
+	}
+	return templates, baseIndex
+}
+
+func builtinShortFlag(cfg domain.Config, longName, defaultShort string) string {
+	if cfg.RemapShortFlags != nil {
+		if remapped, ok := cfg.RemapShortFlags[longName]; ok {
+			remapped = strings.TrimSpace(remapped)
+			if len([]rune(remapped)) == 1 {
+				return remapped
+			}
+		}
+	}
+	if !cfg.IncludeBuiltinShorthand {
+		return ""
+	}
+	return defaultShort
+}
+
+func setTemplateHelp(cmd *cobra.Command) {
+	cmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		out := cmd.OutOrStdout()
+		fmt.Fprintf(out, "Usage:\n  %s\n", cmd.UseLine())
+		if cmd.Long != "" {
+			fmt.Fprintf(out, "\n%s\n", cmd.Long)
+		} else if cmd.Short != "" {
+			fmt.Fprintf(out, "\n%s\n", cmd.Short)
+		}
+		if cmd.HasAvailableSubCommands() {
+			fmt.Fprintln(out, "\nCommands:")
+			for _, sub := range cmd.Commands() {
+				if !sub.IsAvailableCommand() || sub.IsAdditionalHelpTopicCommand() {
+					continue
+				}
+				fmt.Fprintf(out, "  %s\t%s\n", sub.Name(), sub.Short)
+			}
+		}
+
+		builtIn, templateFlags := splitTemplateFlags(cmd)
+		if builtIn.HasFlags() {
+			fmt.Fprintln(out, "\nFlags:")
+			fmt.Fprint(out, builtIn.FlagUsagesWrapped(80))
+		}
+		if templateFlags.HasFlags() {
+			fmt.Fprintln(out, "\nTemplate Flags:")
+			fmt.Fprint(out, templateFlags.FlagUsagesWrapped(80))
+		}
+	})
+}
+
+func splitTemplateFlags(cmd *cobra.Command) (*pflag.FlagSet, *pflag.FlagSet) {
+	builtIn := pflag.NewFlagSet("flags", pflag.ContinueOnError)
+	templateFlags := pflag.NewFlagSet("template", pflag.ContinueOnError)
+	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+		if flag.Hidden {
+			return
+		}
+		if isTemplateFlag(flag) {
+			templateFlags.AddFlag(flag)
+			return
+		}
+		builtIn.AddFlag(flag)
+	})
+	return builtIn, templateFlags
+}
+
+func isTemplateFlag(flag *pflag.Flag) bool {
+	if flag.Annotations == nil {
+		return false
+	}
+	values, ok := flag.Annotations["template"]
+	if !ok || len(values) == 0 {
+		return false
+	}
+	return values[0] == "true"
 }

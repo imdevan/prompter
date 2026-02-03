@@ -120,7 +120,12 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 		appendPart(rendered)
 	}
 
-	for _, name := range req.TemplateNames {
+	order := buildTemplateOrder(req.TemplateOrder, req.TemplateNames)
+	for _, name := range order {
+		if name == domain.BasePromptToken {
+			appendPart(req.BasePrompt)
+			continue
+		}
 		if name == "" {
 			continue
 		}
@@ -139,8 +144,6 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 		appendPart(rendered)
 	}
 
-	appendPart(req.BasePrompt)
-
 	if len(files) > 0 {
 		appendPart(formatFiles("Files", files))
 	}
@@ -157,6 +160,25 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 	}
 
 	return strings.Join(parts, "\n\n"), nil
+}
+
+func buildTemplateOrder(order []string, templates []string) []string {
+	if len(order) == 0 {
+		order = append([]string{}, templates...)
+	}
+	if !containsToken(order, domain.BasePromptToken) {
+		order = append(order, domain.BasePromptToken)
+	}
+	return order
+}
+
+func containsToken(items []string, token string) bool {
+	for _, item := range items {
+		if item == token {
+			return true
+		}
+	}
+	return false
 }
 
 // FileContent captures file data included in prompts.

@@ -57,7 +57,15 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 	}
 	repo := template.NewRepository(localPrompts, cfg.PromptsLocation)
 
-	templates := opts.templates
+	argv := os.Args[1:]
+	if cmd.Name() != "prompter" {
+		argv = stripSubcommand(argv, cmd.Name())
+	}
+	orderedTemplates, baseIndex := resolveTemplateOrder(argv, opts, cfg)
+	templates := orderedTemplates
+	if len(templates) == 0 {
+		templates = append([]string{}, opts.templates...)
+	}
 	if shouldInteractive(opts, cfg) {
 		allTemplates, err := repo.List()
 		if err != nil {
@@ -73,7 +81,7 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		if opts.clipboard {
 			note = "Clipboard content will be appended."
 		}
-		req, err := prompter.Collect(basePrompt, allTemplates, opts.clipboard, note)
+		req, err := prompter.Collect(basePrompt, allTemplates, templates, opts.clipboard, note)
 		if err != nil {
 			return err
 		}
@@ -92,6 +100,7 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 	req := domain.Request{
 		BasePrompt:        basePrompt,
 		TemplateNames:     templates,
+		TemplateOrder:     buildTemplateOrder(templates, baseIndex),
 		Files:             opts.files,
 		IncludeDirectory:  opts.includeDir,
 		DirectoryStrategy: cfg.DirectoryStrategy,
@@ -111,6 +120,35 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 	service := workflow.New(repo, handler)
 	_, err = service.Generate(req, cfg)
 	return err
+}
+
+func buildTemplateOrder(templates []string, baseIndex int) []string {
+	if baseIndex < 0 || baseIndex > len(templates) {
+		baseIndex = len(templates)
+	}
+	order := make([]string, 0, len(templates)+1)
+	for i, name := range templates {
+		if i == baseIndex {
+			order = append(order, domain.BasePromptToken)
+		}
+		order = append(order, name)
+	}
+	if baseIndex == len(templates) {
+		order = append(order, domain.BasePromptToken)
+	}
+	return order
+}
+
+func stripSubcommand(args []string, name string) []string {
+	for i, arg := range args {
+		if strings.HasPrefix(arg, "-") {
+			continue
+		}
+		if arg == name {
+			return append(append([]string{}, args[:i]...), args[i+1:]...)
+		}
+	}
+	return args
 }
 
 func agentTemplateForSelection(cwd string) (*domain.Template, error) {

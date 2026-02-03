@@ -31,8 +31,8 @@ func (Adapter) AskBasePrompt(defaultValue, note string) (string, error) {
 }
 
 // SelectTemplates prompts for template selection.
-func (Adapter) SelectTemplates(templates []domain.Template, basePrompt string) ([]domain.Template, error) {
-	model := newTemplateSelectModel(templates, basePrompt)
+func (Adapter) SelectTemplates(templates []domain.Template, basePrompt string, preselected []string) ([]domain.Template, error) {
+	model := newTemplateSelectModel(templates, basePrompt, preselected)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
@@ -117,13 +117,29 @@ const (
 	focusBar
 )
 
-func newTemplateSelectModel(templates []domain.Template, basePrompt string) templateSelectModel {
+func newTemplateSelectModel(templates []domain.Template, basePrompt string, preselected []string) templateSelectModel {
 	items := make([]list.Item, 0, len(templates))
 	for i, tmpl := range templates {
 		items = append(items, templateItem{template: tmpl, index: i})
 	}
 
 	selecteds := make(map[int]bool)
+	order := make([]int, 0, len(preselected))
+	indexByName := make(map[string]int, len(templates))
+	for i, tmpl := range templates {
+		indexByName[strings.ToLower(tmpl.Name)] = i
+	}
+	for _, name := range preselected {
+		idx, ok := indexByName[strings.ToLower(strings.TrimSpace(name))]
+		if !ok {
+			continue
+		}
+		if selecteds[idx] {
+			continue
+		}
+		selecteds[idx] = true
+		order = append(order, idx)
+	}
 	defaultDelegate := list.NewDefaultDelegate()
 	defaultDelegate.Styles.SelectedTitle = defaultDelegate.Styles.SelectedTitle.Foreground(lipgloss.Color("2")).Bold(true)
 	defaultDelegate.Styles.SelectedDesc = defaultDelegate.Styles.SelectedDesc.Foreground(lipgloss.Color("5"))
@@ -143,7 +159,7 @@ func newTemplateSelectModel(templates []domain.Template, basePrompt string) temp
 		list:       l,
 		templates:  templates,
 		selecteds:  selecteds,
-		order:      make([]int, 0),
+		order:      order,
 		basePrompt: strings.TrimSpace(basePrompt),
 		barIndex:   0,
 		focus:      focusList,
