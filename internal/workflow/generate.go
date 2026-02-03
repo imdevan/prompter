@@ -71,95 +71,49 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 		Env:        req.Env,
 		Config:     cfg,
 	}
-	// index template
-	var parts []string
-	appendPart := func(text string) {
-		text = strings.TrimSpace(text)
-		if text == "" {
-			return
-		}
-		parts = append(parts, text)
-	}
-
-	if indexTemplate, err := g.Repo.Get("index"); err == nil {
-		data.Prompt = strings.Join(parts, "\n\n")
-		rendered, err := template.Render(template.StripFrontmatter(indexTemplate.Content), data)
+	assembled := strings.TrimSpace(req.BasePrompt)
+	applyTemplate := func(content string) error {
+		content = template.StripFrontmatter(content)
+		hasPrompt := strings.Contains(content, ".Prompt")
+		data.Prompt = assembled
+		rendered, err := template.Render(content, data)
 		if err != nil {
-			return "", err
+			return err
 		}
-		appendPart(rendered)
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return "", err
+		if hasPrompt {
+			assembled = strings.TrimSpace(rendered)
+			return nil
+		}
+		assembled = joinParts(rendered, assembled)
+		return nil
 	}
 
-	agentTemplates, err := collectAgentTemplates(cwd, req.TemplateNames)
+	templates, err := collectTemplateContents(cwd, g.Repo, req)
 	if err != nil {
 		return "", err
 	}
-	for _, content := range agentTemplates {
-		data.Prompt = strings.Join(parts, "\n\n")
-		rendered, err := template.Render(template.StripFrontmatter(content), data)
-		if err != nil {
+	for i := len(templates) - 1; i >= 0; i-- {
+		if err := applyTemplate(templates[i]); err != nil {
 			return "", err
 		}
-		appendPart(rendered)
-	}
-
-	if req.Fix.Enabled {
-		fixContent := defaultFixTemplate
-		if fixTemplate, err := g.Repo.Get("fix"); err == nil {
-			fixContent = fixTemplate.Content
-		} else if !errors.Is(err, os.ErrNotExist) {
-			return "", err
-		}
-		data.Prompt = strings.Join(parts, "\n\n")
-		rendered, err := template.Render(template.StripFrontmatter(fixContent), data)
-		if err != nil {
-			return "", err
-		}
-		appendPart(rendered)
-	}
-
-	order := buildTemplateOrder(req.TemplateOrder, req.TemplateNames)
-	for _, name := range order {
-		if name == domain.BasePromptToken {
-			appendPart(req.BasePrompt)
-			continue
-		}
-		if name == "" {
-			continue
-		}
-		if strings.EqualFold(strings.TrimSpace(name), "agents.md") {
-			continue
-		}
-		tmpl, err := g.Repo.Get(name)
-		if err != nil {
-			return "", err
-		}
-		data.Prompt = strings.Join(parts, "\n\n")
-		rendered, err := template.Render(template.StripFrontmatter(tmpl.Content), data)
-		if err != nil {
-			return "", err
-		}
-		appendPart(rendered)
 	}
 
 	if len(files) > 0 {
-		appendPart(formatFiles("Files", files))
+		assembled = joinParts(assembled, formatFiles("Files", files))
 	}
 	if req.IncludeDirectory && len(directory.Files) > 0 {
-		appendPart(formatFiles("Directory", directory.Files))
+		assembled = joinParts(assembled, formatFiles("Directory", directory.Files))
 	}
 	if req.Fix.Enabled && strings.TrimSpace(req.Fix.Output) != "" {
-		appendPart(fmt.Sprintf("Command Output:\n%s", strings.TrimSpace(req.Fix.Output)))
+		assembled = joinParts(assembled, fmt.Sprintf("Command Output:\n%s", strings.TrimSpace(req.Fix.Output)))
 	}
 	if strings.TrimSpace(req.PipedInput) != "" {
 		if !req.Fix.Enabled || strings.TrimSpace(req.PipedInput) != strings.TrimSpace(req.Fix.Output) {
-			appendPart(strings.TrimSpace(req.PipedInput))
+			assembled = joinParts(assembled, strings.TrimSpace(req.PipedInput))
 		}
 	}
 
-	return strings.Join(parts, "\n\n"), nil
+	return strings.TrimSpace(assembled), nil
 }
 
 func buildTemplateOrder(order []string, templates []string) []string {
@@ -179,6 +133,68 @@ func containsToken(items []string, token string) bool {
 		}
 	}
 	return false
+}
+
+func collectTemplateContents(cwd string, repo template.Repository, req domain.Request) ([]string, error) {
+	var contents []string
+
+	if indexTemplate, err := repo.Get("index"); err == nil {
+		contents = append(contents, indexTemplate.Content)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
+
+	agentTemplates, err := collectAgentTemplates(cwd, req.TemplateNames)
+	if err != nil {
+		return nil, err
+	}
+	contents = append(contents, agentTemplates...)
+
+	if req.Fix.Enabled {
+		fixContent := defaultFixTemplate
+		if fixTemplate, err := repo.Get("fix"); err == nil {
+			fixContent = fixTemplate.Content
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return nil, err
+		}
+		contents = append(contents, fixContent)
+	}
+
+	order := buildTemplateOrder(req.TemplateOrder, req.TemplateNames)
+	for _, name := range order {
+		if name == domain.BasePromptToken {
+			continue
+		}
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		if strings.EqualFold(name, "agents.md") {
+			continue
+		}
+		tmpl, err := repo.Get(name)
+		if err != nil {
+			return nil, err
+		}
+		contents = append(contents, tmpl.Content)
+	}
+
+	return contents, nil
+}
+
+func joinParts(left, right string) string {
+	left = strings.TrimSpace(left)
+	right = strings.TrimSpace(right)
+	switch {
+	case left == "" && right == "":
+		return ""
+	case left == "":
+		return right
+	case right == "":
+		return left
+	default:
+		return left + "\n\n" + right
+	}
 }
 
 // FileContent captures file data included in prompts.
