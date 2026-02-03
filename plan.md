@@ -65,9 +65,6 @@ flags:
   - [x] 1 arg: edits template in prompts_location
   - [x] if not found prompt user to add using bubbles confirm
 
-- [ ] version
-  - [ ] print version/commit/date/go/platform
-
 - [ ] completion
   - [ ] generate shell completion scripts via cobra
 
