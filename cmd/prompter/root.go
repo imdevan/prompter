@@ -148,6 +148,12 @@ func registerTemplateFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Con
 	if opts.templateFlagShorthand == nil {
 		opts.templateFlagShorthand = make(map[string]string)
 	}
+	usedShort := map[string]bool{}
+	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+		if flag.Shorthand != "" {
+			usedShort[flag.Shorthand] = true
+		}
+	})
 
 	for _, tmpl := range templates {
 		flagName := strings.TrimSpace(tmpl.Flag)
@@ -164,12 +170,19 @@ func registerTemplateFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Con
 		if shorthand != "" && len([]rune(shorthand)) != 1 {
 			shorthand = ""
 		}
+		if shorthand != "" && usedShort[shorthand] {
+			shorthand = ""
+		}
+		if shorthand == "" {
+			shorthand = templateShorthandFromName(tmpl.Name, usedShort)
+		}
 		usage := strings.TrimSpace(tmpl.Description)
 		if usage == "" {
 			usage = "include template " + tmpl.Name
 		}
 		if shorthand != "" {
 			cmd.Flags().BoolP(flagName, shorthand, false, usage)
+			usedShort[shorthand] = true
 		} else {
 			cmd.Flags().Bool(flagName, false, usage)
 		}
@@ -237,6 +250,26 @@ func defaultTemplateFlagName(name string) string {
 	}
 	flagName := strings.Trim(builder.String(), "-")
 	return flagName
+}
+
+func templateShorthandFromName(name string, used map[string]bool) string {
+	base := strings.TrimSpace(filepath.Base(name))
+	if base == "" {
+		return ""
+	}
+	for _, r := range base {
+		if r >= 'A' && r <= 'Z' {
+			r = r - 'A' + 'a'
+		}
+		if r < 'a' || r > 'z' {
+			continue
+		}
+		letter := string(r)
+		if !used[letter] {
+			return letter
+		}
+	}
+	return ""
 }
 
 func resolveTemplateOrder(args []string, opts *rootOptions, cfg domain.Config) ([]string, int) {
