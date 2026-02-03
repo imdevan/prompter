@@ -22,6 +22,7 @@ include_builtin_shorthand = true
 # history_clear_cycle options: never, 1, 7, 31 (days)
 history_clear_cycle = "never"
 history_file_format = "month-day_eu"
+disable_history = false
 
 [remap_short_flags]
 # Map long flags to a custom short flag (single letter).

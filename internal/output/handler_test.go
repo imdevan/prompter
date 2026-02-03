@@ -31,6 +31,7 @@ func TestHandlerWriteStdout(t *testing.T) {
 	var buf bytes.Buffer
 	handler := NewHandler(&buf, nil, nil)
 	cfg := domain.DefaultConfig()
+	cfg.DisableHistory = true
 
 	if err := handler.Write(domain.Request{Target: "stdout"}, "hello", cfg); err != nil {
 		t.Fatalf("write stdout: %v", err)
@@ -44,6 +45,7 @@ func TestHandlerWriteFile(t *testing.T) {
 	root := t.TempDir()
 	handler := NewHandler(&bytes.Buffer{}, nil, nil)
 	cfg := domain.DefaultConfig()
+	cfg.DisableHistory = true
 
 	target := "file:" + filepath.Join(root, "output.md")
 	if err := handler.Write(domain.Request{Target: target}, "file content", cfg); err != nil {
@@ -62,6 +64,7 @@ func TestHandlerWriteClipboard(t *testing.T) {
 	clipboard := &clipboardStub{}
 	handler := NewHandler(&bytes.Buffer{}, clipboard, nil)
 	cfg := domain.DefaultConfig()
+	cfg.DisableHistory = true
 
 	if err := handler.Write(domain.Request{Target: "clipboard"}, "clip", cfg); err != nil {
 		t.Fatalf("write clipboard: %v", err)
@@ -77,6 +80,7 @@ func TestHandlerWriteEditor(t *testing.T) {
 	handler := NewHandler(&bytes.Buffer{}, nil, editor)
 	cfg := domain.DefaultConfig()
 	cfg.HistoryLocation = root
+	cfg.DisableHistory = false
 
 	if err := handler.Write(domain.Request{Target: "editor", HistorySuffix: "q-t"}, "editor content", cfg); err != nil {
 		t.Fatalf("write editor: %v", err)

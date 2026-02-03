@@ -89,6 +89,7 @@ type partialConfig struct {
 	HistoryLocation         *string           `toml:"history_location"`
 	HistoryClearCycle       *string           `toml:"history_clear_cycle"`
 	HistoryFileFormat       *string           `toml:"history_file_format"`
+	DisableHistory          *bool             `toml:"disable_history"`
 	LocalPromptsLocation    *string           `toml:"local_prompts_location"`
 	IncludeAgents           *string           `toml:"include_agents"`
 	Editor                  *string           `toml:"editor"`
@@ -126,6 +127,9 @@ func applyPartial(config *domain.Config, partial *partialConfig) {
 	}
 	if partial.HistoryFileFormat != nil {
 		config.HistoryFileFormat = *partial.HistoryFileFormat
+	}
+	if partial.DisableHistory != nil {
+		config.DisableHistory = *partial.DisableHistory
 	}
 	if partial.LocalPromptsLocation != nil {
 		config.LocalPromptsLocation = expandPath(*partial.LocalPromptsLocation)

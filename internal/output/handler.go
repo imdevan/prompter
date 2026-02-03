@@ -35,6 +35,11 @@ func (h *Handler) Write(req domain.Request, content string, cfg domain.Config) e
 	if target == "" {
 		target = cfg.Target
 	}
+	if !cfg.DisableHistory {
+		if _, err := h.writeHistory(content, cfg, req.HistorySuffix); err != nil {
+			return err
+		}
+	}
 	switch {
 	case target == "stdout":
 		if h.Stdout == nil {
@@ -81,6 +86,26 @@ func (h *Handler) openInEditor(content string, cfg domain.Config, suffix string)
 		return err
 	}
 	return h.Editor.Open(path)
+}
+
+func (h *Handler) writeHistory(content string, cfg domain.Config, suffix string) (string, error) {
+	dir := cfg.HistoryLocation
+	if strings.TrimSpace(dir) == "" {
+		dir = os.TempDir()
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", err
+	}
+	filename := fmt.Sprintf("prompt-%s", time.Now().Format("20060102-150405"))
+	if strings.TrimSpace(suffix) != "" {
+		filename = filename + "-" + strings.TrimSpace(suffix)
+	}
+	filename += ".md"
+	path := filepath.Join(dir, filename)
+	if err := writeFile(path, content); err != nil {
+		return "", err
+	}
+	return path, nil
 }
 
 func writeFile(path, content string) error {
