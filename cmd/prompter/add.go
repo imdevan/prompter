@@ -46,6 +46,9 @@ func runAdd(cmd *cobra.Command, opts *addOptions, args []string) error {
 	if err != nil {
 		return err
 	}
+	if len(args) <= 1 {
+		opts.interactive = true
+	}
 	manager := config.NewManager(cwd)
 	cfg, err := manager.Load()
 	if err != nil {
