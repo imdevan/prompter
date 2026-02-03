@@ -61,12 +61,10 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 	if cmd.Name() != "prompter" {
 		argv = stripSubcommand(argv, cmd.Name())
 	}
-	orderedTemplates, baseIndex, orderedShorthands := resolveTemplateOrder(argv, opts, cfg)
+	orderedTemplates, baseIndex, _ := resolveTemplateOrder(argv, opts, cfg)
 	templates := orderedTemplates
-	shorthands := orderedShorthands
 	if len(templates) == 0 {
 		templates = append([]string{}, opts.templates...)
-		shorthands = templateShorthandsForNames(templates, opts.templateShortByName)
 	}
 	if shouldInteractive(opts, cfg) {
 		allTemplates, err := repo.List()
@@ -103,7 +101,6 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		BasePrompt:        basePrompt,
 		TemplateNames:     templates,
 		TemplateOrder:     buildTemplateOrder(templates, baseIndex),
-		HistorySuffix:     buildHistorySuffix(shorthands),
 		Files:             opts.files,
 		IncludeDirectory:  opts.includeDir,
 		DirectoryStrategy: cfg.DirectoryStrategy,
@@ -118,6 +115,8 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 	if opts.agents {
 		req.TemplateNames = append(req.TemplateNames, "agents.md")
 	}
+	shorthands := templateShorthandsForNames(req.TemplateNames, opts.templateShortByName)
+	req.HistorySuffix = buildHistorySuffix(shorthands)
 
 	handler := output.NewHandler(cmd.OutOrStdout(), clip, editor.New(cfg.Editor))
 	service := workflow.New(repo, handler)
