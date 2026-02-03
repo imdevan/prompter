@@ -76,6 +76,7 @@ func newRootCmd() *cobra.Command {
 	cmd.AddCommand(newAddCmd())
 	cmd.AddCommand(newEditCmd())
 	cmd.AddCommand(newFixCmd())
+	cmd.AddCommand(newHistoryCmd())
 	cmd.AddCommand(newCompletionCmd())
 
 	return cmd
