@@ -16,17 +16,24 @@ import (
 )
 
 func newHistoryCmd() *cobra.Command {
-	return &cobra.Command{
+	opts := &historyOptions{}
+	cmd := &cobra.Command{
 		Use:   "history",
 		Short: "List saved prompt history",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runHistory(cmd)
+			return runHistory(cmd, opts)
 		},
 	}
+	cmd.Flags().BoolVarP(&opts.clear, "clear", "c", false, "clear prompt history")
+	return cmd
 }
 
-func runHistory(cmd *cobra.Command) error {
+type historyOptions struct {
+	clear bool
+}
+
+func runHistory(cmd *cobra.Command, opts *historyOptions) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -39,6 +46,14 @@ func runHistory(cmd *cobra.Command) error {
 	if strings.TrimSpace(cfg.HistoryLocation) == "" {
 		return fmt.Errorf("history_location is not configured")
 	}
+	if opts.clear {
+		if err := clearHistory(cfg.HistoryLocation); err != nil {
+			return err
+		}
+		_, err := fmt.Fprintln(cmd.OutOrStdout(), "History cleared.")
+		return err
+	}
+
 	entries, err := readHistoryEntries(cfg.HistoryLocation)
 	if err != nil {
 		return err
@@ -166,4 +181,23 @@ func formatSize(size int64) string {
 		}
 	}
 	return fmt.Sprintf("%.1f TB", value/1024)
+}
+
+func clearHistory(dir string) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		if err := os.Remove(filepath.Join(dir, entry.Name())); err != nil {
+			return err
+		}
+	}
+	return nil
 }
