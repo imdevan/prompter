@@ -96,7 +96,7 @@ flags:
   - [x] Add interactive preselection tests (selected templates + order preserved)
   - [x] Add agent suffix + de-dup tests (agents included in suffix, no repeats)
 
-9) Clean up 
+9) Interactive ui updates
 - [ ] interactive ui reflects template processing
   - [ ] templates with {{.Prompt}} before any other white space are put at the end of of the visual list
   - [ ] templates with {{.Prompt}} in the middle of their copy should visual wrap templates it will wrap in the process
@@ -119,6 +119,11 @@ flags:
   - [ ] calling prompter history [tag] should search for a prompt history with the provided tag
       - [ ] if one result is found open it (in target)
       - [ ] if more than one result is found open the results in the same list as prompter history
+
+12. Config update
+12.1 Color scheme change
+- [ ]replace colors with colors derived from config primary, secondary, base_prompt
+- [ ] add to config defaults and init
 
 
 
