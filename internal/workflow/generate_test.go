@@ -152,6 +152,85 @@ func TestGeneratorStripsTemplateFrontmatter(t *testing.T) {
 	}
 }
 
+func TestGeneratorRightToLeftTemplatePipeline(t *testing.T) {
+	root := t.TempDir()
+	templatesDir := filepath.Join(root, "templates")
+	if err := os.MkdirAll(templatesDir, 0o755); err != nil {
+		t.Fatalf("mkdir templates: %v", err)
+	}
+
+	writeTemplate := func(name, content string) {
+		t.Helper()
+		path := filepath.Join(templatesDir, name+".md")
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatalf("write template %s: %v", name, err)
+		}
+	}
+
+	writeTemplate("question", "Question")
+	writeTemplate("test", "Test")
+	writeTemplate("validate", "{{.Prompt}}\nValidate")
+
+	repo := template.NewRepository(templatesDir)
+	gen := NewGenerator(repo)
+	req := domain.Request{
+		BasePrompt:    "Base",
+		TemplateNames: []string{"question", "test", "validate"},
+	}
+
+	out, err := gen.Run(req, domain.DefaultConfig())
+	if err != nil {
+		t.Fatalf("run generator: %v", err)
+	}
+	if out != "Question\n\nTest\n\nBase\n\nValidate" {
+		t.Fatalf("unexpected prompt order: %q", out)
+	}
+}
+
+func TestGeneratorWrapperTemplateWrapsPrompt(t *testing.T) {
+	root := t.TempDir()
+	templatesDir := filepath.Join(root, "templates")
+	if err := os.MkdirAll(templatesDir, 0o755); err != nil {
+		t.Fatalf("mkdir templates: %v", err)
+	}
+
+	writeTemplate := func(name, content string) {
+		t.Helper()
+		path := filepath.Join(templatesDir, name+".md")
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatalf("write template %s: %v", name, err)
+		}
+	}
+
+	writeTemplate("question", "Question")
+	writeTemplate("wrapper", "Begin\n{{.Prompt}}\nEnd")
+	writeTemplate("test", "Test")
+	writeTemplate("validate", "{{.Prompt}}\nValidate")
+
+	repo := template.NewRepository(templatesDir)
+	gen := NewGenerator(repo)
+	req := domain.Request{
+		BasePrompt:    "Base",
+		TemplateNames: []string{"question", "wrapper", "test", "validate"},
+	}
+
+	out, err := gen.Run(req, domain.DefaultConfig())
+	if err != nil {
+		t.Fatalf("run generator: %v", err)
+	}
+	expected := strings.Join([]string{
+		"Question",
+		"Begin",
+		"Test",
+		"Base",
+		"Validate",
+		"End",
+	}, "\n\n")
+	if out != expected {
+		t.Fatalf("unexpected prompt order: %q", out)
+	}
+}
+
 func copyFile(src, dst string) error {
 	data, err := os.ReadFile(src)
 	if err != nil {
