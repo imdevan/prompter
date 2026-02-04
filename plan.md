@@ -79,9 +79,12 @@ flags:
 - Notes: Unit/property tests, integration tests, coverage gaps.
 
 **Infra improvements**
-  - [ ] Build in-process Cobra command runner (no `go run`) for CLI tests
-  - [ ] Add `internal/testutil` helpers for temp config/history/prompts + XDG env setup
-  - [ ] Standardize config builder for tests (defaults + overrides)
+  - [x] Build in-process Cobra command runner (no `go run`) for CLI tests
+  commit message: add in-process command runner for tests
+  - [x] Add `internal/testutil` helpers for temp config/history/prompts + XDG env setup
+  commit message: add testutil helpers
+  - [x] Standardize config builder for tests (defaults + overrides)
+  commit message: update standardize config builder for tests
   - [ ] Replace Bubble Tea UI dependencies with fake UI for unit tests
   - [ ] Add `-short`/`TEST_INTEGRATION=1` gating for slower integration tests
   - [ ] Add fixture layout and loader helpers under `tests/fixtures`
