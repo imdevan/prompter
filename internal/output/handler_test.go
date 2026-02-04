@@ -74,6 +74,45 @@ func TestHandlerWriteClipboard(t *testing.T) {
 	}
 }
 
+func TestHandlerWriteHistoryForStdout(t *testing.T) {
+	root := t.TempDir()
+	var buf bytes.Buffer
+	handler := NewHandler(&buf, nil, nil)
+	cfg := domain.DefaultConfig()
+	cfg.HistoryLocation = root
+	cfg.DisableHistory = false
+
+	if err := handler.Write(domain.Request{Target: "stdout", HistorySuffix: "q"}, "hello", cfg); err != nil {
+		t.Fatalf("write stdout: %v", err)
+	}
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatalf("read history dir: %v", err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 history file, got %d", len(entries))
+	}
+}
+
+func TestHandlerDisableHistorySkipsWrites(t *testing.T) {
+	root := t.TempDir()
+	handler := NewHandler(&bytes.Buffer{}, nil, nil)
+	cfg := domain.DefaultConfig()
+	cfg.HistoryLocation = root
+	cfg.DisableHistory = true
+
+	if err := handler.Write(domain.Request{Target: "stdout"}, "hello", cfg); err != nil {
+		t.Fatalf("write stdout: %v", err)
+	}
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatalf("read history dir: %v", err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("expected no history files, got %d", len(entries))
+	}
+}
+
 func TestHandlerWriteEditor(t *testing.T) {
 	root := t.TempDir()
 	editor := &editorStub{}
