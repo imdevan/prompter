@@ -267,6 +267,6 @@ func (m historyModel) View() string {
 	frame := lipgloss.NewStyle().
 		Padding(1, 2).
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#444"))
+		BorderForeground(lipgloss.Color("8"))
 	return frame.Render(header + m.list.View() + "\n\n" + help)
 }

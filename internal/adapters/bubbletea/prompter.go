@@ -90,7 +90,7 @@ func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m textInputModel) View() string {
 	title := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2")).Render(m.title)
 	description := lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render(m.description)
-	body := lipgloss.NewStyle().Padding(1, 2).Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("#444")).Render(m.input.View())
+	body := lipgloss.NewStyle().Padding(1, 2).Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("8")).Render(m.input.View())
 	parts := []string{title, description}
 	if strings.TrimSpace(m.note) != "" {
 		note := lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Render(m.note)
@@ -219,7 +219,7 @@ func (m templateSelectModel) View() string {
 	return lipgloss.NewStyle().
 		Padding(1, 2).
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#444")).
+		BorderForeground(lipgloss.Color("8")).
 		Render(header + "\n\n" + summary + "\n\n" + m.list.View())
 }
 

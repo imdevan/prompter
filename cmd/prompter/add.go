@@ -227,12 +227,12 @@ func (m addTemplateModel) View() string {
 
 	nameBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#444")).
+		BorderForeground(lipgloss.Color("8")).
 		Padding(0, 1).
 		Render(m.nameInput.View())
 	contentBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#444")).
+		BorderForeground(lipgloss.Color("8")).
 		Padding(0, 1).
 		Render(m.contentInput.View())
 
