@@ -54,7 +54,7 @@ func newFixCmd() *cobra.Command {
 		includeFix:     false,
 		includeVersion: false,
 	})
-	registerTemplateFlags(cmd, opts, cfg)
+	registerTemplateFlags(cmd, opts, cfg, nil)
 	setTemplateHelp(cmd)
 
 	return cmd

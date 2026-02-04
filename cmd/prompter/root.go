@@ -69,7 +69,7 @@ func newRootCmd() *cobra.Command {
 		includeFix:     true,
 		includeVersion: true,
 	})
-	registerTemplateFlags(cmd, opts, cfg)
+	registerTemplateFlags(cmd, opts, cfg, nil)
 	setTemplateHelp(cmd)
 
 	cmd.AddCommand(newConfigCmd())
@@ -129,7 +129,7 @@ func addRootFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Config, opti
 	}
 }
 
-func registerTemplateFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Config) {
+func registerTemplateFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Config, templates []domain.Template) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return
@@ -138,10 +138,13 @@ func registerTemplateFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Con
 	if cfg.LocalPromptsLocation != "" {
 		localPrompts = filepath.Join(cwd, cfg.LocalPromptsLocation)
 	}
-	repo := template.NewRepository(localPrompts, cfg.PromptsLocation)
-	templates, err := repo.List()
-	if err != nil {
-		return
+	if templates == nil {
+		repo := template.NewRepository(localPrompts, cfg.PromptsLocation)
+		var err error
+		templates, err = repo.List()
+		if err != nil {
+			return
+		}
 	}
 
 	if opts.templateFlagName == nil {
