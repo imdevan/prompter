@@ -7,8 +7,6 @@ import (
 )
 
 func TestPrompterRuns(t *testing.T) {
-	t.Parallel()
-
 	testutil.WithTempXDG(t)
 	cmd := newRootCmd()
 	output, err := testutil.RunCLI(t, cmd, "--yes", "--target=stdout")
