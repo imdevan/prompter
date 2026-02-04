@@ -72,7 +72,7 @@ flags:
   - [x] generate shell completion scripts via cobra
 
 7.2. Deduplication
-  - [ ] Define agent template de-duplication rule for generation + history suffix (agents included, no repeats)
+  - [x] Define agent template de-duplication rule for generation + history suffix (agents included, no repeats)
 
 8) Testing and QA
 - Status: pending
