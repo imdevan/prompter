@@ -85,7 +85,7 @@ flags:
   commit message: add testutil helpers
   - [x] Standardize config builder for tests (defaults + overrides)
   commit message: update standardize config builder for tests
-  - [ ] Replace Bubble Tea UI dependencies with fake UI for unit tests
+  - [x] Replace Bubble Tea UI dependencies with fake UI for unit tests
   - [ ] Add `-short`/`TEST_INTEGRATION=1` gating for slower integration tests
   - [ ] Add fixture layout and loader helpers under `tests/fixtures`
 
