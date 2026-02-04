@@ -87,7 +87,7 @@ flags:
   commit message: update standardize config builder for tests
   - [x] Replace Bubble Tea UI dependencies with fake UI for unit tests
   - [x] Add `-short`/`TEST_INTEGRATION=1` gating for slower integration tests
-  - [ ] Add fixture layout and loader helpers under `tests/fixtures`
+  - [x] Add fixture layout and loader helpers under `tests/fixtures`
 
 **Tasks:**
   - [ ] Add generator tests for right-to-left template pipeline + {{.Prompt}} wrapping (question/wrapper/test/base/validate examples)
