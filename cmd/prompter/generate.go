@@ -115,6 +115,7 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 	if opts.agents {
 		req.TemplateNames = append(req.TemplateNames, "agents.md")
 	}
+	req.TemplateNames = dedupeTemplates(req.TemplateNames)
 	shorthands := templateShorthandsForNames(req.TemplateNames, opts.templateShortByName)
 	req.HistorySuffix = buildHistorySuffix(shorthands)
 
@@ -146,7 +147,17 @@ func templateShorthandsForNames(names []string, mapping map[string]string) []str
 		return nil
 	}
 	shorts := make([]string, 0, len(names))
+	seen := make(map[string]bool)
 	for _, name := range names {
+		key := strings.TrimSpace(strings.ToLower(name))
+		if key == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		if key == "agents.md" || key == "agents" {
+			shorts = append(shorts, "a")
+			continue
+		}
 		if shorthand := strings.TrimSpace(mapping[name]); shorthand != "" {
 			shorts = append(shorts, shorthand)
 		}
@@ -159,6 +170,23 @@ func buildHistorySuffix(shorts []string) string {
 		return ""
 	}
 	return strings.Join(shorts, "")
+}
+
+func dedupeTemplates(names []string) []string {
+	if len(names) == 0 {
+		return nil
+	}
+	seen := make(map[string]bool)
+	unique := make([]string, 0, len(names))
+	for _, name := range names {
+		key := strings.TrimSpace(strings.ToLower(name))
+		if key == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		unique = append(unique, name)
+	}
+	return unique
 }
 
 func stripSubcommand(args []string, name string) []string {
