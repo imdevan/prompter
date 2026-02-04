@@ -115,7 +115,7 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 	if opts.agents {
 		req.TemplateNames = append(req.TemplateNames, "agents.md")
 	}
-	req.TemplateNames = dedupeTemplates(req.TemplateNames)
+	req.TemplateOrder, req.TemplateNames = dedupeTemplateOrder(req.TemplateOrder, req.TemplateNames)
 	shorthands := templateShorthandsForNames(req.TemplateNames, opts.templateShortByName)
 	req.HistorySuffix = buildHistorySuffix(shorthands)
 
@@ -172,21 +172,27 @@ func buildHistorySuffix(shorts []string) string {
 	return strings.Join(shorts, "")
 }
 
-func dedupeTemplates(names []string) []string {
-	if len(names) == 0 {
-		return nil
+func dedupeTemplateOrder(order []string, names []string) ([]string, []string) {
+	if len(order) == 0 {
+		order = buildTemplateOrder(names, -1)
 	}
 	seen := make(map[string]bool)
-	unique := make([]string, 0, len(names))
-	for _, name := range names {
-		key := strings.TrimSpace(strings.ToLower(name))
+	dedupedOrder := make([]string, 0, len(order))
+	dedupedNames := make([]string, 0, len(names))
+	for _, entry := range order {
+		if entry == domain.BasePromptToken {
+			dedupedOrder = append(dedupedOrder, entry)
+			continue
+		}
+		key := strings.TrimSpace(strings.ToLower(entry))
 		if key == "" || seen[key] {
 			continue
 		}
 		seen[key] = true
-		unique = append(unique, name)
+		dedupedOrder = append(dedupedOrder, entry)
+		dedupedNames = append(dedupedNames, entry)
 	}
-	return unique
+	return dedupedOrder, dedupedNames
 }
 
 func stripSubcommand(args []string, name string) []string {
