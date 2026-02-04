@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -87,7 +88,12 @@ func renderTemplateList(templates []domain.Template, descStyle lipgloss.Style) s
 	}
 	items := make([]list.Item, 0, len(templates))
 	for _, tmpl := range templates {
-		items = append(items, templateListItem{template: tmpl})
+		items = append(items, templateListItem{
+			display:     templateDisplayName(tmpl),
+			flagLabel:   formatFlagLabel(tmpl),
+			description: strings.TrimSpace(tmpl.Description),
+			pinned:      tmpl.Pinned,
+		})
 	}
 	delegate := list.NewDefaultDelegate()
 	delegate.Styles.SelectedTitle = delegate.Styles.NormalTitle
@@ -120,44 +126,37 @@ func renderTemplateList(templates []domain.Template, descStyle lipgloss.Style) s
 }
 
 type templateListItem struct {
-	template domain.Template
+	display     string
+	flagLabel   string
+	description string
+	pinned      bool
 }
 
 func (t templateListItem) Title() string {
 	nameStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true)
-	metaStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("13"))
-	title := strings.TrimSpace(t.template.Title)
-	name := strings.TrimSpace(t.template.Name)
-	display := name
-	if title != "" {
-		display = title
+	flagStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("13"))
+	parts := []string{nameStyle.Render(t.display)}
+	if t.pinned {
+		parts = append(parts, flagStyle.Render("[pinned]"))
 	}
-	parts := []string{nameStyle.Render(display)}
-	if title != "" && name != "" && isAgentTemplateName(name) {
-		parts = append(parts, metaStyle.Render("("+name+")"))
-	}
-	flags := []string{}
-	if strings.TrimSpace(t.template.Flag) != "" {
-		flags = append(flags, "--"+t.template.Flag)
-	}
-	if strings.TrimSpace(t.template.Shorthand) != "" {
-		flags = append(flags, "-"+t.template.Shorthand)
-	}
-	if len(flags) > 0 {
-		parts = append(parts, metaStyle.Render("["+strings.Join(flags, ", ")+"]"))
-	}
-	if t.template.Pinned {
-		parts = append(parts, metaStyle.Render("[pinned]"))
-	}
-	return strings.Join(parts, " ")
+	return strings.Join(parts, "  ")
 }
 
 func (t templateListItem) Description() string {
-	return strings.TrimSpace(t.template.Description)
+	descStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("7"))
+	flagStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("13"))
+	parts := []string{}
+	if t.description != "" {
+		parts = append(parts, descStyle.Render(t.description))
+	}
+	if strings.TrimSpace(t.flagLabel) != "" {
+		parts = append(parts, flagStyle.Render(t.flagLabel))
+	}
+	return strings.Join(parts, "\n")
 }
 
 func (t templateListItem) FilterValue() string {
-	return t.template.Name
+	return t.display
 }
 
 func isAgentTemplateName(name string) bool {
@@ -175,4 +174,95 @@ func isAgentTemplateName(name string) bool {
 		return true
 	}
 	return false
+}
+
+func templateDisplayName(tmpl domain.Template) string {
+	title := strings.TrimSpace(tmpl.Title)
+	if title != "" {
+		title = toTitleCase(title)
+	}
+	name := strings.TrimSpace(tmpl.Name)
+	if title == "" {
+		return name
+	}
+	if name != "" && isAgentTemplateName(name) {
+		return fmt.Sprintf("%s (%s)", title, name)
+	}
+	return title
+}
+
+func formatFlagLabel(tmpl domain.Template) string {
+	flags := []string{}
+	shorthand := strings.TrimSpace(tmpl.Shorthand)
+	if shorthand == "" {
+		shorthand = listTemplateShorthand(tmpl.Name)
+	}
+	flag := strings.TrimSpace(tmpl.Flag)
+	if flag == "" {
+		flag = listTemplateFlagName(tmpl.Name)
+	}
+	if shorthand != "" {
+		flags = append(flags, "-"+shorthand)
+	}
+	if flag != "" {
+		flags = append(flags, "--"+flag)
+	}
+	if len(flags) == 0 {
+		return ""
+	}
+	return strings.Join(flags, ", ")
+}
+
+func toTitleCase(value string) string {
+	words := strings.Fields(value)
+	for i, word := range words {
+		runes := []rune(word)
+		if len(runes) == 0 {
+			continue
+		}
+		runes[0] = []rune(strings.ToUpper(string(runes[0])))[0]
+		for j := 1; j < len(runes); j++ {
+			runes[j] = []rune(strings.ToLower(string(runes[j])))[0]
+		}
+		words[i] = string(runes)
+	}
+	return strings.Join(words, " ")
+}
+
+func listTemplateFlagName(name string) string {
+	name = strings.TrimSpace(strings.ToLower(name))
+	if name == "" {
+		return ""
+	}
+	var builder strings.Builder
+	lastDash := false
+	for _, r := range name {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			builder.WriteRune(r)
+			lastDash = false
+			continue
+		}
+		if !lastDash {
+			builder.WriteRune('-')
+			lastDash = true
+		}
+	}
+	return strings.Trim(builder.String(), "-")
+}
+
+func listTemplateShorthand(name string) string {
+	base := strings.TrimSpace(filepath.Base(name))
+	if base == "" {
+		return ""
+	}
+	for _, r := range base {
+		if r >= 'A' && r <= 'Z' {
+			r = r - 'A' + 'a'
+		}
+		if r < 'a' || r > 'z' {
+			continue
+		}
+		return string(r)
+	}
+	return ""
 }
