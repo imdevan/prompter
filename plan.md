@@ -96,24 +96,25 @@ flags:
   - [x] Add interactive preselection tests (selected templates + order preserved)
   - [x] Add agent suffix + de-dup tests (agents included in suffix, no repeats)
 
-9) Release readiness
-- Status: pending
-- Notes: Cross-platform build, Homebrew template, docs updates.
-
 9) Clean up 
 - [ ] interactive ui reflects template processing
   - [ ] templates with {{.Prompt}} before any other white space are put at the end of of the visual list
   - [ ] templates with {{.Prompt}} in the middle of their copy should visual wrap templates it will wrap in the process
 - [ ] base prompt is color5
 
+10) Release readiness
+- Status: pending
+- Notes: Cross-platform build, Homebrew template, docs updates.
+
+
 ## v2.1 
 
-10) Tagging history
+11) Tagging history
 
-10.1 History frontmatter
+11.1 History frontmatter
 - [ ] History prompts should save front matter
   - [ ] contains prompter prompt
-10.2 History tags
+11.2 History tags
   - [ ] contains optional tag
   - [ ] calling prompter history [tag] should search for a prompt history with the provided tag
       - [ ] if one result is found open it (in target)
