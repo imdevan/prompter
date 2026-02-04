@@ -14,7 +14,7 @@ Status key: pending, in-progress, blocked, completed
 3) Configuration and path resolution
 - Status: completed
 - Notes: Config manager, defaults, precedence, validation.
-
+**
 4) Template system
 - Status: completed
 - Notes: Template repository, processing, frontmatter, custom flags.
@@ -25,9 +25,8 @@ Status key: pending, in-progress, blocked, completed
 
 6) Interactive UI
 - Status: completed
-- Notes: Bubble Tea/Bubbles prompts and selection lists.
 
-7) CLI commands and flags
+7) CLI commands and flags**7) CLI commands and flags
 - Status: in-progress
 - Notes: Cobra commands, completion, version, help text, dynamic template flags from config.
 
@@ -72,19 +71,52 @@ flags:
 - [x] completion
   - [x] generate shell completion scripts via cobra
 
+7.2. Deduplication
+  - [ ] Define agent template de-duplication rule for generation + history suffix (agents included, no repeats)
 
 8) Testing and QA
 - Status: pending
 - Notes: Unit/property tests, integration tests, coverage gaps.
+
+**Infra improvements**
+  - [ ] Build in-process Cobra command runner (no `go run`) for CLI tests
+  - [ ] Add `internal/testutil` helpers for temp config/history/prompts + XDG env setup
+  - [ ] Standardize config builder for tests (defaults + overrides)
+  - [ ] Replace Bubble Tea UI dependencies with fake UI for unit tests
+  - [ ] Add `-short`/`TEST_INTEGRATION=1` gating for slower integration tests
+  - [ ] Add fixture layout and loader helpers under `tests/fixtures`
+
+**Tasks:**
+  - [ ] Add generator tests for right-to-left template pipeline + {{.Prompt}} wrapping (question/wrapper/test/base/validate examples)
+  - [ ] Add output/history tests: history written for stdout/clipboard when disable_history=false, no writes when true
+  - [ ] Add dynamic flag registration + order parsing tests (auto shorthand from filename, flag order vs base prompt)
+  - [ ] Add interactive preselection tests (selected templates + order preserved)
+  - [ ] Add agent suffix + de-dup tests (agents included in suffix, no repeats)
+
 9) Release readiness
 - Status: pending
 - Notes: Cross-platform build, Homebrew template, docs updates.
 
-9. Clean up 
+9) Clean up 
 - [ ] interactive ui reflects template processing
   - [ ] templates with {{.Prompt}} before any other white space are put at the end of of the visual list
   - [ ] templates with {{.Prompt}} in the middle of their copy should visual wrap templates it will wrap in the process
 - [ ] base prompt is color5
+
+## v2.1 
+
+10) Tagging history
+
+10.1 History frontmatter
+- [ ] History prompts should save front matter
+  - [ ] contains prompter prompt
+10.2 History tags
+  - [ ] contains optional tag
+  - [ ] calling prompter history [tag] should search for a prompt history with the provided tag
+      - [ ] if one result is found open it (in target)
+      - [ ] if more than one result is found open the results in the same list as prompter history
+
+
 
 ## Progress Log
 - 2025-01-29: Created plan.md with milestones and status tracking.
