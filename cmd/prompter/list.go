@@ -133,7 +133,7 @@ func (t templateListItem) Title() string {
 		display = title
 	}
 	parts := []string{nameStyle.Render(display)}
-	if title != "" && name != "" {
+	if title != "" && name != "" && isAgentTemplateName(name) {
 		parts = append(parts, metaStyle.Render("("+name+")"))
 	}
 	flags := []string{}
@@ -158,4 +158,21 @@ func (t templateListItem) Description() string {
 
 func (t templateListItem) FilterValue() string {
 	return t.template.Name
+}
+
+func isAgentTemplateName(name string) bool {
+	trimmed := strings.ToLower(strings.TrimSpace(name))
+	if trimmed == "agents.md" || trimmed == "agents" {
+		return true
+	}
+	if strings.HasPrefix(trimmed, "cursor/commands") {
+		return true
+	}
+	if strings.HasPrefix(trimmed, "kiro/steering") {
+		return true
+	}
+	if strings.HasPrefix(trimmed, "opencode/commands") {
+		return true
+	}
+	return false
 }
