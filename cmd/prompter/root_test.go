@@ -61,3 +61,15 @@ func TestResolveTemplateOrderPreservesBasePromptPosition(t *testing.T) {
 		t.Fatalf("unexpected template order: %v", templates)
 	}
 }
+
+func TestTemplateShorthandsIncludeAgentsOnce(t *testing.T) {
+	names := []string{"agents.md", "agents.md", "question"}
+	mapping := map[string]string{"question": "q"}
+	shorts := templateShorthandsForNames(names, mapping, true)
+	if len(shorts) != 2 {
+		t.Fatalf("expected 2 shorthands, got %v", shorts)
+	}
+	if shorts[0] != "a" || shorts[1] != "q" {
+		t.Fatalf("unexpected shorthands: %v", shorts)
+	}
+}

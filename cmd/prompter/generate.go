@@ -116,7 +116,7 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		req.TemplateNames = append(req.TemplateNames, "agents.md")
 	}
 	req.TemplateOrder, req.TemplateNames = dedupeTemplateOrder(req.TemplateOrder, req.TemplateNames)
-	shorthands := templateShorthandsForNames(req.TemplateNames, opts.templateShortByName)
+	shorthands := templateShorthandsForNames(req.TemplateNames, opts.templateShortByName, opts.agents || containsTemplateName(req.TemplateNames, "agents.md"))
 	req.HistorySuffix = buildHistorySuffix(shorthands)
 
 	handler := output.NewHandler(cmd.OutOrStdout(), clip, editor.New(cfg.Editor))
@@ -142,7 +142,7 @@ func buildTemplateOrder(templates []string, baseIndex int) []string {
 	return order
 }
 
-func templateShorthandsForNames(names []string, mapping map[string]string) []string {
+func templateShorthandsForNames(names []string, mapping map[string]string, includeAgents bool) []string {
 	if len(names) == 0 || len(mapping) == 0 {
 		return nil
 	}
@@ -154,7 +154,7 @@ func templateShorthandsForNames(names []string, mapping map[string]string) []str
 			continue
 		}
 		seen[key] = true
-		if key == "agents.md" || key == "agents" {
+		if includeAgents && (key == "agents.md" || key == "agents") {
 			shorts = append(shorts, "a")
 			continue
 		}
@@ -193,6 +193,15 @@ func dedupeTemplateOrder(order []string, names []string) ([]string, []string) {
 		dedupedNames = append(dedupedNames, entry)
 	}
 	return dedupedOrder, dedupedNames
+}
+
+func containsTemplateName(names []string, match string) bool {
+	for _, name := range names {
+		if strings.EqualFold(strings.TrimSpace(name), match) {
+			return true
+		}
+	}
+	return false
 }
 
 func stripSubcommand(args []string, name string) []string {

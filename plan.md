@@ -94,7 +94,7 @@ flags:
   - [x] Add output/history tests: history written for stdout/clipboard when disable_history=false, no writes when true
   - [x] Add dynamic flag registration + order parsing tests (auto shorthand from filename, flag order vs base prompt)
   - [x] Add interactive preselection tests (selected templates + order preserved)
-  - [ ] Add agent suffix + de-dup tests (agents included in suffix, no repeats)
+  - [x] Add agent suffix + de-dup tests (agents included in suffix, no repeats)
 
 9) Release readiness
 - Status: pending
