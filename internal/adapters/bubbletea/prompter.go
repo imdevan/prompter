@@ -59,6 +59,7 @@ func newTextInputModel(title, description, defaultValue, note string) textInputM
 	input.Focus()
 	input.CharLimit = 2000
 	input.Width = 80
+	input.TextStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
 
 	return textInputModel{
 		title:       title,
@@ -340,9 +341,18 @@ func (m templateSelectModel) renderSelectionBar() string {
 		Foreground(lipgloss.Color("0")).
 		Background(lipgloss.Color("2")).
 		Bold(true)
+	basePromptStyle := lipgloss.NewStyle().
+		Padding(0, 1).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("3")).
+		Foreground(lipgloss.Color("3"))
 	parts := make([]string, 0, len(entries))
 	for i, entry := range entries {
 		chip := entry.label
+		if entry.templateIndex < 0 {
+			parts = append(parts, basePromptStyle.Render(chip))
+			continue
+		}
 		if m.focus == focusBar && i == m.barIndex {
 			parts = append(parts, focused.Render(chip))
 		} else {
