@@ -100,7 +100,7 @@ flags:
 - [ ] interactive ui reflects template processing
   - [ ] templates with {{.Prompt}} before any other white space are put at the end of of the visual list
   - [ ] templates with {{.Prompt}} in the middle of their copy should visual wrap templates it will wrap in the process
-- [ ] base prompt is color5
+- [ ] base prompt is color3
 
 10) Release readiness
 - Status: pending
