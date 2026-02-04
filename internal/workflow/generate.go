@@ -75,14 +75,28 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 	applyTemplate := func(content string) error {
 		content = template.StripFrontmatter(content)
 		hasPrompt := strings.Contains(content, ".Prompt")
+		if hasPrompt {
+			token := "__PROMPTER_PROMPT_TOKEN__"
+			data.Prompt = token
+			rendered, err := template.Render(content, data)
+			if err != nil {
+				return err
+			}
+			if strings.Contains(rendered, token) {
+				parts := strings.Split(rendered, token)
+				before := strings.Join(parts[:1], "")
+				after := strings.Join(parts[1:], token)
+				assembled = joinParts(before, assembled)
+				assembled = joinParts(assembled, after)
+				return nil
+			}
+			assembled = strings.TrimSpace(rendered)
+			return nil
+		}
 		data.Prompt = assembled
 		rendered, err := template.Render(content, data)
 		if err != nil {
 			return err
-		}
-		if hasPrompt {
-			assembled = strings.TrimSpace(rendered)
-			return nil
 		}
 		assembled = joinParts(rendered, assembled)
 		return nil
