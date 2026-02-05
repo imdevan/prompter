@@ -331,7 +331,7 @@ func formatHistoryFileLine(flags string, bytes int, tokens int, flagWidth int) s
 }
 
 func maxHistoryFlagWidth(entries []historyEntry) int {
-	const maxFlagWidth = 2
+	const maxFlagWidth = 3
 	width := 1
 	for _, entry := range entries {
 		if strings.TrimSpace(entry.Flags) == "" {
