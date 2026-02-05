@@ -157,21 +157,17 @@ func readHistoryEntries(dir string) ([]historyEntry, error) {
 }
 
 type historyListItem struct {
-	entry historyEntry
+	entry       historyEntry
+	title       string
+	description string
 }
 
 func (h historyListItem) Title() string {
-	return h.entry.Name
+	return h.title
 }
 
 func (h historyListItem) Description() string {
-	timestamp := h.entry.ModTime.Local().Format("2006-01-02 15:04")
-	size := formatSize(h.entry.Size)
-	if strings.TrimSpace(h.entry.Tag) != "" {
-		tagStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
-		return fmt.Sprintf("%s • %s • %s", timestamp, size, tagStyle.Render("#"+h.entry.Tag))
-	}
-	return fmt.Sprintf("%s • %s", timestamp, size)
+	return h.description
 }
 
 func (h historyListItem) FilterValue() string {
@@ -191,6 +187,111 @@ func formatSize(size int64) string {
 		}
 	}
 	return fmt.Sprintf("%.1f TB", value/1024)
+}
+
+func formatHistoryDisplay(entry historyEntry, now time.Time) (string, string) {
+	const day = 24 * time.Hour
+	const week = 7 * day
+	const month = 30 * day
+
+	tag := strings.TrimSpace(entry.Tag)
+	age := now.Sub(entry.ModTime)
+	if age < 0 {
+		age = 0
+	}
+
+	timeLine := formatHistoryTimeLine(entry.ModTime, age, week, month)
+	fileLine := formatHistoryFileLine(entry.Name, entry.Size)
+
+	if tag == "" {
+		return timeLine, fileLine
+	}
+
+	tagStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
+	if age >= month {
+		tagStyle = tagStyle.Bold(true)
+	}
+	title := tagStyle.Render("#" + tag)
+	description := strings.Join([]string{timeLine, fileLine}, "\n")
+	return title, description
+}
+
+func formatHistoryTimeLine(modTime time.Time, age time.Duration, week time.Duration, month time.Duration) string {
+	bold := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("7"))
+	localTime := modTime.Local()
+
+	switch {
+	case age < 24*time.Hour:
+		return bold.Render(formatTimeAgo(age))
+	case age < month:
+		if age < week {
+			return bold.Render(formatTimeAgo(age))
+		}
+		return bold.Render(formatWeekdayOrdinalTime(localTime))
+	default:
+		return bold.Render(localTime.Format("2 Jan 2006 15:04"))
+	}
+}
+
+func formatTimeAgo(age time.Duration) string {
+	if age < time.Minute {
+		return "Just now"
+	}
+	if age < 2*time.Minute {
+		return "One minute ago"
+	}
+	if age < time.Hour {
+		return fmt.Sprintf("%d minutes ago", int(age.Minutes()))
+	}
+	if age < 2*time.Hour {
+		return "One hour ago"
+	}
+	if age < 24*time.Hour {
+		return fmt.Sprintf("%d hours ago", int(age.Hours()))
+	}
+	if age < 48*time.Hour {
+		return "One day ago"
+	}
+	return fmt.Sprintf("%d days ago", int(age.Hours()/24))
+}
+
+func formatWeekdayOrdinalTime(t time.Time) string {
+	weekday := map[time.Weekday]string{
+		time.Monday:    "Mon.",
+		time.Tuesday:   "Tues.",
+		time.Wednesday: "Wed.",
+		time.Thursday:  "Thur.",
+		time.Friday:    "Fri.",
+		time.Saturday:  "Sat.",
+		time.Sunday:    "Sun.",
+	}[t.Weekday()]
+	day := t.Day()
+	return fmt.Sprintf("%s %d%s, %s", weekday, day, ordinalSuffix(day), t.Format("15:04"))
+}
+
+func ordinalSuffix(day int) string {
+	if day%100 >= 11 && day%100 <= 13 {
+		return "th"
+	}
+	switch day % 10 {
+	case 1:
+		return "st"
+	case 2:
+		return "nd"
+	case 3:
+		return "rd"
+	default:
+		return "th"
+	}
+}
+
+func formatHistoryFileLine(name string, size int64) string {
+	displayName := strings.TrimPrefix(name, "prompter-")
+	displayName = strings.TrimSuffix(displayName, ".md")
+	sizeText := formatSize(size)
+	return lipgloss.NewStyle().
+		Foreground(lipgloss.Color("8")).
+		Render(fmt.Sprintf("%s • %s", displayName, sizeText))
 }
 
 func clearHistory(dir string, keepTags bool) error {
@@ -308,14 +409,27 @@ type historyModel struct {
 
 func newHistoryModel(entries []historyEntry, location string) historyModel {
 	items := make([]list.Item, 0, len(entries))
+	now := time.Now()
 	for _, entry := range entries {
-		items = append(items, historyListItem{entry: entry})
+		title, description := formatHistoryDisplay(entry, now)
+		items = append(items, historyListItem{
+			entry:       entry,
+			title:       title,
+			description: description,
+		})
 	}
 	delegate := list.NewDefaultDelegate()
-	delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.Foreground(lipgloss.Color("2")).Bold(true)
-	delegate.Styles.SelectedDesc = delegate.Styles.SelectedDesc.Foreground(lipgloss.Color("5"))
-	delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.Foreground(lipgloss.Color("7")).Bold(true)
-	delegate.Styles.NormalDesc = delegate.Styles.NormalDesc.Foreground(lipgloss.Color("8"))
+	delegate.SetHeight(3)
+	delegate.Styles.NormalTitle = lipgloss.NewStyle().Padding(0, 0, 0, 2)
+	delegate.Styles.NormalDesc = lipgloss.NewStyle().Padding(0, 0, 0, 2)
+	delegate.Styles.SelectedTitle = lipgloss.NewStyle().
+		Padding(0, 0, 0, 1).
+		Border(lipgloss.NormalBorder(), false, false, false, true).
+		BorderForeground(lipgloss.Color("2"))
+	delegate.Styles.SelectedDesc = lipgloss.NewStyle().
+		Padding(0, 0, 0, 1).
+		Border(lipgloss.NormalBorder(), false, false, false, true).
+		BorderForeground(lipgloss.Color("2"))
 	model := list.New(items, delegate, 80, 20)
 	model.Title = "History"
 	model.Styles.Title = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)

@@ -121,33 +121,34 @@ flags:
   - [x] editor, -e flag opens history folder in editor
 
 11.2 style
-- [ ] display history based on this algorithm
+- [x] display history based on this algorithm
+  - continue to use the default delegation function - no need for extra headers
+- [ ] history_enable_time_ago defaults to true - add to config and config init
+- [ ] history_date_time format defaults to day, month - add to config and config init
 
-items less then a week old (type1)
+
+if history_enable_time_ago:
+items less then a day old
 ```
-```
-#tag            -- also in bold if present
+#tag            -- if present
 One minute ago  -- in bold use *ago* format if less then a week old
-file_name • 0 B -- light font as date is now. propmter- and .md omitted from file name
+file_name • 0 B -- light font as date is now. prompter- and .md omitted from file name
 ```
 
-items after a week. (type2)
+
+less then a month old
+#tag            -- if present
+Tues. 17th, time      -- in bold use *ago* format if less then a week old
+file_name • 0 B -- light font as date is now. prompter- and .md omitted from file name
+```
+
+
+items after a month or if history_enable_time_ago
 ```
 #tag            -- also in bold if present
 date_time       -- in bold 
-file_name • 0 B -- light font as date is now. propmter- and .md omitted from file name
+file_name • 0 B -- light font as date is now. prompter- and .md omitted from file name
 ```
-
-break down history like:
-
-History 
-- items from today
-Yesterday (if any)
-- items form yesterday
-A week ago (if any)
-- items form a week ago
-A month ago (if any)
-Month (if more than 2 months old show month)
 
 11) Release readiness
  Status: pending
