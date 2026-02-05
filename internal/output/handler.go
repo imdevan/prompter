@@ -35,9 +35,12 @@ func (h *Handler) Write(req domain.Request, content string, cfg domain.Config) e
 	if target == "" {
 		target = cfg.Target
 	}
+
 	if !cfg.DisableHistory {
-		if _, err := h.writeHistory(content, cfg, req.HistorySuffix, req.HistoryTag); err != nil {
-			return err
+		if strings.TrimSpace(content) != "" {
+			if _, err := h.writeHistory(content, cfg, req.HistorySuffix, req.HistoryTag); err != nil {
+				return err
+			}
 		}
 	}
 	switch {

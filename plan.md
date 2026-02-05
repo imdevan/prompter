@@ -115,7 +115,7 @@ flags:
 
 11.1 history clear subcommand
 - [x] add history clear subcommand
-  - [ ] confirms with user using bubbles confirm
+  - [ ] confirms with user using huh confirm
   - [x] clears the history files
   - [ ] keep tags flag to keep all with tags
 

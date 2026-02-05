@@ -11,6 +11,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 
@@ -30,11 +31,13 @@ func newHistoryCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVarP(&opts.clear, "clear", "c", false, "clear prompt history")
+	cmd.Flags().BoolVarP(&opts.yes, "yes", "y", false, "skip confirmation")
 	return cmd
 }
 
 type historyOptions struct {
 	clear bool
+	yes   bool
 }
 
 func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
@@ -51,6 +54,16 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 		return fmt.Errorf("history_location is not configured")
 	}
 	if opts.clear {
+		if !opts.yes {
+			confirm, err := promptConfirmClear()
+			if err != nil {
+				return err
+			}
+			if !confirm {
+				_, err := fmt.Fprintln(cmd.OutOrStdout(), "History not cleared.")
+				return err
+			}
+		}
 		if err := clearHistory(cfg.HistoryLocation); err != nil {
 			return err
 		}
@@ -201,6 +214,16 @@ func parseHistoryIndex(value string) (int, error) {
 		return 0, fmt.Errorf("invalid history index %q", value)
 	}
 	return index, nil
+}
+
+func promptConfirmClear() (bool, error) {
+	confirmed := false
+	err := huh.NewConfirm().
+		Title("Clear history?").
+		Description("Delete all saved prompts?").
+		Value(&confirmed).
+		Run()
+	return confirmed, err
 }
 
 func extractHistoryTag(path string) string {
