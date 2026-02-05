@@ -147,7 +147,8 @@ func (h historyListItem) Description() string {
 	timestamp := h.entry.ModTime.Local().Format("2006-01-02 15:04")
 	size := formatSize(h.entry.Size)
 	if strings.TrimSpace(h.entry.Tag) != "" {
-		return fmt.Sprintf("%s • %s • tag:%s", timestamp, size, h.entry.Tag)
+		tagStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
+		return fmt.Sprintf("%s • %s • %s", timestamp, size, tagStyle.Render("#"+h.entry.Tag))
 	}
 	return fmt.Sprintf("%s • %s", timestamp, size)
 }
@@ -233,7 +234,9 @@ func extractHistoryTag(path string) string {
 func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []historyEntry, tag string) error {
 	matches := make([]historyEntry, 0)
 	for _, entry := range entries {
-		if strings.EqualFold(strings.TrimSpace(entry.Tag), tag) {
+		entryTag := strings.ToLower(strings.TrimSpace(entry.Tag))
+		query := strings.ToLower(strings.TrimSpace(tag))
+		if entryTag != "" && query != "" && strings.Contains(entryTag, query) {
 			matches = append(matches, entry)
 		}
 	}
