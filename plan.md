@@ -114,9 +114,9 @@ flags:
 11. History refinements
 
 11.1 history clear subcommand
-- [ ] add history clear subcommand
+- [x] add history clear subcommand
   - [ ] confirms with user using bubbles confirm
-  - [ ] clears the history file
+  - [x] clears the history files
   - [ ] keep tags flag to keep all with tags
 
 11.2 style
