@@ -117,7 +117,8 @@ flags:
 - [x] add history clear subcommand
   - [x] confirms with user using huh confirm
   - [x] clears the history files
-  - [ ] keep tags flag to keep all with tags
+  - [x] keep tags flag to keep all with tags
+  - [ ] editor, -e flag opens history folder in editor
 
 11.2 style
 - [ ] display history based on this algorithm
