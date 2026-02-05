@@ -137,7 +137,7 @@ flags:
 
 11.4 cache maintenance
 - [x] on history call delete empty prompts
-  - [ ] also delete any prompts that only contain the index template (also essentially empty)
+  - [x] also delete any prompts that only contain the index template (also essentially empty)
 
 
 if history_enable_time_ago:

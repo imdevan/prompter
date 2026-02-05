@@ -19,6 +19,7 @@ import (
 	"prompter-cli/internal/adapters/editor"
 	"prompter-cli/internal/config"
 	"prompter-cli/internal/domain"
+	"prompter-cli/internal/template"
 	"prompter-cli/internal/ui"
 )
 
@@ -81,6 +82,9 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 		return err
 	}
 
+	if err := pruneHistoryEntries(cfg, cwd); err != nil {
+		return err
+	}
 	entries, err := readHistoryEntries(cfg.HistoryLocation)
 	if err != nil {
 		return err
@@ -326,6 +330,45 @@ func clearHistory(dir string, keepTags bool) error {
 		}
 		if err := os.Remove(filepath.Join(dir, entry.Name())); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+func pruneHistoryEntries(cfg domain.Config, cwd string) error {
+	if strings.TrimSpace(cfg.HistoryLocation) == "" {
+		return nil
+	}
+	localPrompts := ""
+	if strings.TrimSpace(cfg.LocalPromptsLocation) != "" {
+		localPrompts = filepath.Join(cwd, cfg.LocalPromptsLocation)
+	}
+	indexBody := ""
+	repo := template.NewRepository(localPrompts, cfg.PromptsLocation)
+	if tmpl, err := repo.Get("index"); err == nil {
+		indexBody = strings.TrimSpace(template.StripFrontmatter(tmpl.Content))
+	}
+	entries, err := os.ReadDir(cfg.HistoryLocation)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		path := filepath.Join(cfg.HistoryLocation, entry.Name())
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		body := strings.TrimSpace(template.StripFrontmatter(string(data)))
+		if body == "" || (indexBody != "" && body == indexBody) {
+			if err := os.Remove(path); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
