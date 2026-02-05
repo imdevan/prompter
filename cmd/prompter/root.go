@@ -114,20 +114,20 @@ func addRootFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Config, opti
 
 	addString("config", "", "config file path", &opts.configPath)
 	addStringSlice("file", "", "files to include", &opts.files)
-	addBool("directory", "d", "include current directory", &opts.includeDir)
-	addString("target", "t", "output target (clipboard, stdout, file:/path, editor)", &opts.target)
+	addBool("directory", "D", "include current directory", &opts.includeDir)
+	addString("target", "T", "output target (clipboard, stdout, file:/path, editor)", &opts.target)
 	if options.includeFix {
-		addBool("fix", "f", "fix mode", &opts.fix)
+		addBool("fix", "F", "fix mode", &opts.fix)
 	}
-	addBool("clipboard", "b", "use clipboard input", &opts.clipboard)
-	addBool("agents", "a", "include AGENTS.md/.cursor/.kiro templates", &opts.agents)
-	addBool("interactive", "i", "force interactive mode", &opts.interactive)
-	addBool("yes", "y", "non-interactive mode", &opts.yes)
-	addBool("editor", "e", "open output in editor", &opts.editorTarget)
+	addBool("clipboard", "B", "use clipboard input", &opts.clipboard)
+	addBool("agents", "A", "include AGENTS.md/.cursor/.kiro templates", &opts.agents)
+	addBool("interactive", "I", "force interactive mode", &opts.interactive)
+	addBool("yes", "Y", "non-interactive mode", &opts.yes)
+	addBool("editor", "E", "open output in editor", &opts.editorTarget)
 	addStringSlice("template", "", "template names to include", &opts.templates)
 	addString("tag", "", "tag to include in history frontmatter", &opts.historyTag)
 	if options.includeVersion {
-		addBool("version", "v", "print version information", &opts.showVersion)
+		addBool("version", "V", "print version information", &opts.showVersion)
 	}
 }
 
@@ -300,7 +300,7 @@ func resolveTemplateOrder(args []string, opts *rootOptions, cfg domain.Config) (
 	for long, def := range map[string]string{
 		"config":   "",
 		"file":     "",
-		"target":   "t",
+		"target":   "T",
 		"template": "",
 		"tag":      "",
 	} {

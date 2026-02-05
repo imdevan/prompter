@@ -93,7 +93,7 @@ func renderConfigTemplate(cfg domain.Config) string {
 	builder.WriteString(fmt.Sprintf("disable_history = %t\n", cfg.DisableHistory))
 	builder.WriteString("\n[remap_short_flags]\n")
 	builder.WriteString("# Map long flags to a custom short flag (single letter).\n")
-	builder.WriteString("# Existing short flags: a b d e f i t v y\n")
+	builder.WriteString("# Existing short flags: A B D E F I T V Y\n")
 	builder.WriteString("# Example: directory = \"D\"\n")
 	return builder.String()
 }

@@ -29,5 +29,5 @@ disable_history = false
 
 [remap_short_flags]
 # Map long flags to a custom short flag (single letter).
-# Existing short flags: a b d e f i t v y
+# Existing short flags: A B D E F I T V Y
 # Example: directory = "D"
