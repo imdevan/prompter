@@ -139,6 +139,15 @@ flags:
 - [x] on history call delete empty prompts
   - [x] also delete any prompts that only contain the index template (also essentially empty)
 
+11.5 insert from list
+- [ ] from history list hitting i/ins will open the prompt in configured editor with 
+    ```
+    \n
+    ---
+    \n
+    ```
+    inserted above the last text in insert mode above that
+- [ ] or if history called with flag -n, --insert
 
 if history_enable_time_ago:
 items less then a day old
