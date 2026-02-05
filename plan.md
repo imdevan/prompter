@@ -111,6 +111,42 @@ flags:
   - [x] if one result is found open it (in target)
   - [x] if more than one result is found open the results in the same list as prompter history
 
+11. History refinements
+
+11.1 history clear subcommand
+- [ ] add history clear subcommand
+  - [ ] confirms with user using bubbles confirm
+  - [ ] clears the history file
+  - [ ] keep tags flag to keep all with tags
+
+11.2 style
+- [ ] display history based on this algorithm
+
+items less then a week old (type1)
+```
+```
+#tag            -- also in bold if present
+One minute ago  -- in bold use *ago* format if less then a week old
+file_name • 0 B -- light font as date is now. propmter- and .md omitted from file name
+```
+
+items after a week. (type2)
+```
+#tag            -- also in bold if present
+date_time       -- in bold 
+file_name • 0 B -- light font as date is now. propmter- and .md omitted from file name
+```
+
+break down history like:
+
+History 
+- items from today
+Yesterday (if any)
+- items form yesterday
+A week ago (if any)
+- items form a week ago
+A month ago (if any)
+Month (if more than 2 months old show month)
 
 11) Release readiness
  Status: pending
