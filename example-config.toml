@@ -22,6 +22,9 @@ include_builtin_shorthand = true
 # history_clear_cycle options: never, 1, 7, 31 (days)
 history_clear_cycle = "never"
 history_file_format = "month-day_eu"
+history_enable_time_ago = true
+# history_date_time options: day, month; month, day; iso; or a Go time layout
+history_date_time = "day, month"
 disable_history = false
 
 [remap_short_flags]
