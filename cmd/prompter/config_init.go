@@ -88,6 +88,8 @@ func renderConfigTemplate(cfg domain.Config) string {
 	builder.WriteString(fmt.Sprintf("history_clear_cycle = %q\n", cfg.HistoryClearCycle))
 	builder.WriteString(fmt.Sprintf("history_file_format = %q\n", cfg.HistoryFileFormat))
 	builder.WriteString(fmt.Sprintf("history_enable_time_ago = %t\n", cfg.HistoryEnableTimeAgo))
+	builder.WriteString("# history_date_time options: day, month; month, day; iso; or a Go time layout\n")
+	builder.WriteString(fmt.Sprintf("history_date_time = %q\n", cfg.HistoryDateTime))
 	builder.WriteString(fmt.Sprintf("disable_history = %t\n", cfg.DisableHistory))
 	builder.WriteString("\n[remap_short_flags]\n")
 	builder.WriteString("# Map long flags to a custom short flag (single letter).\n")

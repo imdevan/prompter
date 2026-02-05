@@ -90,6 +90,7 @@ type partialConfig struct {
 	HistoryClearCycle       *string           `toml:"history_clear_cycle"`
 	HistoryFileFormat       *string           `toml:"history_file_format"`
 	HistoryEnableTimeAgo    *bool             `toml:"history_enable_time_ago"`
+	HistoryDateTime         *string           `toml:"history_date_time"`
 	DisableHistory          *bool             `toml:"disable_history"`
 	LocalPromptsLocation    *string           `toml:"local_prompts_location"`
 	IncludeAgents           *string           `toml:"include_agents"`
@@ -131,6 +132,9 @@ func applyPartial(config *domain.Config, partial *partialConfig) {
 	}
 	if partial.HistoryEnableTimeAgo != nil {
 		config.HistoryEnableTimeAgo = *partial.HistoryEnableTimeAgo
+	}
+	if partial.HistoryDateTime != nil {
+		config.HistoryDateTime = *partial.HistoryDateTime
 	}
 	if partial.DisableHistory != nil {
 		config.DisableHistory = *partial.DisableHistory

@@ -12,6 +12,7 @@ type Config struct {
 	HistoryClearCycle       string            `toml:"history_clear_cycle"`
 	HistoryFileFormat       string            `toml:"history_file_format"`
 	HistoryEnableTimeAgo    bool              `toml:"history_enable_time_ago"`
+	HistoryDateTime         string            `toml:"history_date_time"`
 	DisableHistory          bool              `toml:"disable_history"`
 	LocalPromptsLocation    string            `toml:"local_prompts_location"`
 	IncludeAgents           string            `toml:"include_agents"`
@@ -34,6 +35,7 @@ func DefaultConfig() Config {
 		HistoryClearCycle:       "never",
 		HistoryFileFormat:       "month-day_eu",
 		HistoryEnableTimeAgo:    true,
+		HistoryDateTime:         "day, month",
 		DisableHistory:          false,
 		LocalPromptsLocation:    "prompts",
 		IncludeAgents:           "all",

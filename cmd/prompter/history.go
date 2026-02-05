@@ -99,7 +99,7 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 		return err
 	}
 
-	model := newHistoryModel(entries, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo)
+	model := newHistoryModel(entries, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo, cfg.HistoryDateTime)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
@@ -189,7 +189,7 @@ func formatSize(size int64) string {
 	return fmt.Sprintf("%.1f TB", value/1024)
 }
 
-func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool) (string, string) {
+func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool, dateTimeFormat string) (string, string) {
 	const day = 24 * time.Hour
 	const week = 7 * day
 	const month = 30 * day
@@ -200,7 +200,7 @@ func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool)
 		age = 0
 	}
 
-	timeLine := formatHistoryTimeLine(entry.ModTime, age, week, month, enableTimeAgo)
+	timeLine := formatHistoryTimeLine(entry.ModTime, age, week, month, enableTimeAgo, dateTimeFormat)
 	fileLine := formatHistoryFileLine(entry.Name, entry.Size)
 
 	if tag == "" {
@@ -216,12 +216,12 @@ func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool)
 	return title, description
 }
 
-func formatHistoryTimeLine(modTime time.Time, age time.Duration, week time.Duration, month time.Duration, enableTimeAgo bool) string {
+func formatHistoryTimeLine(modTime time.Time, age time.Duration, week time.Duration, month time.Duration, enableTimeAgo bool, dateTimeFormat string) string {
 	bold := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("7"))
 	localTime := modTime.Local()
 
 	if !enableTimeAgo {
-		return bold.Render(localTime.Format("2 Jan 2006 15:04"))
+		return bold.Render(localTime.Format(historyDateTimeLayout(dateTimeFormat)))
 	}
 
 	switch {
@@ -233,7 +233,7 @@ func formatHistoryTimeLine(modTime time.Time, age time.Duration, week time.Durat
 		}
 		return bold.Render(formatWeekdayOrdinalTime(localTime))
 	default:
-		return bold.Render(localTime.Format("2 Jan 2006 15:04"))
+		return bold.Render(localTime.Format(historyDateTimeLayout(dateTimeFormat)))
 	}
 }
 
@@ -296,6 +296,20 @@ func formatHistoryFileLine(name string, size int64) string {
 	return lipgloss.NewStyle().
 		Foreground(lipgloss.Color("8")).
 		Render(fmt.Sprintf("%s • %s", displayName, sizeText))
+}
+
+func historyDateTimeLayout(value string) string {
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	switch normalized {
+	case "", "day, month", "day-month", "day month", "day_month":
+		return "2 Jan 2006 15:04"
+	case "month, day", "month-day", "month day", "month_day":
+		return "Jan 2 2006 15:04"
+	case "iso", "iso8601":
+		return "2006-01-02 15:04"
+	default:
+		return value
+	}
 }
 
 func clearHistory(dir string, keepTags bool) error {
@@ -389,7 +403,7 @@ func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []histor
 	if len(matches) == 1 {
 		return editorAdapter.Open(matches[0].Path)
 	}
-	model := newHistoryModel(matches, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo)
+	model := newHistoryModel(matches, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo, cfg.HistoryDateTime)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
@@ -411,11 +425,11 @@ type historyModel struct {
 	selectedPath string
 }
 
-func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool) historyModel {
+func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool, dateTimeFormat string) historyModel {
 	items := make([]list.Item, 0, len(entries))
 	now := time.Now()
 	for _, entry := range entries {
-		title, description := formatHistoryDisplay(entry, now, enableTimeAgo)
+		title, description := formatHistoryDisplay(entry, now, enableTimeAgo, dateTimeFormat)
 		items = append(items, historyListItem{
 			entry:       entry,
 			title:       title,
