@@ -32,12 +32,14 @@ func newHistoryCmd() *cobra.Command {
 	}
 	cmd.Flags().BoolVarP(&opts.clear, "clear", "c", false, "clear prompt history")
 	cmd.Flags().BoolVarP(&opts.yes, "yes", "y", false, "skip confirmation")
+	cmd.Flags().BoolVarP(&opts.keep, "keep-tags", "k", false, "keep tagged history entries when clearing")
 	return cmd
 }
 
 type historyOptions struct {
 	clear bool
 	yes   bool
+	keep  bool
 }
 
 func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
@@ -64,7 +66,7 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 				return err
 			}
 		}
-		if err := clearHistory(cfg.HistoryLocation); err != nil {
+		if err := clearHistory(cfg.HistoryLocation, opts.keep); err != nil {
 			return err
 		}
 		_, err := fmt.Fprintln(cmd.OutOrStdout(), "History cleared.")
@@ -185,7 +187,7 @@ func formatSize(size int64) string {
 	return fmt.Sprintf("%.1f TB", value/1024)
 }
 
-func clearHistory(dir string) error {
+func clearHistory(dir string, keepTags bool) error {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -196,6 +198,12 @@ func clearHistory(dir string) error {
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
+		}
+		if keepTags {
+			tag := extractHistoryTag(filepath.Join(dir, entry.Name()))
+			if strings.TrimSpace(tag) != "" {
+				continue
+			}
 		}
 		if err := os.Remove(filepath.Join(dir, entry.Name())); err != nil {
 			return err
