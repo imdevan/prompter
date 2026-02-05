@@ -225,7 +225,7 @@ func historyFlagsFromName(name string) string {
 	return strings.Join(parts[2:], "-")
 }
 
-func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool, dateTimeFormat string, theme ui.Theme, flagWidth int) (string, string) {
+func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool, dateTimeFormat string, theme ui.Theme, flagWidth int, tokenWidth int) (string, string) {
 	const day = 24 * time.Hour
 	const week = 7 * day
 	const month = 30 * day
@@ -242,7 +242,7 @@ func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool,
 		tagStyle := lipgloss.NewStyle().Foreground(theme.Accent)
 		title = tagStyle.Render("#"+tag) + "\n" + timeLine
 	}
-	description := formatHistoryFileLine(entry.Flags, entry.BodyBytes, entry.BodyTokens, flagWidth)
+	description := formatHistoryFileLine(entry.Flags, entry.BodyBytes, entry.BodyTokens, flagWidth, tokenWidth)
 	return title, description
 }
 
@@ -318,20 +318,24 @@ func ordinalSuffix(day int) string {
 	}
 }
 
-func formatHistoryFileLine(flags string, bytes int, tokens int, flagWidth int) string {
+func formatHistoryFileLine(flags string, bytes int, tokens int, flagWidth int, tokenWidth int) string {
 	parts := make([]string, 0, 3)
 	if strings.TrimSpace(flags) != "" {
 		parts = append(parts, " "+formatFixedWidth(strings.TrimSpace(flags), flagWidth, false))
 	} else {
 		parts = append(parts, " "+formatFixedWidth("_", flagWidth, false))
 	}
-	parts = append(parts, fmt.Sprintf("  %s", formatFixedWidth(fmt.Sprintf("~%d", tokens), 5, false)))
+	parts = append(parts, fmt.Sprintf(" %s", formatFixedWidth(fmt.Sprintf("~%d", tokens), tokenWidth, false)))
 	parts = append(parts, formatSize(int64(bytes)))
 	return strings.Join(parts, " • ")
 }
 
+const (
+	maxHistoryFlagWidthLimit  = 5
+	maxHistoryTokenWidthLimit = 5
+)
+
 func maxHistoryFlagWidth(entries []historyEntry) int {
-	const maxFlagWidth = 3
 	width := 1
 	for _, entry := range entries {
 		if strings.TrimSpace(entry.Flags) == "" {
@@ -341,12 +345,30 @@ func maxHistoryFlagWidth(entries []historyEntry) int {
 		if count > width {
 			width = count
 		}
-		if width >= maxFlagWidth {
-			return maxFlagWidth
+		if width >= maxHistoryFlagWidthLimit {
+			return maxHistoryFlagWidthLimit
 		}
 	}
-	if width > maxFlagWidth {
-		return maxFlagWidth
+	if width > maxHistoryFlagWidthLimit {
+		return maxHistoryFlagWidthLimit
+	}
+	return width
+}
+
+func maxHistoryTokenWidth(entries []historyEntry) int {
+	width := 1
+	for _, entry := range entries {
+		value := fmt.Sprintf("~%d", entry.BodyTokens)
+		count := len([]rune(value))
+		if count > width {
+			width = count
+		}
+		if width >= maxHistoryTokenWidthLimit {
+			return maxHistoryTokenWidthLimit
+		}
+	}
+	if width > maxHistoryTokenWidthLimit {
+		return maxHistoryTokenWidthLimit
 	}
 	return width
 }
@@ -541,8 +563,9 @@ func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool
 	items := make([]list.Item, 0, len(entries))
 	now := time.Now()
 	flagWidth := maxHistoryFlagWidth(entries)
+	tokenWidth := maxHistoryTokenWidth(entries)
 	for _, entry := range entries {
-		title, description := formatHistoryDisplay(entry, now, enableTimeAgo, dateTimeFormat, theme, flagWidth)
+		title, description := formatHistoryDisplay(entry, now, enableTimeAgo, dateTimeFormat, theme, flagWidth, tokenWidth)
 		items = append(items, historyListItem{
 			entry:       entry,
 			title:       title,
