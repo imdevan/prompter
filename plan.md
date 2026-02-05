@@ -135,6 +135,10 @@ flags:
   - [x] upon deletion the list should update but user should continue in the history list view focused on the next item in the list
   - [x] keybinding should show "d/D delete"
 
+11.4 cache maintenance
+- [x] on history call delete empty prompts
+  - [ ] also delete any prompts that only contain the index template (also essentially empty)
+
 
 if history_enable_time_ago:
 items less then a day old
