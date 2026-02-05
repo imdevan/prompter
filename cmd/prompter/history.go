@@ -124,11 +124,14 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 }
 
 type historyEntry struct {
-	Name    string
-	Path    string
-	ModTime time.Time
-	Size    int64
-	Tag     string
+	Name      string
+	Path      string
+	ModTime   time.Time
+	Size      int64
+	Tag       string
+	Flags     string
+	BodyLines int
+	BodyBytes int
 }
 
 func readHistoryEntries(dir string) ([]historyEntry, error) {
@@ -148,13 +151,29 @@ func readHistoryEntries(dir string) ([]historyEntry, error) {
 		if err != nil {
 			return nil, err
 		}
-		tag := extractHistoryTag(filepath.Join(dir, entry.Name()))
+		path := filepath.Join(dir, entry.Name())
+		tag := extractHistoryTag(path)
+		flags := historyFlagsFromName(entry.Name())
+		bodyLines := 0
+		bodyBytes := 0
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		body := strings.TrimSpace(template.StripFrontmatter(string(data)))
+		if body != "" {
+			bodyLines = strings.Count(body, "\n") + 1
+			bodyBytes = len([]byte(body))
+		}
 		items = append(items, historyEntry{
-			Name:    entry.Name(),
-			Path:    filepath.Join(dir, entry.Name()),
-			ModTime: info.ModTime(),
-			Size:    info.Size(),
-			Tag:     tag,
+			Name:      entry.Name(),
+			Path:      path,
+			ModTime:   info.ModTime(),
+			Size:      info.Size(),
+			Tag:       tag,
+			Flags:     flags,
+			BodyLines: bodyLines,
+			BodyBytes: bodyBytes,
 		})
 	}
 	sort.Slice(items, func(i, j int) bool {
@@ -196,6 +215,16 @@ func formatSize(size int64) string {
 	return fmt.Sprintf("%.1f TB", value/1024)
 }
 
+func historyFlagsFromName(name string) string {
+	base := strings.TrimSuffix(name, filepath.Ext(name))
+	base = strings.TrimPrefix(base, "prompt-")
+	parts := strings.Split(base, "-")
+	if len(parts) <= 2 {
+		return ""
+	}
+	return strings.Join(parts[2:], "-")
+}
+
 func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool, dateTimeFormat string, theme ui.Theme) (string, string) {
 	const day = 24 * time.Hour
 	const week = 7 * day
@@ -213,7 +242,7 @@ func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool,
 		tagStyle := lipgloss.NewStyle().Foreground(theme.Accent)
 		title = tagStyle.Render("#"+tag) + "\n" + timeLine
 	}
-	description := formatHistoryFileLine(entry.Name, entry.Size)
+	description := formatHistoryFileLine(entry.Flags, entry.BodyLines, entry.BodyBytes)
 	return title, description
 }
 
@@ -289,11 +318,14 @@ func ordinalSuffix(day int) string {
 	}
 }
 
-func formatHistoryFileLine(name string, size int64) string {
-	displayName := strings.TrimPrefix(name, "prompter-")
-	displayName = strings.TrimSuffix(displayName, ".md")
-	sizeText := formatSize(size)
-	return fmt.Sprintf("%s • %s", displayName, sizeText)
+func formatHistoryFileLine(flags string, lines int, bytes int) string {
+	parts := make([]string, 0, 3)
+	if strings.TrimSpace(flags) != "" {
+		parts = append(parts, "flags: "+strings.TrimSpace(flags))
+	}
+	parts = append(parts, fmt.Sprintf("lines: %d", lines))
+	parts = append(parts, fmt.Sprintf("bytes: %d", bytes))
+	return strings.Join(parts, " • ")
 }
 
 func historyDateTimeLayout(value string) string {
