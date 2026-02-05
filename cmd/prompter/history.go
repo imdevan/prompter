@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -434,11 +435,23 @@ func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool
 	delegate := ui.NewListDelegate(theme, ui.ListDelegateOptions{
 		Height: 2,
 	})
+	delegate.ShortHelpFunc = func() []key.Binding {
+		return []key.Binding{
+			key.NewBinding(
+				key.WithKeys("󰌑"),
+				key.WithHelp("󰌑", "Open"),
+			),
+			key.NewBinding(
+				key.WithKeys("󰍃"),
+				key.WithHelp("󰍃", "Exit"),
+			),
+		}
+	}
 	model := list.New(items, delegate, 80, 20)
 	model.Title = "History"
 	model.Styles.Title = lipgloss.NewStyle().Foreground(theme.Primary).Bold(true)
 	model.SetShowStatusBar(false)
-	model.SetShowHelp(false)
+	model.SetShowHelp(true)
 	model.SetFilteringEnabled(true)
 	return historyModel{
 		list:     model,
@@ -486,7 +499,6 @@ func (m historyModel) View() string {
 		empty := lipgloss.NewStyle().Foreground(m.theme.BasePrompt).Render("No history entries found.")
 		return empty
 	}
-	help := lipgloss.NewStyle().Foreground(m.theme.Secondary).Render("Enter to open, Esc to exit.")
 	pathStyle := lipgloss.NewStyle().Foreground(m.theme.Secondary)
 	header := ""
 	if strings.TrimSpace(m.location) != "" {
@@ -496,5 +508,5 @@ func (m historyModel) View() string {
 		Padding(1, 2).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(m.theme.Border)
-	return frame.Render(header + m.list.View() + "\n\n" + help)
+	return frame.Render(header + m.list.View())
 }
