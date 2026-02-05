@@ -130,7 +130,6 @@ type historyEntry struct {
 	Size       int64
 	Tag        string
 	Flags      string
-	BodyLines  int
 	BodyBytes  int
 	BodyTokens int
 }
@@ -155,7 +154,6 @@ func readHistoryEntries(dir string) ([]historyEntry, error) {
 		path := filepath.Join(dir, entry.Name())
 		tag := extractHistoryTag(path)
 		flags := historyFlagsFromName(entry.Name())
-		bodyLines := 0
 		bodyBytes := 0
 		bodyTokens := 0
 		data, err := os.ReadFile(path)
@@ -164,7 +162,6 @@ func readHistoryEntries(dir string) ([]historyEntry, error) {
 		}
 		body := strings.TrimSpace(template.StripFrontmatter(string(data)))
 		if body != "" {
-			bodyLines = strings.Count(body, "\n") + 1
 			bodyBytes = len([]byte(body))
 			bodyTokens = len(body) / 4
 		}
@@ -175,7 +172,6 @@ func readHistoryEntries(dir string) ([]historyEntry, error) {
 			Size:       info.Size(),
 			Tag:        tag,
 			Flags:      flags,
-			BodyLines:  bodyLines,
 			BodyBytes:  bodyBytes,
 			BodyTokens: bodyTokens,
 		})
@@ -229,7 +225,7 @@ func historyFlagsFromName(name string) string {
 	return strings.Join(parts[2:], "-")
 }
 
-func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool, dateTimeFormat string, theme ui.Theme) (string, string) {
+func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool, dateTimeFormat string, theme ui.Theme, flagWidth int) (string, string) {
 	const day = 24 * time.Hour
 	const week = 7 * day
 	const month = 30 * day
@@ -246,7 +242,7 @@ func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool,
 		tagStyle := lipgloss.NewStyle().Foreground(theme.Accent)
 		title = tagStyle.Render("#"+tag) + "\n" + timeLine
 	}
-	description := formatHistoryFileLine(entry.Flags, entry.BodyLines, entry.BodyBytes, entry.BodyTokens)
+	description := formatHistoryFileLine(entry.Flags, entry.BodyBytes, entry.BodyTokens, flagWidth)
 	return title, description
 }
 
@@ -322,17 +318,49 @@ func ordinalSuffix(day int) string {
 	}
 }
 
-func formatHistoryFileLine(flags string, lines int, bytes int, tokens int) string {
-	parts := make([]string, 0, 4)
+func formatHistoryFileLine(flags string, bytes int, tokens int, flagWidth int) string {
+	parts := make([]string, 0, 3)
 	if strings.TrimSpace(flags) != "" {
-		parts = append(parts, " "+strings.TrimSpace(flags))
+		parts = append(parts, " "+formatFixedWidth(strings.TrimSpace(flags), flagWidth, false))
 	} else {
-		parts = append(parts, " _")
+		parts = append(parts, " "+formatFixedWidth("_", flagWidth, false))
 	}
-	parts = append(parts, fmt.Sprintf("󰦪 %d", lines))
+	parts = append(parts, fmt.Sprintf(" %s", formatFixedWidth(fmt.Sprintf("~%d", tokens), 5, true)))
 	parts = append(parts, formatSize(int64(bytes)))
-	parts = append(parts, fmt.Sprintf(" ~%d", tokens))
 	return strings.Join(parts, " • ")
+}
+
+func maxHistoryFlagWidth(entries []historyEntry) int {
+	const maxFlagWidth = 2
+	width := 1
+	for _, entry := range entries {
+		if strings.TrimSpace(entry.Flags) == "" {
+			continue
+		}
+		count := len([]rune(entry.Flags))
+		if count > width {
+			width = count
+		}
+		if width >= maxFlagWidth {
+			return maxFlagWidth
+		}
+	}
+	if width > maxFlagWidth {
+		return maxFlagWidth
+	}
+	return width
+}
+
+func formatFixedWidth(value string, width int, padLeft bool) string {
+	runes := []rune(value)
+	if len(runes) > width {
+		return value
+	}
+	value = string(runes)
+	if padLeft {
+		return fmt.Sprintf("%*s", width, value)
+	}
+	return fmt.Sprintf("%-*s", width, value)
 }
 
 func historyDateTimeLayout(value string) string {
@@ -512,8 +540,9 @@ type historyModel struct {
 func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool, dateTimeFormat string, theme ui.Theme) historyModel {
 	items := make([]list.Item, 0, len(entries))
 	now := time.Now()
+	flagWidth := maxHistoryFlagWidth(entries)
 	for _, entry := range entries {
-		title, description := formatHistoryDisplay(entry, now, enableTimeAgo, dateTimeFormat, theme)
+		title, description := formatHistoryDisplay(entry, now, enableTimeAgo, dateTimeFormat, theme, flagWidth)
 		items = append(items, historyListItem{
 			entry:       entry,
 			title:       title,
