@@ -124,7 +124,7 @@ flags:
 - [x] display history based on this algorithm
   - continue to use the default delegation function - no need for extra headers
 - [x] history_enable_time_ago defaults to true - add to config and config init
-- [ ] history_date_time format defaults to day, month - add to config and config init
+- [x] history_date_time format defaults to day, month - add to config and config init
 
 
 if history_enable_time_ago:
