@@ -127,8 +127,8 @@ flags:
 - [x] history_date_time format defaults to day, month - add to config and config init
 
 11.3 delete from list
-from history list view. hitting d, del, or backspace will prompt the user with a confirmation dialog to delete the item. 
-upon deletion the list should update but user should stay in history list view
+- [ ] from history list view. hitting d, del, or backspace will prompt the user with a confirmation dialog to delete the item. 
+  - upon deletion the list should update but user should stay in history list view
 
 
 if history_enable_time_ago:
@@ -162,7 +162,7 @@ file_name • 0 B -- light font as date is now. prompter- and .md omitted from f
 e.g. `primary=7 or other color type that lipgloss supports`
 
 12 Escape
-- [ ] quting a bubble tea program should end without a prompt being genrated
+- [ ] quting a bubble tea program should end without a prompt being generated
   only generate a prompt when a user completes the input flow. this applies to all bubble tea inputs
 
 
