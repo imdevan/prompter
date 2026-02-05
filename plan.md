@@ -150,17 +150,17 @@ date_time       -- in bold
 file_name • 0 B -- light font as date is now. prompter- and .md omitted from file name
 ```
 
-11) Release readiness
+11 Config update
+11.1 Color scheme change
+- [ ]replace colors with colors derived from config primary, secondary, accent base_prompt, border
+  - the colors default to their current color definitions
+- [ ] add to config defaults and init
+e.g. `primary=7 or other color type that lipgloss supports`
+
+12) Release readiness
  Status: pending
 - Notes: Cross-platform build, Homebrew template, docs updates.
 
-
-## v2.1 
-
-12. Config update
-12.1 Color scheme change
-- [ ]replace colors with colors derived from config primary, secondary, base_prompt
-- [ ] add to config defaults and init
 
 
 
