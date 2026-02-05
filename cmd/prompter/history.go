@@ -321,10 +321,10 @@ func ordinalSuffix(day int) string {
 func formatHistoryFileLine(flags string, lines int, bytes int) string {
 	parts := make([]string, 0, 3)
 	if strings.TrimSpace(flags) != "" {
-		parts = append(parts, "flags: "+strings.TrimSpace(flags))
+		parts = append(parts, " "+strings.TrimSpace(flags))
 	}
-	parts = append(parts, fmt.Sprintf("lines: %d", lines))
-	parts = append(parts, fmt.Sprintf("bytes: %d", bytes))
+	parts = append(parts, fmt.Sprintf("󰦪 %d", lines))
+	parts = append(parts, formatSize(int64(bytes)))
 	return strings.Join(parts, " • ")
 }
 
