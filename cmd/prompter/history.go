@@ -16,6 +16,7 @@ import (
 
 	"prompter-cli/internal/adapters/editor"
 	"prompter-cli/internal/config"
+	"prompter-cli/internal/domain"
 )
 
 func newHistoryCmd() *cobra.Command {
@@ -63,14 +64,18 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 	}
 	if len(args) == 1 {
 		index, err := parseHistoryIndex(args[0])
-		if err != nil {
-			return err
+		if err == nil {
+			if index <= 0 || index > len(entries) {
+				return fmt.Errorf("history index out of range (1-%d)", len(entries))
+			}
+			editorAdapter := editor.New(cfg.Editor)
+			return editorAdapter.Open(entries[index-1].Path)
 		}
-		if index <= 0 || index > len(entries) {
-			return fmt.Errorf("history index out of range (1-%d)", len(entries))
+		tag := strings.TrimSpace(args[0])
+		if tag != "" {
+			return runHistoryTagSearch(cmd, cfg, entries, tag)
 		}
-		editorAdapter := editor.New(cfg.Editor)
-		return editorAdapter.Open(entries[index-1].Path)
+		return err
 	}
 
 	model := newHistoryModel(entries, cfg.HistoryLocation)
@@ -95,6 +100,7 @@ type historyEntry struct {
 	Path    string
 	ModTime time.Time
 	Size    int64
+	Tag     string
 }
 
 func readHistoryEntries(dir string) ([]historyEntry, error) {
@@ -114,11 +120,13 @@ func readHistoryEntries(dir string) ([]historyEntry, error) {
 		if err != nil {
 			return nil, err
 		}
+		tag := extractHistoryTag(filepath.Join(dir, entry.Name()))
 		items = append(items, historyEntry{
 			Name:    entry.Name(),
 			Path:    filepath.Join(dir, entry.Name()),
 			ModTime: info.ModTime(),
 			Size:    info.Size(),
+			Tag:     tag,
 		})
 	}
 	sort.Slice(items, func(i, j int) bool {
@@ -138,6 +146,9 @@ func (h historyListItem) Title() string {
 func (h historyListItem) Description() string {
 	timestamp := h.entry.ModTime.Local().Format("2006-01-02 15:04")
 	size := formatSize(h.entry.Size)
+	if strings.TrimSpace(h.entry.Tag) != "" {
+		return fmt.Sprintf("%s • %s • tag:%s", timestamp, size, h.entry.Tag)
+	}
 	return fmt.Sprintf("%s • %s", timestamp, size)
 }
 
@@ -189,6 +200,64 @@ func parseHistoryIndex(value string) (int, error) {
 		return 0, fmt.Errorf("invalid history index %q", value)
 	}
 	return index, nil
+}
+
+func extractHistoryTag(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	lines := strings.Split(string(data), "\n")
+	if len(lines) < 3 || strings.TrimSpace(lines[0]) != "---" {
+		return ""
+	}
+	for _, line := range lines[1:] {
+		line = strings.TrimSpace(line)
+		if line == "---" {
+			break
+		}
+		key, value, ok := strings.Cut(line, ":")
+		if !ok {
+			continue
+		}
+		if strings.TrimSpace(strings.ToLower(key)) != "tag" {
+			continue
+		}
+		value = strings.TrimSpace(value)
+		value = strings.Trim(value, "\"")
+		return value
+	}
+	return ""
+}
+
+func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []historyEntry, tag string) error {
+	matches := make([]historyEntry, 0)
+	for _, entry := range entries {
+		if strings.EqualFold(strings.TrimSpace(entry.Tag), tag) {
+			matches = append(matches, entry)
+		}
+	}
+	if len(matches) == 0 {
+		return fmt.Errorf("no history entries found with tag %q", tag)
+	}
+	editorAdapter := editor.New(cfg.Editor)
+	if len(matches) == 1 {
+		return editorAdapter.Open(matches[0].Path)
+	}
+	model := newHistoryModel(matches, cfg.HistoryLocation)
+	program := tea.NewProgram(model, tea.WithoutSignalHandler())
+	result, err := program.Run()
+	if err != nil {
+		return err
+	}
+	m, ok := result.(historyModel)
+	if !ok {
+		return fmt.Errorf("unexpected history model result")
+	}
+	if strings.TrimSpace(m.selectedPath) == "" {
+		return nil
+	}
+	return editorAdapter.Open(m.selectedPath)
 }
 
 type historyModel struct {
