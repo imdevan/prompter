@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -37,14 +39,16 @@ func newHistoryCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&opts.yes, "yes", "y", false, "skip confirmation")
 	cmd.Flags().BoolVarP(&opts.keep, "keep-tags", "k", false, "keep tagged history entries when clearing")
 	cmd.Flags().BoolVarP(&opts.open, "editor", "e", false, "open history folder in editor")
+	cmd.Flags().BoolVarP(&opts.insert, "insert", "n", false, "open history entry for insertion")
 	return cmd
 }
 
 type historyOptions struct {
-	clear bool
-	yes   bool
-	keep  bool
-	open  bool
+	clear  bool
+	yes    bool
+	keep   bool
+	open   bool
+	insert bool
 }
 
 func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
@@ -60,8 +64,8 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 	if strings.TrimSpace(cfg.HistoryLocation) == "" {
 		return fmt.Errorf("history_location is not configured")
 	}
+	editorAdapter := editor.New(cfg.Editor)
 	if opts.open {
-		editorAdapter := editor.New(cfg.Editor)
 		return editorAdapter.Open(cfg.HistoryLocation)
 	}
 	if opts.clear {
@@ -95,8 +99,7 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 			if index <= 0 || index > len(entries) {
 				return fmt.Errorf("history index out of range (1-%d)", len(entries))
 			}
-			editorAdapter := editor.New(cfg.Editor)
-			return editorAdapter.Open(entries[index-1].Path)
+			return openHistoryForInsert(editorAdapter, entries[index-1].Path, opts.insert)
 		}
 		tag := strings.TrimSpace(args[0])
 		if tag != "" {
@@ -116,11 +119,15 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 	if !ok {
 		return fmt.Errorf("unexpected history model result")
 	}
-	if strings.TrimSpace(m.selectedPath) == "" {
+	path := strings.TrimSpace(m.selectedPath)
+	if strings.TrimSpace(m.insertPath) != "" {
+		path = m.insertPath
+		opts.insert = true
+	}
+	if path == "" {
 		return nil
 	}
-	editorAdapter := editor.New(cfg.Editor)
-	return editorAdapter.Open(m.selectedPath)
+	return openHistoryForInsert(editorAdapter, path, opts.insert)
 }
 
 type historyEntry struct {
@@ -399,6 +406,110 @@ func historyDateTimeLayout(value string) string {
 	}
 }
 
+func openHistoryForInsert(editorAdapter *editor.Adapter, path string, insert bool) error {
+	if !insert {
+		return editorAdapter.Open(path)
+	}
+	line, err := ensureHistoryInsertMarker(path)
+	if err != nil {
+		return err
+	}
+	command := resolveEditorCommand(editorAdapter)
+	if command == "" {
+		return editorAdapter.Open(path)
+	}
+	if isVimEditor(command) {
+		return openVimInsert(command, path, line)
+	}
+	return editorAdapter.Open(path)
+}
+
+func ensureHistoryInsertMarker(path string) (int, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return 0, err
+	}
+	content := string(data)
+	header, body, hasFrontmatter := splitHistoryFrontmatter(content)
+	body = strings.TrimLeft(body, "\n")
+	insertLine := 2
+	if hasFrontmatter {
+		insertLine = countLines(header) + 2
+	}
+	if strings.HasPrefix(body, "---") {
+		return insertLine, nil
+	}
+	insertBlock := "\n\n\n\n---\n\n"
+	if hasFrontmatter {
+		content = header + insertBlock + body
+	} else {
+		content = insertBlock + body
+	}
+	return insertLine, os.WriteFile(path, []byte(content), 0o644)
+}
+
+func splitHistoryFrontmatter(content string) (string, string, bool) {
+	trimmed := strings.TrimLeft(content, "\ufeff\r\n\t ")
+	lines := strings.Split(trimmed, "\n")
+	if len(lines) == 0 || strings.TrimRight(lines[0], "\r") != "---" {
+		return "", content, false
+	}
+	end := -1
+	for i := 1; i < len(lines); i++ {
+		if strings.TrimRight(lines[i], "\r") == "---" {
+			end = i
+			break
+		}
+	}
+	if end == -1 {
+		return "", content, false
+	}
+	header := strings.Join(lines[:end+1], "\n")
+	body := strings.Join(lines[end+1:], "\n")
+	body = strings.TrimLeft(body, "\r\n")
+	return header, body, true
+}
+
+func countLines(value string) int {
+	if value == "" {
+		return 0
+	}
+	return strings.Count(value, "\n") + 1
+}
+
+func resolveEditorCommand(editorAdapter *editor.Adapter) string {
+	command := strings.TrimSpace(editorAdapter.Command)
+	if command == "" {
+		command = strings.TrimSpace(os.Getenv("VISUAL"))
+	}
+	if command == "" {
+		command = strings.TrimSpace(os.Getenv("EDITOR"))
+	}
+	return command
+}
+
+func isVimEditor(command string) bool {
+	fields := strings.Fields(command)
+	if len(fields) == 0 {
+		return false
+	}
+	base := strings.ToLower(filepath.Base(fields[0]))
+	return strings.Contains(base, "nvim") || strings.Contains(base, "vim") || base == "vi"
+}
+
+func openVimInsert(command, path string, line int) error {
+	fields := strings.Fields(command)
+	if len(fields) == 0 {
+		return errors.New("editor command is required")
+	}
+	args := append(fields[1:], fmt.Sprintf("+call cursor(%d,1)", line), "+startinsert", path)
+	cmd := exec.Command(fields[0], args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
+}
+
 func clearHistory(dir string, keepTags bool) error {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -543,7 +654,7 @@ func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []histor
 	if strings.TrimSpace(m.selectedPath) == "" {
 		return nil
 	}
-	return editorAdapter.Open(m.selectedPath)
+	return openHistoryForInsert(editorAdapter, m.selectedPath, false)
 }
 
 type historyModel struct {
@@ -557,6 +668,7 @@ type historyModel struct {
 	deleteContent string
 	deleteItem    historyListItem
 	deleteError   string
+	insertPath    string
 }
 
 func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool, dateTimeFormat string, theme ui.Theme) historyModel {
@@ -584,6 +696,10 @@ func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool
 			key.NewBinding(
 				key.WithKeys("d", "D"),
 				key.WithHelp("d/D", "delete"),
+			),
+			key.NewBinding(
+				key.WithKeys("i", "insert"),
+				key.WithHelp("i/ins", "insert"),
 			),
 			key.NewBinding(
 				key.WithKeys("esc"),
@@ -626,6 +742,13 @@ func (m historyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		switch msg.String() {
+		case "i", "insert":
+			item, ok := m.list.SelectedItem().(historyListItem)
+			if !ok || item.entry.Path == "" {
+				return m, tea.Quit
+			}
+			m.insertPath = item.entry.Path
+			return m, tea.Quit
 		case "d", "backspace":
 			return m.startDeleteConfirm()
 		case "D", "delete":

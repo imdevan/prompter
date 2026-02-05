@@ -165,7 +165,7 @@ file_name • 0 B -- light font as date is now. prompter- and .md omitted from f
 
 11.5 insert from list
 
-- [ ] from history list hitting i/ins will open the prompt in configured editor with 
+- [x] from history list hitting i/ins will open the prompt in configured editor with 
   
     ```
     \n
@@ -173,7 +173,7 @@ file_name • 0 B -- light font as date is now. prompter- and .md omitted from f
     \n
     ```
     inserted above the last text in insert mode above that
-- [ ] or if history called with flag -n, --insert
+- [x] or if history called with flag -n, --insert
 
 11 Config update
 11.1 Color scheme change
