@@ -325,7 +325,7 @@ func formatHistoryFileLine(flags string, bytes int, tokens int, flagWidth int) s
 	} else {
 		parts = append(parts, " "+formatFixedWidth("_", flagWidth, false))
 	}
-	parts = append(parts, fmt.Sprintf(" %s", formatFixedWidth(fmt.Sprintf("~%d", tokens), 5, true)))
+	parts = append(parts, fmt.Sprintf("  %s", formatFixedWidth(fmt.Sprintf("~%d", tokens), 5, false)))
 	parts = append(parts, formatSize(int64(bytes)))
 	return strings.Join(parts, " • ")
 }
