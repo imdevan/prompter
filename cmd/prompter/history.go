@@ -124,14 +124,15 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 }
 
 type historyEntry struct {
-	Name      string
-	Path      string
-	ModTime   time.Time
-	Size      int64
-	Tag       string
-	Flags     string
-	BodyLines int
-	BodyBytes int
+	Name       string
+	Path       string
+	ModTime    time.Time
+	Size       int64
+	Tag        string
+	Flags      string
+	BodyLines  int
+	BodyBytes  int
+	BodyTokens int
 }
 
 func readHistoryEntries(dir string) ([]historyEntry, error) {
@@ -156,6 +157,7 @@ func readHistoryEntries(dir string) ([]historyEntry, error) {
 		flags := historyFlagsFromName(entry.Name())
 		bodyLines := 0
 		bodyBytes := 0
+		bodyTokens := 0
 		data, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
@@ -164,16 +166,18 @@ func readHistoryEntries(dir string) ([]historyEntry, error) {
 		if body != "" {
 			bodyLines = strings.Count(body, "\n") + 1
 			bodyBytes = len([]byte(body))
+			bodyTokens = len(body) / 4
 		}
 		items = append(items, historyEntry{
-			Name:      entry.Name(),
-			Path:      path,
-			ModTime:   info.ModTime(),
-			Size:      info.Size(),
-			Tag:       tag,
-			Flags:     flags,
-			BodyLines: bodyLines,
-			BodyBytes: bodyBytes,
+			Name:       entry.Name(),
+			Path:       path,
+			ModTime:    info.ModTime(),
+			Size:       info.Size(),
+			Tag:        tag,
+			Flags:      flags,
+			BodyLines:  bodyLines,
+			BodyBytes:  bodyBytes,
+			BodyTokens: bodyTokens,
 		})
 	}
 	sort.Slice(items, func(i, j int) bool {
@@ -242,7 +246,7 @@ func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool,
 		tagStyle := lipgloss.NewStyle().Foreground(theme.Accent)
 		title = tagStyle.Render("#"+tag) + "\n" + timeLine
 	}
-	description := formatHistoryFileLine(entry.Flags, entry.BodyLines, entry.BodyBytes)
+	description := formatHistoryFileLine(entry.Flags, entry.BodyLines, entry.BodyBytes, entry.BodyTokens)
 	return title, description
 }
 
@@ -318,8 +322,8 @@ func ordinalSuffix(day int) string {
 	}
 }
 
-func formatHistoryFileLine(flags string, lines int, bytes int) string {
-	parts := make([]string, 0, 3)
+func formatHistoryFileLine(flags string, lines int, bytes int, tokens int) string {
+	parts := make([]string, 0, 4)
 	if strings.TrimSpace(flags) != "" {
 		parts = append(parts, " "+strings.TrimSpace(flags))
 	} else {
@@ -327,6 +331,7 @@ func formatHistoryFileLine(flags string, lines int, bytes int) string {
 	}
 	parts = append(parts, fmt.Sprintf("󰦪 %d", lines))
 	parts = append(parts, formatSize(int64(bytes)))
+	parts = append(parts, fmt.Sprintf(" ~%d", tokens))
 	return strings.Join(parts, " • ")
 }
 
