@@ -11,6 +11,7 @@ type Config struct {
 	HistoryLocation         string            `toml:"history_location"`
 	HistoryClearCycle       string            `toml:"history_clear_cycle"`
 	HistoryFileFormat       string            `toml:"history_file_format"`
+	HistoryEnableTimeAgo    bool              `toml:"history_enable_time_ago"`
 	DisableHistory          bool              `toml:"disable_history"`
 	LocalPromptsLocation    string            `toml:"local_prompts_location"`
 	IncludeAgents           string            `toml:"include_agents"`
@@ -32,6 +33,7 @@ func DefaultConfig() Config {
 		HistoryLocation:         filepath.Join(cacheHome, "prompter", "history"),
 		HistoryClearCycle:       "never",
 		HistoryFileFormat:       "month-day_eu",
+		HistoryEnableTimeAgo:    true,
 		DisableHistory:          false,
 		LocalPromptsLocation:    "prompts",
 		IncludeAgents:           "all",

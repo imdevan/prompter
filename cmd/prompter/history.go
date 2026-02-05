@@ -99,7 +99,7 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 		return err
 	}
 
-	model := newHistoryModel(entries, cfg.HistoryLocation)
+	model := newHistoryModel(entries, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
@@ -189,7 +189,7 @@ func formatSize(size int64) string {
 	return fmt.Sprintf("%.1f TB", value/1024)
 }
 
-func formatHistoryDisplay(entry historyEntry, now time.Time) (string, string) {
+func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool) (string, string) {
 	const day = 24 * time.Hour
 	const week = 7 * day
 	const month = 30 * day
@@ -200,7 +200,7 @@ func formatHistoryDisplay(entry historyEntry, now time.Time) (string, string) {
 		age = 0
 	}
 
-	timeLine := formatHistoryTimeLine(entry.ModTime, age, week, month)
+	timeLine := formatHistoryTimeLine(entry.ModTime, age, week, month, enableTimeAgo)
 	fileLine := formatHistoryFileLine(entry.Name, entry.Size)
 
 	if tag == "" {
@@ -208,7 +208,7 @@ func formatHistoryDisplay(entry historyEntry, now time.Time) (string, string) {
 	}
 
 	tagStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
-	if age >= month {
+	if age >= month || !enableTimeAgo {
 		tagStyle = tagStyle.Bold(true)
 	}
 	title := tagStyle.Render("#" + tag)
@@ -216,9 +216,13 @@ func formatHistoryDisplay(entry historyEntry, now time.Time) (string, string) {
 	return title, description
 }
 
-func formatHistoryTimeLine(modTime time.Time, age time.Duration, week time.Duration, month time.Duration) string {
+func formatHistoryTimeLine(modTime time.Time, age time.Duration, week time.Duration, month time.Duration, enableTimeAgo bool) string {
 	bold := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("7"))
 	localTime := modTime.Local()
+
+	if !enableTimeAgo {
+		return bold.Render(localTime.Format("2 Jan 2006 15:04"))
+	}
 
 	switch {
 	case age < 24*time.Hour:
@@ -385,7 +389,7 @@ func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []histor
 	if len(matches) == 1 {
 		return editorAdapter.Open(matches[0].Path)
 	}
-	model := newHistoryModel(matches, cfg.HistoryLocation)
+	model := newHistoryModel(matches, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
@@ -407,11 +411,11 @@ type historyModel struct {
 	selectedPath string
 }
 
-func newHistoryModel(entries []historyEntry, location string) historyModel {
+func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool) historyModel {
 	items := make([]list.Item, 0, len(entries))
 	now := time.Now()
 	for _, entry := range entries {
-		title, description := formatHistoryDisplay(entry, now)
+		title, description := formatHistoryDisplay(entry, now, enableTimeAgo)
 		items = append(items, historyListItem{
 			entry:       entry,
 			title:       title,
