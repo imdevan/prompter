@@ -11,14 +11,22 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"prompter-cli/internal/domain"
+	"prompter-cli/internal/ui"
 )
 
 // Adapter implements interactive UI using Bubble Tea + Bubbles.
-type Adapter struct{}
+type Adapter struct {
+	Theme ui.Theme
+}
+
+// NewAdapter returns a Bubble Tea adapter configured with theme colors.
+func NewAdapter(cfg domain.Config) Adapter {
+	return Adapter{Theme: ui.ThemeFromConfig(cfg)}
+}
 
 // AskBasePrompt prompts for the base prompt.
-func (Adapter) AskBasePrompt(defaultValue, note string) (string, error) {
-	model := newTextInputModel("Base prompt", "Enter your base prompt", defaultValue, note)
+func (a Adapter) AskBasePrompt(defaultValue, note string) (string, error) {
+	model := newTextInputModel("Base prompt", "Enter your base prompt", defaultValue, note, a.Theme)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
@@ -31,8 +39,8 @@ func (Adapter) AskBasePrompt(defaultValue, note string) (string, error) {
 }
 
 // SelectTemplates prompts for template selection.
-func (Adapter) SelectTemplates(templates []domain.Template, basePrompt string, preselected []string) ([]domain.Template, error) {
-	model := newTemplateSelectModel(templates, basePrompt, preselected)
+func (a Adapter) SelectTemplates(templates []domain.Template, basePrompt string, preselected []string) ([]domain.Template, error) {
+	model := newTemplateSelectModel(templates, basePrompt, preselected, a.Theme)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
@@ -50,22 +58,24 @@ type textInputModel struct {
 	note        string
 	input       textinput.Model
 	ready       bool
+	theme       ui.Theme
 }
 
-func newTextInputModel(title, description, defaultValue, note string) textInputModel {
+func newTextInputModel(title, description, defaultValue, note string, theme ui.Theme) textInputModel {
 	input := textinput.New()
 	input.Placeholder = description
 	input.SetValue(defaultValue)
 	input.Focus()
 	input.CharLimit = 2000
 	input.Width = 80
-	input.TextStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
+	input.TextStyle = lipgloss.NewStyle().Foreground(theme.BasePrompt)
 
 	return textInputModel{
 		title:       title,
 		description: description,
 		note:        note,
 		input:       input,
+		theme:       theme,
 	}
 }
 
@@ -89,12 +99,12 @@ func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m textInputModel) View() string {
-	title := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2")).Render(m.title)
-	description := lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render(m.description)
-	body := lipgloss.NewStyle().Padding(1, 2).Border(lipgloss.RoundedBorder()).BorderForeground(lipgloss.Color("8")).Render(m.input.View())
+	title := lipgloss.NewStyle().Bold(true).Foreground(m.theme.Primary).Render(m.title)
+	description := lipgloss.NewStyle().Foreground(m.theme.Secondary).Render(m.description)
+	body := lipgloss.NewStyle().Padding(1, 2).Border(lipgloss.RoundedBorder()).BorderForeground(m.theme.Border).Render(m.input.View())
 	parts := []string{title, description}
 	if strings.TrimSpace(m.note) != "" {
-		note := lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Render(m.note)
+		note := lipgloss.NewStyle().Foreground(m.theme.Secondary).Render(m.note)
 		parts = append(parts, note)
 	}
 	parts = append(parts, body, "Press Enter to continue.")
@@ -109,6 +119,7 @@ type templateSelectModel struct {
 	basePrompt string
 	barIndex   int
 	focus      focusArea
+	theme      ui.Theme
 }
 
 type focusArea int
@@ -118,7 +129,7 @@ const (
 	focusBar
 )
 
-func newTemplateSelectModel(templates []domain.Template, basePrompt string, preselected []string) templateSelectModel {
+func newTemplateSelectModel(templates []domain.Template, basePrompt string, preselected []string, theme ui.Theme) templateSelectModel {
 	items := make([]list.Item, 0, len(templates))
 	for i, tmpl := range templates {
 		items = append(items, templateItem{template: tmpl, index: i})
@@ -142,8 +153,8 @@ func newTemplateSelectModel(templates []domain.Template, basePrompt string, pres
 		order = append(order, idx)
 	}
 	defaultDelegate := list.NewDefaultDelegate()
-	defaultDelegate.Styles.SelectedTitle = defaultDelegate.Styles.SelectedTitle.Foreground(lipgloss.Color("2")).Bold(true)
-	defaultDelegate.Styles.SelectedDesc = defaultDelegate.Styles.SelectedDesc.Foreground(lipgloss.Color("5"))
+	defaultDelegate.Styles.SelectedTitle = defaultDelegate.Styles.SelectedTitle.Foreground(theme.Primary).Bold(true)
+	defaultDelegate.Styles.SelectedDesc = defaultDelegate.Styles.SelectedDesc.Foreground(theme.Secondary)
 	delegate := templateItemDelegate{
 		DefaultDelegate: defaultDelegate,
 		selecteds:       selecteds,
@@ -154,7 +165,7 @@ func newTemplateSelectModel(templates []domain.Template, basePrompt string, pres
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowPagination(true)
-	l.Styles.Title = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
+	l.Styles.Title = lipgloss.NewStyle().Foreground(theme.Primary).Bold(true)
 
 	return templateSelectModel{
 		list:       l,
@@ -164,6 +175,7 @@ func newTemplateSelectModel(templates []domain.Template, basePrompt string, pres
 		basePrompt: strings.TrimSpace(basePrompt),
 		barIndex:   0,
 		focus:      focusList,
+		theme:      theme,
 	}
 }
 
@@ -215,12 +227,12 @@ func (m templateSelectModel) View() string {
 	if len(m.templates) == 0 {
 		return "No templates available."
 	}
-	header := lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render("Space to toggle, Tab to focus summary, Enter to continue.")
+	header := lipgloss.NewStyle().Foreground(m.theme.Secondary).Render("Space to toggle, Tab to focus summary, Enter to continue.")
 	summary := m.renderSelectionBar()
 	return lipgloss.NewStyle().
 		Padding(1, 2).
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("8")).
+		BorderForeground(m.theme.Border).
 		Render(header + "\n\n" + summary + "\n\n" + m.list.View())
 }
 
@@ -327,25 +339,25 @@ func (m templateSelectModel) selectionEntries() []selectionEntry {
 func (m templateSelectModel) renderSelectionBar() string {
 	entries := m.selectionEntries()
 	if len(entries) == 0 {
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("No templates selected yet.")
+		return lipgloss.NewStyle().Foreground(m.theme.Border).Render("No templates selected yet.")
 	}
 	normal := lipgloss.NewStyle().
 		Padding(0, 1).
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("7")).
-		Foreground(lipgloss.Color("7"))
+		BorderForeground(m.theme.Border).
+		Foreground(m.theme.BasePrompt)
 	focused := lipgloss.NewStyle().
 		Padding(0, 1).
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("2")).
-		Foreground(lipgloss.Color("0")).
-		Background(lipgloss.Color("2")).
+		BorderForeground(m.theme.Primary).
+		Foreground(m.theme.BasePrompt).
+		Background(m.theme.Primary).
 		Bold(true)
 	basePromptStyle := lipgloss.NewStyle().
 		Padding(0, 1).
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("3")).
-		Foreground(lipgloss.Color("3"))
+		BorderForeground(m.theme.BasePrompt).
+		Foreground(m.theme.BasePrompt)
 	parts := make([]string, 0, len(entries))
 	for i, entry := range entries {
 		chip := entry.label

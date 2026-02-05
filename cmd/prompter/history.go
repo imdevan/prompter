@@ -18,6 +18,7 @@ import (
 	"prompter-cli/internal/adapters/editor"
 	"prompter-cli/internal/config"
 	"prompter-cli/internal/domain"
+	"prompter-cli/internal/ui"
 )
 
 func newHistoryCmd() *cobra.Command {
@@ -99,7 +100,8 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 		return err
 	}
 
-	model := newHistoryModel(entries, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo, cfg.HistoryDateTime)
+	theme := ui.ThemeFromConfig(cfg)
+	model := newHistoryModel(entries, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo, cfg.HistoryDateTime, theme)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
@@ -189,7 +191,7 @@ func formatSize(size int64) string {
 	return fmt.Sprintf("%.1f TB", value/1024)
 }
 
-func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool, dateTimeFormat string) (string, string) {
+func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool, dateTimeFormat string, theme ui.Theme) (string, string) {
 	const day = 24 * time.Hour
 	const week = 7 * day
 	const month = 30 * day
@@ -200,14 +202,14 @@ func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool,
 		age = 0
 	}
 
-	timeLine := formatHistoryTimeLine(entry.ModTime, age, week, month, enableTimeAgo, dateTimeFormat)
-	fileLine := formatHistoryFileLine(entry.Name, entry.Size)
+	timeLine := formatHistoryTimeLine(entry.ModTime, age, week, month, enableTimeAgo, dateTimeFormat, theme)
+	fileLine := formatHistoryFileLine(entry.Name, entry.Size, theme)
 
 	if tag == "" {
 		return timeLine, fileLine
 	}
 
-	tagStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
+	tagStyle := lipgloss.NewStyle().Foreground(theme.Primary)
 	if age >= month || !enableTimeAgo {
 		tagStyle = tagStyle.Bold(true)
 	}
@@ -216,8 +218,8 @@ func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool,
 	return title, description
 }
 
-func formatHistoryTimeLine(modTime time.Time, age time.Duration, week time.Duration, month time.Duration, enableTimeAgo bool, dateTimeFormat string) string {
-	bold := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("7"))
+func formatHistoryTimeLine(modTime time.Time, age time.Duration, week time.Duration, month time.Duration, enableTimeAgo bool, dateTimeFormat string, theme ui.Theme) string {
+	bold := lipgloss.NewStyle().Bold(true).Foreground(theme.BasePrompt)
 	localTime := modTime.Local()
 
 	if !enableTimeAgo {
@@ -289,12 +291,12 @@ func ordinalSuffix(day int) string {
 	}
 }
 
-func formatHistoryFileLine(name string, size int64) string {
+func formatHistoryFileLine(name string, size int64, theme ui.Theme) string {
 	displayName := strings.TrimPrefix(name, "prompter-")
 	displayName = strings.TrimSuffix(displayName, ".md")
 	sizeText := formatSize(size)
 	return lipgloss.NewStyle().
-		Foreground(lipgloss.Color("8")).
+		Foreground(theme.Border).
 		Render(fmt.Sprintf("%s • %s", displayName, sizeText))
 }
 
@@ -403,7 +405,8 @@ func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []histor
 	if len(matches) == 1 {
 		return editorAdapter.Open(matches[0].Path)
 	}
-	model := newHistoryModel(matches, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo, cfg.HistoryDateTime)
+	theme := ui.ThemeFromConfig(cfg)
+	model := newHistoryModel(matches, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo, cfg.HistoryDateTime, theme)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
@@ -423,13 +426,14 @@ type historyModel struct {
 	list         list.Model
 	location     string
 	selectedPath string
+	theme        ui.Theme
 }
 
-func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool, dateTimeFormat string) historyModel {
+func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool, dateTimeFormat string, theme ui.Theme) historyModel {
 	items := make([]list.Item, 0, len(entries))
 	now := time.Now()
 	for _, entry := range entries {
-		title, description := formatHistoryDisplay(entry, now, enableTimeAgo, dateTimeFormat)
+		title, description := formatHistoryDisplay(entry, now, enableTimeAgo, dateTimeFormat, theme)
 		items = append(items, historyListItem{
 			entry:       entry,
 			title:       title,
@@ -443,20 +447,21 @@ func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool
 	delegate.Styles.SelectedTitle = lipgloss.NewStyle().
 		Padding(0, 0, 0, 1).
 		Border(lipgloss.NormalBorder(), false, false, false, true).
-		BorderForeground(lipgloss.Color("2"))
+		BorderForeground(theme.Accent)
 	delegate.Styles.SelectedDesc = lipgloss.NewStyle().
 		Padding(0, 0, 0, 1).
 		Border(lipgloss.NormalBorder(), false, false, false, true).
-		BorderForeground(lipgloss.Color("2"))
+		BorderForeground(theme.Accent)
 	model := list.New(items, delegate, 80, 20)
 	model.Title = "History"
-	model.Styles.Title = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
+	model.Styles.Title = lipgloss.NewStyle().Foreground(theme.Primary).Bold(true)
 	model.SetShowStatusBar(false)
 	model.SetShowHelp(false)
 	model.SetFilteringEnabled(true)
 	return historyModel{
 		list:     model,
 		location: location,
+		theme:    theme,
 	}
 }
 
@@ -496,11 +501,11 @@ func (m historyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m historyModel) View() string {
 	if len(m.list.Items()) == 0 {
-		empty := lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Render("No history entries found.")
+		empty := lipgloss.NewStyle().Foreground(m.theme.BasePrompt).Render("No history entries found.")
 		return empty
 	}
-	help := lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Render("Enter to open, Esc to exit.")
-	pathStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
+	help := lipgloss.NewStyle().Foreground(m.theme.Secondary).Render("Enter to open, Esc to exit.")
+	pathStyle := lipgloss.NewStyle().Foreground(m.theme.Secondary)
 	header := ""
 	if strings.TrimSpace(m.location) != "" {
 		header = pathStyle.Render(m.location) + "\n\n"
@@ -508,6 +513,6 @@ func (m historyModel) View() string {
 	frame := lipgloss.NewStyle().
 		Padding(1, 2).
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("8"))
+		BorderForeground(m.theme.Border)
 	return frame.Render(header + m.list.View() + "\n\n" + help)
 }

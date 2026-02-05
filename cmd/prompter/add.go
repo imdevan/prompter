@@ -17,6 +17,7 @@ import (
 	"prompter-cli/internal/config"
 	"prompter-cli/internal/domain"
 	"prompter-cli/internal/template"
+	"prompter-cli/internal/ui"
 )
 
 type addOptions struct {
@@ -61,7 +62,8 @@ func runAdd(cmd *cobra.Command, opts *addOptions, args []string) error {
 	}
 
 	if opts.interactive {
-		name, content, err = promptAddTemplate(name, content)
+		theme := ui.ThemeFromConfig(cfg)
+		name, content, err = promptAddTemplate(name, content, theme)
 		if err != nil {
 			return err
 		}
@@ -136,10 +138,11 @@ type addTemplateModel struct {
 	nameInput    textinput.Model
 	contentInput textarea.Model
 	errMessage   string
+	theme        ui.Theme
 }
 
-func promptAddTemplate(defaultName, defaultContent string) (string, string, error) {
-	model := newAddTemplateModel(defaultName, defaultContent)
+func promptAddTemplate(defaultName, defaultContent string, theme ui.Theme) (string, string, error) {
+	model := newAddTemplateModel(defaultName, defaultContent, theme)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
@@ -151,7 +154,7 @@ func promptAddTemplate(defaultName, defaultContent string) (string, string, erro
 	return "", "", fmt.Errorf("unexpected model result")
 }
 
-func newAddTemplateModel(defaultName, defaultContent string) addTemplateModel {
+func newAddTemplateModel(defaultName, defaultContent string, theme ui.Theme) addTemplateModel {
 	nameInput := textinput.New()
 	nameInput.Placeholder = "template-name"
 	nameInput.CharLimit = 200
@@ -171,6 +174,7 @@ func newAddTemplateModel(defaultName, defaultContent string) addTemplateModel {
 		step:         addTemplateNameStep,
 		nameInput:    nameInput,
 		contentInput: contentInput,
+		theme:        theme,
 	}
 }
 
@@ -217,22 +221,22 @@ func (m addTemplateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m addTemplateModel) View() string {
-	title := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2")).Render("Add template")
+	title := lipgloss.NewStyle().Bold(true).Foreground(m.theme.Primary).Render("Add template")
 	help := "Enter name, then press Enter. Add content, then press Ctrl+S to save."
 	if m.errMessage != "" {
-		help = lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Render(m.errMessage)
+		help = lipgloss.NewStyle().Foreground(m.theme.Accent).Render(m.errMessage)
 	} else {
-		help = lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render(help)
+		help = lipgloss.NewStyle().Foreground(m.theme.Secondary).Render(help)
 	}
 
 	nameBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("8")).
+		BorderForeground(m.theme.Border).
 		Padding(0, 1).
 		Render(m.nameInput.View())
 	contentBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("8")).
+		BorderForeground(m.theme.Border).
 		Padding(0, 1).
 		Render(m.contentInput.View())
 

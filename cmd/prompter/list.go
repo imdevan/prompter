@@ -12,6 +12,7 @@ import (
 
 	"prompter-cli/internal/config"
 	"prompter-cli/internal/domain"
+	"prompter-cli/internal/ui"
 	"prompter-cli/internal/workflow"
 )
 
@@ -50,21 +51,22 @@ func runList(cmd *cobra.Command, opts *listOptions) error {
 		return err
 	}
 
-	content := renderTemplateGroups(groups)
+	theme := ui.ThemeFromConfig(cfg)
+	content := renderTemplateGroups(groups, theme)
 	_, err = fmt.Fprintln(cmd.OutOrStdout(), content)
 	return err
 }
 
-func renderTemplateGroups(groups []workflow.TemplateGroup) string {
+func renderTemplateGroups(groups []workflow.TemplateGroup, theme ui.Theme) string {
 	var builder strings.Builder
 	if len(groups) == 0 {
 		builder.WriteString("No template locations configured.")
 		return builder.String()
 	}
 
-	groupStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2"))
-	pathStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
-	descStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("7"))
+	groupStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.Primary)
+	pathStyle := lipgloss.NewStyle().Foreground(theme.Secondary)
+	descStyle := lipgloss.NewStyle().Foreground(theme.BasePrompt)
 
 	for i, group := range groups {
 		if i > 0 {
@@ -76,13 +78,13 @@ func renderTemplateGroups(groups []workflow.TemplateGroup) string {
 			builder.WriteString(pathStyle.Render(group.Location))
 		}
 		builder.WriteString("\n\n")
-		builder.WriteString(renderTemplateList(group.Templates, descStyle))
+		builder.WriteString(renderTemplateList(group.Templates, descStyle, theme))
 	}
 
 	return builder.String()
 }
 
-func renderTemplateList(templates []domain.Template, descStyle lipgloss.Style) string {
+func renderTemplateList(templates []domain.Template, descStyle lipgloss.Style, theme ui.Theme) string {
 	if len(templates) == 0 {
 		return descStyle.Render("No templates found.")
 	}
@@ -93,13 +95,14 @@ func renderTemplateList(templates []domain.Template, descStyle lipgloss.Style) s
 			flagLabel:   formatFlagLabel(tmpl),
 			description: strings.TrimSpace(tmpl.Description),
 			pinned:      tmpl.Pinned,
+			theme:       theme,
 		})
 	}
 	delegate := list.NewDefaultDelegate()
 	delegate.Styles.SelectedTitle = delegate.Styles.NormalTitle
 	delegate.Styles.SelectedDesc = delegate.Styles.NormalDesc
-	delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.Foreground(lipgloss.Color("5")).Bold(true)
-	delegate.Styles.NormalDesc = delegate.Styles.NormalDesc.Foreground(lipgloss.Color("7"))
+	delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.Foreground(theme.Secondary).Bold(true)
+	delegate.Styles.NormalDesc = delegate.Styles.NormalDesc.Foreground(theme.BasePrompt)
 
 	model := list.New(items, delegate, 80, len(items)+2)
 	model.SetShowStatusBar(false)
@@ -130,11 +133,12 @@ type templateListItem struct {
 	flagLabel   string
 	description string
 	pinned      bool
+	theme       ui.Theme
 }
 
 func (t templateListItem) Title() string {
-	nameStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true)
-	flagStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("13"))
+	nameStyle := lipgloss.NewStyle().Foreground(t.theme.Secondary).Bold(true)
+	flagStyle := lipgloss.NewStyle().Foreground(t.theme.Accent)
 	parts := []string{nameStyle.Render(t.display)}
 	if t.pinned {
 		parts = append(parts, flagStyle.Render("[pinned]"))
@@ -143,8 +147,8 @@ func (t templateListItem) Title() string {
 }
 
 func (t templateListItem) Description() string {
-	descStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("7"))
-	flagStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("13"))
+	descStyle := lipgloss.NewStyle().Foreground(t.theme.BasePrompt)
+	flagStyle := lipgloss.NewStyle().Foreground(t.theme.Accent)
 	parts := []string{}
 	if t.description != "" {
 		parts = append(parts, descStyle.Render(t.description))

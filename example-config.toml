@@ -14,6 +14,14 @@ directory_strategy = "git"
 # target options: clipboard, stdout, file:/path, editor
 target = "clipboard"
 
+# Colors
+# Colors support named, numeric, or hex values (ex: 7, 13, "#ff8800").
+primary = "2"
+secondary = "5"
+accent = "13"
+base_prompt = "7"
+border = "8"
+
 # CLI behavior
 interactive_default = true
 include_builtin_shorthand = true

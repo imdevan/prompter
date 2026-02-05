@@ -76,7 +76,7 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		} else if agentTemplate != nil {
 			allTemplates = append(allTemplates, *agentTemplate)
 		}
-		prompter := interactive.New(bubbletea.Adapter{})
+		prompter := interactive.New(bubbletea.NewAdapter(cfg))
 		note := ""
 		if opts.clipboard {
 			note = "Clipboard content will be appended."

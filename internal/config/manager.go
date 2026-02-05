@@ -97,6 +97,11 @@ type partialConfig struct {
 	Editor                  *string           `toml:"editor"`
 	DirectoryStrategy       *string           `toml:"directory_strategy"`
 	Target                  *string           `toml:"target"`
+	Primary                 *string           `toml:"primary"`
+	Secondary               *string           `toml:"secondary"`
+	Accent                  *string           `toml:"accent"`
+	BasePrompt              *string           `toml:"base_prompt"`
+	Border                  *string           `toml:"border"`
 	InteractiveDefault      *bool             `toml:"interactive_default"`
 	IncludeBuiltinShorthand *bool             `toml:"include_builtin_shorthand"`
 	RemapShortFlags         map[string]string `toml:"remap_short_flags"`
@@ -153,6 +158,21 @@ func applyPartial(config *domain.Config, partial *partialConfig) {
 	}
 	if partial.Target != nil {
 		config.Target = *partial.Target
+	}
+	if partial.Primary != nil {
+		config.Primary = *partial.Primary
+	}
+	if partial.Secondary != nil {
+		config.Secondary = *partial.Secondary
+	}
+	if partial.Accent != nil {
+		config.Accent = *partial.Accent
+	}
+	if partial.BasePrompt != nil {
+		config.BasePrompt = *partial.BasePrompt
+	}
+	if partial.Border != nil {
+		config.Border = *partial.Border
 	}
 	if partial.InteractiveDefault != nil {
 		config.InteractiveDefault = *partial.InteractiveDefault

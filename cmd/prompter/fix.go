@@ -14,6 +14,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
+
+	"prompter-cli/internal/config"
+	"prompter-cli/internal/ui"
 )
 
 func newFixCmd() *cobra.Command {
@@ -24,6 +27,16 @@ func newFixCmd() *cobra.Command {
 		Short: "Generate a fix prompt from command output",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			manager := config.NewManager(cwd)
+			cfg, err := manager.LoadWithOverride(opts.configPath)
+			if err != nil {
+				return err
+			}
+			theme := ui.ThemeFromConfig(cfg)
 			piped, err := readStdinIfPiped(os.Stdin)
 			if err != nil {
 				return err
@@ -34,7 +47,7 @@ func newFixCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				output, err = runCommandWithStatus(cmd.OutOrStdout(), lastCommand)
+				output, err = runCommandWithStatus(cmd.OutOrStdout(), lastCommand, theme)
 				if err != nil {
 					return err
 				}
@@ -72,10 +85,11 @@ type fixRunModel struct {
 	output  string
 	err     error
 	done    bool
+	theme   ui.Theme
 }
 
-func runCommandWithStatus(out io.Writer, command string) (string, error) {
-	model := newFixRunModel(command)
+func runCommandWithStatus(out io.Writer, command string, theme ui.Theme) (string, error) {
+	model := newFixRunModel(command, theme)
 	program := tea.NewProgram(model, tea.WithOutput(out), tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
@@ -90,13 +104,14 @@ func runCommandWithStatus(out io.Writer, command string) (string, error) {
 	return "", errors.New("unexpected model result")
 }
 
-func newFixRunModel(command string) fixRunModel {
+func newFixRunModel(command string, theme ui.Theme) fixRunModel {
 	spin := spinner.New(spinner.WithSpinner(spinner.Line))
-	spin.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
+	spin.Style = lipgloss.NewStyle().Foreground(theme.Primary)
 	return fixRunModel{
 		command: command,
 		spinner: spin,
 		watch:   stopwatch.New(),
+		theme:   theme,
 	}
 }
 
@@ -132,8 +147,8 @@ func (m fixRunModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m fixRunModel) View() string {
-	commandStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("7"))
-	timeStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
+	commandStyle := lipgloss.NewStyle().Foreground(m.theme.BasePrompt)
+	timeStyle := lipgloss.NewStyle().Foreground(m.theme.Secondary)
 	title := "Running previous command"
 	if m.done {
 		title = "Finished running previous command"

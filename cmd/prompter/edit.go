@@ -13,6 +13,7 @@ import (
 
 	"prompter-cli/internal/adapters/editor"
 	"prompter-cli/internal/config"
+	"prompter-cli/internal/ui"
 )
 
 func newEditCmd() *cobra.Command {
@@ -65,7 +66,8 @@ func runEdit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	confirm, err := promptCreateTemplate(name)
+	theme := ui.ThemeFromConfig(cfg)
+	confirm, err := promptCreateTemplate(name, theme)
 	if err != nil {
 		return err
 	}
@@ -111,11 +113,13 @@ type confirmModel struct {
 	prompt  string
 	choice  bool
 	decided bool
+	theme   ui.Theme
 }
 
-func promptCreateTemplate(name string) (bool, error) {
+func promptCreateTemplate(name string, theme ui.Theme) (bool, error) {
 	model := confirmModel{
 		prompt: fmt.Sprintf("Template %q not found. Create it? (y/n)", name),
+		theme:  theme,
 	}
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
@@ -150,8 +154,8 @@ func (m confirmModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m confirmModel) View() string {
-	title := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2")).Render("Create template?")
-	prompt := lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Render(m.prompt)
-	help := lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Render("Press y or n.")
+	title := lipgloss.NewStyle().Bold(true).Foreground(m.theme.Primary).Render("Create template?")
+	prompt := lipgloss.NewStyle().Foreground(m.theme.Secondary).Render(m.prompt)
+	help := lipgloss.NewStyle().Foreground(m.theme.BasePrompt).Render("Press y or n.")
 	return strings.Join([]string{title, prompt, help}, "\n")
 }
