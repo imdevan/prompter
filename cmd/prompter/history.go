@@ -322,6 +322,8 @@ func formatHistoryFileLine(flags string, lines int, bytes int) string {
 	parts := make([]string, 0, 3)
 	if strings.TrimSpace(flags) != "" {
 		parts = append(parts, " "+strings.TrimSpace(flags))
+	} else {
+		parts = append(parts, " _")
 	}
 	parts = append(parts, fmt.Sprintf("󰦪 %d", lines))
 	parts = append(parts, formatSize(int64(bytes)))
