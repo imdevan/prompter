@@ -415,10 +415,16 @@ func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []histor
 }
 
 type historyModel struct {
-	list         list.Model
-	location     string
-	selectedPath string
-	theme        ui.Theme
+	list          list.Model
+	location      string
+	selectedPath  string
+	theme         ui.Theme
+	deleteMode    bool
+	deleteIndex   int
+	deleteCount   int
+	deleteContent string
+	deleteItem    historyListItem
+	deleteError   string
 }
 
 func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool, dateTimeFormat string, theme ui.Theme) historyModel {
@@ -442,8 +448,12 @@ func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool
 				key.WithHelp("󰌑", "Open"),
 			),
 			key.NewBinding(
-				key.WithKeys("󰍃"),
-				key.WithHelp("󰍃", "Exit"),
+				key.WithKeys("d", "D"),
+				key.WithHelp("d/D", "delete"),
+			),
+			key.NewBinding(
+				key.WithKeys("esc"),
+				key.WithHelp("esc", "Exit"),
 			),
 		}
 	}
@@ -467,6 +477,9 @@ func (m historyModel) Init() tea.Cmd {
 func (m historyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if m.deleteMode {
+			return m.updateDelete(msg)
+		}
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
@@ -478,16 +491,14 @@ func (m historyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.selectedPath = item.entry.Path
 			return m, tea.Quit
 		}
+		switch msg.String() {
+		case "d", "backspace":
+			return m.startDeleteConfirm()
+		case "D", "delete":
+			return m.deleteSelected()
+		}
 	case tea.WindowSizeMsg:
-		width := msg.Width - 4
-		height := msg.Height - 6
-		if width < 40 {
-			width = 40
-		}
-		if height < 8 {
-			height = 8
-		}
-		m.list.SetSize(width, height)
+		m.applySize(msg.Width, msg.Height)
 	}
 	var cmd tea.Cmd
 	m.list, cmd = m.list.Update(msg)
@@ -508,5 +519,130 @@ func (m historyModel) View() string {
 		Padding(1, 2).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(m.theme.Border)
-	return frame.Render(header + m.list.View())
+	if !m.deleteMode {
+		return frame.Render(header + m.list.View())
+	}
+	return frame.Render(m.deleteView())
+}
+
+func (m historyModel) applySize(width, height int) {
+	listWidth := width - 4
+	listHeight := height - 6
+	if listWidth < 40 {
+		listWidth = 40
+	}
+	if listHeight < 8 {
+		listHeight = 8
+	}
+	m.list.SetSize(listWidth, listHeight)
+}
+
+func (m historyModel) startDeleteConfirm() (tea.Model, tea.Cmd) {
+	item, ok := m.list.SelectedItem().(historyListItem)
+	if !ok || item.entry.Path == "" {
+		return m, nil
+	}
+	content, err := loadHistoryPrompt(item.entry.Path)
+	m.deleteMode = true
+	m.deleteItem = item
+	m.deleteIndex = m.list.Index()
+	m.deleteCount = len(m.list.VisibleItems())
+	m.deleteContent = content
+	m.deleteError = ""
+	if err != nil {
+		m.deleteError = err.Error()
+	}
+	return m, nil
+}
+
+func (m historyModel) deleteSelected() (tea.Model, tea.Cmd) {
+	item, ok := m.list.SelectedItem().(historyListItem)
+	if !ok || item.entry.Path == "" {
+		return m, nil
+	}
+	return m.deleteItemPath(item, m.list.Index(), len(m.list.VisibleItems()))
+}
+
+func (m historyModel) deleteItemPath(item historyListItem, visibleIndex int, visibleCount int) (tea.Model, tea.Cmd) {
+	if err := os.Remove(item.entry.Path); err != nil {
+		m.deleteError = err.Error()
+		m.deleteMode = true
+		m.deleteItem = item
+		m.deleteIndex = visibleIndex
+		m.deleteCount = visibleCount
+		return m, nil
+	}
+	m.deleteMode = false
+	m.deleteError = ""
+	m.deleteContent = ""
+	items := m.list.Items()
+	nextItems := make([]list.Item, 0, len(items))
+	for _, listItem := range items {
+		historyItem, ok := listItem.(historyListItem)
+		if ok && historyItem.entry.Path == item.entry.Path {
+			continue
+		}
+		nextItems = append(nextItems, listItem)
+	}
+	cmd := m.list.SetItems(nextItems)
+	if len(nextItems) == 0 {
+		return m, cmd
+	}
+	newVisibleCount := visibleCount - 1
+	if newVisibleCount <= 0 {
+		return m, cmd
+	}
+	nextIndex := visibleIndex
+	if nextIndex >= newVisibleCount {
+		nextIndex = newVisibleCount - 1
+	}
+	if nextIndex < 0 {
+		nextIndex = 0
+	}
+	m.list.Select(nextIndex)
+	return m, cmd
+}
+
+func (m historyModel) updateDelete(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "y", "Y", "enter":
+		return m.deleteItemPath(m.deleteItem, m.deleteIndex, m.deleteCount)
+	case "n", "N", "esc", "ctrl+c":
+		m.deleteMode = false
+		m.deleteError = ""
+		return m, nil
+	}
+	return m, nil
+}
+
+func (m historyModel) deleteView() string {
+	titleStyle := lipgloss.NewStyle().Foreground(m.theme.Primary).Bold(true)
+	promptStyle := lipgloss.NewStyle().Foreground(m.theme.Secondary)
+	errorStyle := lipgloss.NewStyle().Foreground(m.theme.Accent).Bold(true)
+	name := strings.TrimSuffix(m.deleteItem.entry.Name, filepath.Ext(m.deleteItem.entry.Name))
+	contentStyle := lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder()).
+		BorderForeground(m.theme.Border).
+		Padding(0, 1).
+		MaxHeight(12)
+	lines := []string{
+		titleStyle.Render("Delete history item?"),
+		promptStyle.Render(name),
+		"",
+		contentStyle.Render(m.deleteContent),
+		"",
+		promptStyle.Render("y/enter delete • n/esc cancel"),
+	}
+	if strings.TrimSpace(m.deleteError) != "" {
+		lines = append(lines, errorStyle.Render("Error: "+m.deleteError))
+	}
+	return strings.Join(lines, "\n")
+}
+
+func loadHistoryPrompt(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "Unable to load history entry.", err
+	}
+	return strings.TrimLeft(string(data), "\n"), nil
 }

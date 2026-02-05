@@ -127,13 +127,13 @@ flags:
 - [x] history_date_time format defaults to day, month - add to config and config init
 
 11.3 delete from list
-- [ ] from history list view. hitting d/D, del, or backspace will remove a history item
-  - d/backspace: prompt the user before deleting
-    - prompt should show a bubbles viewport of the history file
-    - and a confirmation dialog
-  - D/del: delete without dialog
-  - upon deletion the list should update but user should continue in the history list view focused on the next item in the list
-  - keybinding should show "d/D delete"
+- [x] from history list view. hitting d/D, del, or backspace will remove a history item
+  - [x] d/backspace: prompt the user before deleting
+    - [x] prompt should show a bubbles viewport of the history file
+    - [x] and a confirmation dialog
+  - [x] D/del: delete without dialog
+  - [x] upon deletion the list should update but user should continue in the history list view focused on the next item in the list
+  - [x] keybinding should show "d/D delete"
 
 
 if history_enable_time_ago:
