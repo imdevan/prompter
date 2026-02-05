@@ -202,40 +202,33 @@ func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool,
 		age = 0
 	}
 
-	timeLine := formatHistoryTimeLine(entry.ModTime, age, week, month, enableTimeAgo, dateTimeFormat, theme)
-	fileLine := formatHistoryFileLine(entry.Name, entry.Size, theme)
-
-	if tag == "" {
-		return timeLine, fileLine
+	timeLine := formatHistoryTimeLine(entry.ModTime, age, week, month, enableTimeAgo, dateTimeFormat)
+	title := timeLine
+	if tag != "" {
+		tagStyle := lipgloss.NewStyle().Foreground(theme.Accent)
+		title = tagStyle.Render("#"+tag) + "\n" + timeLine
 	}
-
-	tagStyle := lipgloss.NewStyle().Foreground(theme.Primary)
-	if age >= month || !enableTimeAgo {
-		tagStyle = tagStyle.Bold(true)
-	}
-	title := tagStyle.Render("#" + tag)
-	description := strings.Join([]string{timeLine, fileLine}, "\n")
+	description := formatHistoryFileLine(entry.Name, entry.Size)
 	return title, description
 }
 
-func formatHistoryTimeLine(modTime time.Time, age time.Duration, week time.Duration, month time.Duration, enableTimeAgo bool, dateTimeFormat string, theme ui.Theme) string {
-	bold := lipgloss.NewStyle().Bold(true).Foreground(theme.BasePrompt)
+func formatHistoryTimeLine(modTime time.Time, age time.Duration, week time.Duration, month time.Duration, enableTimeAgo bool, dateTimeFormat string) string {
 	localTime := modTime.Local()
 
 	if !enableTimeAgo {
-		return bold.Render(localTime.Format(historyDateTimeLayout(dateTimeFormat)))
+		return localTime.Format(historyDateTimeLayout(dateTimeFormat))
 	}
 
 	switch {
 	case age < 24*time.Hour:
-		return bold.Render(formatTimeAgo(age))
+		return formatTimeAgo(age)
 	case age < month:
 		if age < week {
-			return bold.Render(formatTimeAgo(age))
+			return formatTimeAgo(age)
 		}
-		return bold.Render(formatWeekdayOrdinalTime(localTime))
+		return formatWeekdayOrdinalTime(localTime)
 	default:
-		return bold.Render(localTime.Format(historyDateTimeLayout(dateTimeFormat)))
+		return localTime.Format(historyDateTimeLayout(dateTimeFormat))
 	}
 }
 
@@ -291,13 +284,11 @@ func ordinalSuffix(day int) string {
 	}
 }
 
-func formatHistoryFileLine(name string, size int64, theme ui.Theme) string {
+func formatHistoryFileLine(name string, size int64) string {
 	displayName := strings.TrimPrefix(name, "prompter-")
 	displayName = strings.TrimSuffix(displayName, ".md")
 	sizeText := formatSize(size)
-	return lipgloss.NewStyle().
-		Foreground(theme.Border).
-		Render(fmt.Sprintf("%s • %s", displayName, sizeText))
+	return fmt.Sprintf("%s • %s", displayName, sizeText)
 }
 
 func historyDateTimeLayout(value string) string {
@@ -440,18 +431,9 @@ func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool
 			description: description,
 		})
 	}
-	delegate := list.NewDefaultDelegate()
-	delegate.SetHeight(3)
-	delegate.Styles.NormalTitle = lipgloss.NewStyle().Padding(0, 0, 0, 2)
-	delegate.Styles.NormalDesc = lipgloss.NewStyle().Padding(0, 0, 0, 2)
-	delegate.Styles.SelectedTitle = lipgloss.NewStyle().
-		Padding(0, 0, 0, 1).
-		Border(lipgloss.NormalBorder(), false, false, false, true).
-		BorderForeground(theme.Accent)
-	delegate.Styles.SelectedDesc = lipgloss.NewStyle().
-		Padding(0, 0, 0, 1).
-		Border(lipgloss.NormalBorder(), false, false, false, true).
-		BorderForeground(theme.Accent)
+	delegate := ui.NewListDelegate(theme, ui.ListDelegateOptions{
+		Height: 2,
+	})
 	model := list.New(items, delegate, 80, 20)
 	model.Title = "History"
 	model.Styles.Title = lipgloss.NewStyle().Foreground(theme.Primary).Bold(true)
