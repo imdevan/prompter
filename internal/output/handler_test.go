@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"prompter-cli/internal/domain"
@@ -82,7 +83,7 @@ func TestHandlerWriteHistoryForStdout(t *testing.T) {
 	cfg.HistoryLocation = root
 	cfg.DisableHistory = false
 
-	if err := handler.Write(domain.Request{Target: "stdout", HistorySuffix: "q"}, "hello", cfg); err != nil {
+	if err := handler.Write(domain.Request{Target: "stdout", HistorySuffix: "q", HistoryTag: "test"}, "hello", cfg); err != nil {
 		t.Fatalf("write stdout: %v", err)
 	}
 	entries, err := os.ReadDir(root)
@@ -91,6 +92,13 @@ func TestHandlerWriteHistoryForStdout(t *testing.T) {
 	}
 	if len(entries) != 1 {
 		t.Fatalf("expected 1 history file, got %d", len(entries))
+	}
+	data, err := os.ReadFile(filepath.Join(root, entries[0].Name()))
+	if err != nil {
+		t.Fatalf("read history file: %v", err)
+	}
+	if !strings.Contains(string(data), "tag: \"test\"") {
+		t.Fatalf("expected history frontmatter tag, got %q", string(data))
 	}
 }
 

@@ -34,6 +34,7 @@ type rootOptions struct {
 	templates             []string
 	showVersion           bool
 	fixOutput             string
+	historyTag            string
 	templateFlagName      map[string]string
 	templateFlagShorthand map[string]string
 	templateShortByName   map[string]string
@@ -124,6 +125,7 @@ func addRootFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Config, opti
 	addBool("yes", "y", "non-interactive mode", &opts.yes)
 	addBool("editor", "e", "open output in editor", &opts.editorTarget)
 	addStringSlice("template", "", "template names to include", &opts.templates)
+	addString("tag", "", "tag to include in history frontmatter", &opts.historyTag)
 	if options.includeVersion {
 		addBool("version", "v", "print version information", &opts.showVersion)
 	}
@@ -291,6 +293,7 @@ func resolveTemplateOrder(args []string, opts *rootOptions, cfg domain.Config) (
 		"file":     true,
 		"target":   true,
 		"template": true,
+		"tag":      true,
 	}
 	shortFlagsWithValue := make(map[string]bool)
 	templateShort := builtinShortFlag(cfg, "template", "")
@@ -299,6 +302,7 @@ func resolveTemplateOrder(args []string, opts *rootOptions, cfg domain.Config) (
 		"file":     "",
 		"target":   "t",
 		"template": "",
+		"tag":      "",
 	} {
 		if shorthand := builtinShortFlag(cfg, long, def); shorthand != "" {
 			shortFlagsWithValue[shorthand] = true

@@ -101,6 +101,7 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		BasePrompt:        basePrompt,
 		TemplateNames:     templates,
 		TemplateOrder:     buildTemplateOrder(templates, baseIndex),
+		HistoryTag:        strings.TrimSpace(opts.historyTag),
 		Files:             opts.files,
 		IncludeDirectory:  opts.includeDir,
 		DirectoryStrategy: cfg.DirectoryStrategy,

@@ -36,7 +36,7 @@ func (h *Handler) Write(req domain.Request, content string, cfg domain.Config) e
 		target = cfg.Target
 	}
 	if !cfg.DisableHistory {
-		if _, err := h.writeHistory(content, cfg, req.HistorySuffix); err != nil {
+		if _, err := h.writeHistory(content, cfg, req.HistorySuffix, req.HistoryTag); err != nil {
 			return err
 		}
 	}
@@ -53,7 +53,7 @@ func (h *Handler) Write(req domain.Request, content string, cfg domain.Config) e
 		}
 		return h.Clipboard.WriteText(content)
 	case target == "editor":
-		return h.openInEditor(content, cfg, req.HistorySuffix)
+		return h.openInEditor(content, cfg, req.HistorySuffix, req.HistoryTag)
 	case strings.HasPrefix(target, "file:"):
 		path := strings.TrimPrefix(target, "file:")
 		if strings.TrimSpace(path) == "" {
@@ -65,7 +65,7 @@ func (h *Handler) Write(req domain.Request, content string, cfg domain.Config) e
 	}
 }
 
-func (h *Handler) openInEditor(content string, cfg domain.Config, suffix string) error {
+func (h *Handler) openInEditor(content string, cfg domain.Config, suffix, tag string) error {
 	if h.Editor == nil {
 		return errors.New("editor adapter is required")
 	}
@@ -82,13 +82,13 @@ func (h *Handler) openInEditor(content string, cfg domain.Config, suffix string)
 	}
 	filename += ".md"
 	path := filepath.Join(dir, filename)
-	if err := writeFile(path, content); err != nil {
+	if err := writeFile(path, withHistoryFrontmatter(content, tag)); err != nil {
 		return err
 	}
 	return h.Editor.Open(path)
 }
 
-func (h *Handler) writeHistory(content string, cfg domain.Config, suffix string) (string, error) {
+func (h *Handler) writeHistory(content string, cfg domain.Config, suffix, tag string) (string, error) {
 	dir := cfg.HistoryLocation
 	if strings.TrimSpace(dir) == "" {
 		dir = os.TempDir()
@@ -102,10 +102,24 @@ func (h *Handler) writeHistory(content string, cfg domain.Config, suffix string)
 	}
 	filename += ".md"
 	path := filepath.Join(dir, filename)
-	if err := writeFile(path, content); err != nil {
+	if err := writeFile(path, withHistoryFrontmatter(content, tag)); err != nil {
 		return "", err
 	}
 	return path, nil
+}
+
+func withHistoryFrontmatter(content, tag string) string {
+	tag = strings.TrimSpace(tag)
+	if tag == "" {
+		return content
+	}
+	var builder strings.Builder
+	builder.WriteString("---\n")
+	builder.WriteString("tag: ")
+	builder.WriteString(fmt.Sprintf("%q", tag))
+	builder.WriteString("\n---\n\n")
+	builder.WriteString(content)
+	return builder.String()
 }
 
 func writeFile(path, content string) error {

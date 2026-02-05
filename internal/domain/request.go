@@ -13,6 +13,7 @@ type Request struct {
 	TemplateNames     []string
 	TemplateOrder     []string
 	HistorySuffix     string
+	HistoryTag        string
 	Files             []string
 	IncludeDirectory  bool
 	DirectoryPath     string
