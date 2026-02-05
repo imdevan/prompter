@@ -33,6 +33,7 @@ func newHistoryCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&opts.clear, "clear", "c", false, "clear prompt history")
 	cmd.Flags().BoolVarP(&opts.yes, "yes", "y", false, "skip confirmation")
 	cmd.Flags().BoolVarP(&opts.keep, "keep-tags", "k", false, "keep tagged history entries when clearing")
+	cmd.Flags().BoolVarP(&opts.open, "editor", "e", false, "open history folder in editor")
 	return cmd
 }
 
@@ -40,6 +41,7 @@ type historyOptions struct {
 	clear bool
 	yes   bool
 	keep  bool
+	open  bool
 }
 
 func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
@@ -54,6 +56,10 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 	}
 	if strings.TrimSpace(cfg.HistoryLocation) == "" {
 		return fmt.Errorf("history_location is not configured")
+	}
+	if opts.open {
+		editorAdapter := editor.New(cfg.Editor)
+		return editorAdapter.Open(cfg.HistoryLocation)
 	}
 	if opts.clear {
 		if !opts.yes {

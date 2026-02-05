@@ -118,7 +118,7 @@ flags:
   - [x] confirms with user using huh confirm
   - [x] clears the history files
   - [x] keep tags flag to keep all with tags
-  - [ ] editor, -e flag opens history folder in editor
+  - [x] editor, -e flag opens history folder in editor
 
 11.2 style
 - [ ] display history based on this algorithm
