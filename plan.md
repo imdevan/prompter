@@ -107,9 +107,9 @@ flags:
 10.1 Prompt tag
 - [x] Add a tag flag to root command. If present, history should be created with frontmatter and tag populated
 10.2 History frontmatter
-- [ ] calling prompter history [tag] should search for a prompt history with the provided tag
-  - [ ] if one result is found open it (in target)
-  - [ ] if more than one result is found open the results in the same list as prompter history
+- [x] calling prompter history [tag] should search for a prompt history with the provided tag
+  - [x] if one result is found open it (in target)
+  - [x] if more than one result is found open the results in the same list as prompter history
 
 
 11) Release readiness
