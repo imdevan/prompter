@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -155,6 +156,22 @@ func newTemplateSelectModel(templates []domain.Template, basePrompt string, pres
 	defaultDelegate := list.NewDefaultDelegate()
 	defaultDelegate.Styles.SelectedTitle = defaultDelegate.Styles.SelectedTitle.Foreground(theme.Primary).Bold(true)
 	defaultDelegate.Styles.SelectedDesc = defaultDelegate.Styles.SelectedDesc.Foreground(theme.Secondary)
+	defaultDelegate.ShortHelpFunc = func() []key.Binding {
+		return []key.Binding{
+			key.NewBinding(
+				key.WithKeys("󱁐"),
+				key.WithHelp("󱁐", "Toggle"),
+			),
+			key.NewBinding(
+				key.WithKeys("󰌒"),
+				key.WithHelp("󰌒", "Focus summary"),
+			),
+			key.NewBinding(
+				key.WithKeys("󰌑"),
+				key.WithHelp("󰌑", "Continue"),
+			),
+		}
+	}
 	delegate := templateItemDelegate{
 		DefaultDelegate: defaultDelegate,
 		selecteds:       selecteds,
