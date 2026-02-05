@@ -126,6 +126,30 @@ flags:
 - [x] history_enable_time_ago defaults to true - add to config and config init
 - [x] history_date_time format defaults to day, month - add to config and config init
 
+if history_enable_time_ago:
+items less then a day old
+```
+#tag            -- if present
+One minute ago  -- in bold use *ago* format if less then a week old
+file_name • 0 B -- light font as date is now. prompter- and .md omitted from file name
+```
+
+
+less then a month old
+```
+#tag            -- if present
+Tues. 17th, time      -- in bold use *ago* format if less then a week old
+file_name • 0 B -- light font as date is now. prompter- and .md omitted from file name
+```
+
+
+items after a month or if history_enable_time_ago
+```
+#tag            -- also in bold if present
+date_time       -- in bold 
+file_name • 0 B -- light font as date is now. prompter- and .md omitted from file name
+```
+
 11.3 delete from list
 - [x] from history list view. hitting d/D, del, or backspace will remove a history item
   - [x] d/backspace: prompt the user before deleting
@@ -140,7 +164,9 @@ flags:
   - [x] also delete any prompts that only contain the index template (also essentially empty)
 
 11.5 insert from list
+
 - [ ] from history list hitting i/ins will open the prompt in configured editor with 
+  
     ```
     \n
     ---
@@ -148,29 +174,6 @@ flags:
     ```
     inserted above the last text in insert mode above that
 - [ ] or if history called with flag -n, --insert
-
-if history_enable_time_ago:
-items less then a day old
-```
-#tag            -- if present
-One minute ago  -- in bold use *ago* format if less then a week old
-file_name • 0 B -- light font as date is now. prompter- and .md omitted from file name
-```
-
-
-less then a month old
-#tag            -- if present
-Tues. 17th, time      -- in bold use *ago* format if less then a week old
-file_name • 0 B -- light font as date is now. prompter- and .md omitted from file name
-```
-
-
-items after a month or if history_enable_time_ago
-```
-#tag            -- also in bold if present
-date_time       -- in bold 
-file_name • 0 B -- light font as date is now. prompter- and .md omitted from file name
-```
 
 11 Config update
 11.1 Color scheme change
@@ -180,13 +183,15 @@ file_name • 0 B -- light font as date is now. prompter- and .md omitted from f
 e.g. `primary=7 or other color type that lipgloss supports`
 
 12 Escape
-- [ ] quting a bubble tea program should end without a prompt being generated
+- [ ] quiting a bubble tea program should end without a prompt being generated
   only generate a prompt when a user completes the input flow. this applies to all bubble tea inputs
 
 
+13) color scheme changes
+- [ ] update color scheme
 
 
-12) Release readiness
+14) Release readiness
  Status: pending
 - Notes: Cross-platform build, Homebrew template, docs updates.
 
