@@ -100,25 +100,24 @@ flags:
 - [ ] interactive ui reflects template processing
   - [ ] templates with {{.Prompt}} before any other white space are put at the end of of the visual list
   - [ ] templates with {{.Prompt}} in the middle of their copy should visual wrap templates it will wrap in the process
-- [ ] base prompt is color3
+- [x] base prompt is color3
 
-10) Release readiness
-- Status: pending
+10) Tagging history
+- [ ] History may have frontmatter
+10.1 Prompt tag
+- [ ] Add a tag flag to root command. If present, history should be created with frontmatter and tag populated
+10.2 History frontmatter
+- [ ] calling prompter history [tag] should search for a prompt history with the provided tag
+  - [ ] if one result is found open it (in target)
+  - [ ] if more than one result is found open the results in the same list as prompter history
+
+
+11) Release readiness
+ Status: pending
 - Notes: Cross-platform build, Homebrew template, docs updates.
 
 
 ## v2.1 
-
-11) Tagging history
-
-11.1 History frontmatter
-- [ ] History prompts should save front matter
-  - [ ] contains prompter prompt
-11.2 History tags
-  - [ ] contains optional tag
-  - [ ] calling prompter history [tag] should search for a prompt history with the provided tag
-      - [ ] if one result is found open it (in target)
-      - [ ] if more than one result is found open the results in the same list as prompter history
 
 12. Config update
 12.1 Color scheme change
