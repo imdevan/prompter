@@ -183,7 +183,7 @@ file_name • 0 B -- light font as date is now. prompter- and .md omitted from f
 e.g. `primary=7 or other color type that lipgloss supports`
 
 12 Escape
-- [ ] quiting a bubble tea program should end without a prompt being generated
+- [x] quiting a bubble tea program should end without a prompt being generated
   only generate a prompt when a user completes the input flow. this applies to all bubble tea inputs
 
 
