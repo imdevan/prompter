@@ -60,7 +60,7 @@ func DefaultConfig() Config {
 		Secondary:               "06",
 		Text:                    "07",
 		TextHighlight:           "06",
-		DescriptionHighlight:    "06",
+		DescriptionHighlight:    "05",
 		Tags:                    "13",
 		Flags:                   "12",
 		Muted:                   "08",
