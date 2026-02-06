@@ -767,17 +767,12 @@ func (m historyModel) View() string {
 		empty := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("No history entries found.")
 		return empty
 	}
-	pathStyle := lipgloss.NewStyle().Foreground(m.theme.Muted)
-	header := ""
-	if strings.TrimSpace(m.location) != "" {
-		header = pathStyle.Render(m.location) + "\n\n"
-	}
 	frame := lipgloss.NewStyle().
 		Padding(1, 2).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(m.theme.Border)
 	if !m.deleteMode {
-		return frame.Render(header + m.list.View())
+		return frame.Render(m.list.View())
 	}
 	return frame.Render(m.deleteView())
 }
