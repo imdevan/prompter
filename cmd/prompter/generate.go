@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -83,6 +84,9 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		}
 		req, err := prompter.Collect(basePrompt, allTemplates, templates, opts.clipboard, note)
 		if err != nil {
+			if errors.Is(err, interactive.ErrCanceled) {
+				return nil
+			}
 			return err
 		}
 		basePrompt = req.BasePrompt

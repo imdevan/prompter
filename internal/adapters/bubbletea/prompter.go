@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"prompter-cli/internal/domain"
+	"prompter-cli/internal/interactive"
 	"prompter-cli/internal/ui"
 )
 
@@ -34,6 +35,9 @@ func (a Adapter) AskBasePrompt(defaultValue, note string) (string, error) {
 		return "", err
 	}
 	if m, ok := result.(textInputModel); ok {
+		if m.canceled {
+			return "", interactive.ErrCanceled
+		}
 		return strings.TrimSpace(m.input.Value()), nil
 	}
 	return "", fmt.Errorf("unexpected model result")
@@ -48,6 +52,9 @@ func (a Adapter) SelectTemplates(templates []domain.Template, basePrompt string,
 		return nil, err
 	}
 	if m, ok := result.(templateSelectModel); ok {
+		if m.canceled {
+			return nil, interactive.ErrCanceled
+		}
 		return m.selected(), nil
 	}
 	return nil, fmt.Errorf("unexpected model result")
@@ -60,6 +67,7 @@ type textInputModel struct {
 	input       textinput.Model
 	ready       bool
 	theme       ui.Theme
+	canceled    bool
 }
 
 func newTextInputModel(title, description, defaultValue, note string, theme ui.Theme) textInputModel {
@@ -89,6 +97,7 @@ func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
+			m.canceled = true
 			return m, tea.Quit
 		case tea.KeyEnter:
 			return m, tea.Quit
@@ -121,6 +130,7 @@ type templateSelectModel struct {
 	barIndex   int
 	focus      focusArea
 	theme      ui.Theme
+	canceled   bool
 }
 
 type focusArea int
@@ -205,6 +215,7 @@ func (m templateSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
+			m.canceled = true
 			return m, tea.Quit
 		case tea.KeyTab:
 			if m.focus == focusList {
