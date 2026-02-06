@@ -104,7 +104,7 @@ func renderTemplateList(templates []domain.Template, descStyle lipgloss.Style, t
 	delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.Foreground(theme.Secondary).Bold(true)
 	delegate.Styles.NormalDesc = delegate.Styles.NormalDesc.Foreground(theme.Text)
 
-	model := list.New(items, delegate, 80, len(items)+2)
+	model := ui.NewListModel(items, delegate, 80, len(items)+2, theme)
 	model.SetShowStatusBar(false)
 	model.SetShowHelp(false)
 	model.SetShowPagination(false)

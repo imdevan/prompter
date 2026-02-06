@@ -707,7 +707,7 @@ func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool
 			),
 		}
 	}
-	model := list.New(items, delegate, 80, 20)
+	model := ui.NewListModel(items, delegate, 80, 20, theme)
 	model.Title = "History"
 	model.Styles.Title = lipgloss.NewStyle().Foreground(theme.Headings).Bold(true)
 	model.SetShowStatusBar(false)

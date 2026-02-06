@@ -9,6 +9,26 @@ type ListDelegateOptions struct {
 	SelectedPaddingLeft int
 }
 
+// NewListModel creates a list with shared styles applied.
+func NewListModel(items []list.Item, delegate list.ItemDelegate, width, height int, theme Theme) list.Model {
+	model := list.New(items, delegate, width, height)
+	ApplyListFilterStyles(&model, theme)
+	return model
+}
+
+// ApplyListFilterStyles sets shared filter styles for lists.
+func ApplyListFilterStyles(model *list.Model, theme Theme) {
+	if model == nil {
+		return
+	}
+	model.Styles.FilterPrompt = model.Styles.FilterPrompt.Foreground(theme.Secondary)
+	model.Styles.FilterCursor = model.Styles.FilterCursor.Foreground(theme.Secondary)
+	model.FilterInput.PromptStyle = model.FilterInput.PromptStyle.Foreground(theme.Secondary)
+	model.FilterInput.Cursor.Style = model.FilterInput.Cursor.Style.Foreground(theme.Secondary)
+	model.FilterInput.TextStyle = model.FilterInput.TextStyle.Foreground(theme.Text)
+	model.Styles.DefaultFilterCharacterMatch = model.Styles.DefaultFilterCharacterMatch.Foreground(theme.Secondary)
+}
+
 // NewListDelegate provides shared list focus styles.
 func NewListDelegate(theme Theme, opts ListDelegateOptions) list.DefaultDelegate {
 	delegate := list.NewDefaultDelegate()

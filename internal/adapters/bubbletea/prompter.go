@@ -187,7 +187,7 @@ func newTemplateSelectModel(templates []domain.Template, basePrompt string, pres
 		selecteds:       selecteds,
 	}
 
-	l := list.New(items, delegate, 80, 20)
+	l := ui.NewListModel(items, delegate, 80, 20, theme)
 	l.Title = "Select templates"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
