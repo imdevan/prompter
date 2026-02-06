@@ -16,11 +16,17 @@ target = "clipboard"
 
 # Colors
 # Colors support named, numeric, or hex values (ex: 7, 13, "#ff8800").
-primary = "2"
-secondary = "5"
-accent = "13"
-base_prompt = "7"
-border = "8"
+headings = "15"
+primary = "02"
+secondary = "06"
+text = "07"
+text_highlight = "06"
+description_highlight = "06"
+tags = "13"
+flags = "12"
+muted = "08"
+base_prompt_badge = "06"
+border = "08"
 
 # CLI behavior
 interactive_default = true

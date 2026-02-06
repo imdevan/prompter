@@ -154,8 +154,8 @@ func (m confirmModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m confirmModel) View() string {
-	title := lipgloss.NewStyle().Bold(true).Foreground(m.theme.Primary).Render("Create template?")
-	prompt := lipgloss.NewStyle().Foreground(m.theme.Secondary).Render(m.prompt)
-	help := lipgloss.NewStyle().Foreground(m.theme.BasePrompt).Render("Press y or n.")
+	title := lipgloss.NewStyle().Bold(true).Foreground(m.theme.Headings).Render("Create template?")
+	prompt := lipgloss.NewStyle().Foreground(m.theme.Text).Render(m.prompt)
+	help := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("Press y or n.")
 	return strings.Join([]string{title, prompt, help}, "\n")
 }

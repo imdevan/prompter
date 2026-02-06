@@ -246,7 +246,7 @@ func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool,
 	timeLine := formatHistoryTimeLine(entry.ModTime, age, week, month, enableTimeAgo, dateTimeFormat)
 	title := timeLine
 	if tag != "" {
-		tagStyle := lipgloss.NewStyle().Foreground(theme.Accent)
+		tagStyle := lipgloss.NewStyle().Foreground(theme.Tags)
 		title = tagStyle.Render("#"+tag) + "\n" + timeLine
 	}
 	description := formatHistoryFileLine(entry.Flags, entry.BodyBytes, entry.BodyTokens, flagWidth, tokenWidth)
@@ -709,7 +709,7 @@ func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool
 	}
 	model := list.New(items, delegate, 80, 20)
 	model.Title = "History"
-	model.Styles.Title = lipgloss.NewStyle().Foreground(theme.Primary).Bold(true)
+	model.Styles.Title = lipgloss.NewStyle().Foreground(theme.Headings).Bold(true)
 	model.SetShowStatusBar(false)
 	model.SetShowHelp(true)
 	model.SetFilteringEnabled(true)
@@ -764,10 +764,10 @@ func (m historyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m historyModel) View() string {
 	if len(m.list.Items()) == 0 {
-		empty := lipgloss.NewStyle().Foreground(m.theme.BasePrompt).Render("No history entries found.")
+		empty := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("No history entries found.")
 		return empty
 	}
-	pathStyle := lipgloss.NewStyle().Foreground(m.theme.Secondary)
+	pathStyle := lipgloss.NewStyle().Foreground(m.theme.Muted)
 	header := ""
 	if strings.TrimSpace(m.location) != "" {
 		header = pathStyle.Render(m.location) + "\n\n"
@@ -873,9 +873,9 @@ func (m historyModel) updateDelete(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m historyModel) deleteView() string {
-	titleStyle := lipgloss.NewStyle().Foreground(m.theme.Primary).Bold(true)
-	promptStyle := lipgloss.NewStyle().Foreground(m.theme.Secondary)
-	errorStyle := lipgloss.NewStyle().Foreground(m.theme.Accent).Bold(true)
+	titleStyle := lipgloss.NewStyle().Foreground(m.theme.Headings).Bold(true)
+	promptStyle := lipgloss.NewStyle().Foreground(m.theme.Text)
+	errorStyle := lipgloss.NewStyle().Foreground(m.theme.TextHighlight).Bold(true)
 	name := strings.TrimSuffix(m.deleteItem.entry.Name, filepath.Ext(m.deleteItem.entry.Name))
 	contentStyle := lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).

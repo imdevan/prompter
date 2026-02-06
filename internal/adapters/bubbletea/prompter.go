@@ -77,7 +77,7 @@ func newTextInputModel(title, description, defaultValue, note string, theme ui.T
 	input.Focus()
 	input.CharLimit = 2000
 	input.Width = 80
-	input.TextStyle = lipgloss.NewStyle().Foreground(theme.BasePrompt)
+	input.TextStyle = lipgloss.NewStyle().Foreground(theme.Text)
 
 	return textInputModel{
 		title:       title,
@@ -109,12 +109,12 @@ func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m textInputModel) View() string {
-	title := lipgloss.NewStyle().Bold(true).Foreground(m.theme.Primary).Render(m.title)
-	description := lipgloss.NewStyle().Foreground(m.theme.Secondary).Render(m.description)
+	title := lipgloss.NewStyle().Bold(true).Foreground(m.theme.Headings).Render(m.title)
+	description := lipgloss.NewStyle().Foreground(m.theme.Text).Render(m.description)
 	body := lipgloss.NewStyle().Padding(1, 2).Border(lipgloss.RoundedBorder()).BorderForeground(m.theme.Border).Render(m.input.View())
 	parts := []string{title, description}
 	if strings.TrimSpace(m.note) != "" {
-		note := lipgloss.NewStyle().Foreground(m.theme.Secondary).Render(m.note)
+		note := lipgloss.NewStyle().Foreground(m.theme.Muted).Render(m.note)
 		parts = append(parts, note)
 	}
 	parts = append(parts, body, "Press Enter to continue.")
@@ -165,7 +165,7 @@ func newTemplateSelectModel(templates []domain.Template, basePrompt string, pres
 	}
 	defaultDelegate := list.NewDefaultDelegate()
 	defaultDelegate.Styles.SelectedTitle = defaultDelegate.Styles.SelectedTitle.Foreground(theme.Primary).Bold(true)
-	defaultDelegate.Styles.SelectedDesc = defaultDelegate.Styles.SelectedDesc.Foreground(theme.Secondary)
+	defaultDelegate.Styles.SelectedDesc = defaultDelegate.Styles.SelectedDesc.Foreground(theme.DescriptionHighlight)
 	defaultDelegate.ShortHelpFunc = func() []key.Binding {
 		return []key.Binding{
 			key.NewBinding(
@@ -192,7 +192,7 @@ func newTemplateSelectModel(templates []domain.Template, basePrompt string, pres
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowPagination(true)
-	l.Styles.Title = lipgloss.NewStyle().Foreground(theme.Primary).Bold(true)
+	l.Styles.Title = lipgloss.NewStyle().Foreground(theme.Headings).Bold(true)
 
 	return templateSelectModel{
 		list:       l,
@@ -255,7 +255,7 @@ func (m templateSelectModel) View() string {
 	if len(m.templates) == 0 {
 		return "No templates available."
 	}
-	header := lipgloss.NewStyle().Foreground(m.theme.Secondary).Render("Space to toggle, Tab to focus summary, Enter to continue.")
+	header := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("Space to toggle, Tab to focus summary, Enter to continue.")
 	summary := m.renderSelectionBar()
 	return lipgloss.NewStyle().
 		Padding(1, 2).
@@ -367,25 +367,25 @@ func (m templateSelectModel) selectionEntries() []selectionEntry {
 func (m templateSelectModel) renderSelectionBar() string {
 	entries := m.selectionEntries()
 	if len(entries) == 0 {
-		return lipgloss.NewStyle().Foreground(m.theme.Border).Render("No templates selected yet.")
+		return lipgloss.NewStyle().Foreground(m.theme.Muted).Render("No templates selected yet.")
 	}
 	normal := lipgloss.NewStyle().
 		Padding(0, 1).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(m.theme.Border).
-		Foreground(m.theme.BasePrompt)
+		Foreground(m.theme.Text)
 	focused := lipgloss.NewStyle().
 		Padding(0, 1).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(m.theme.Primary).
-		Foreground(m.theme.BasePrompt).
+		Foreground(m.theme.Text).
 		Background(m.theme.Primary).
 		Bold(true)
 	basePromptStyle := lipgloss.NewStyle().
 		Padding(0, 1).
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(m.theme.BasePrompt).
-		Foreground(m.theme.BasePrompt)
+		BorderForeground(m.theme.BasePromptBadge).
+		Foreground(m.theme.BasePromptBadge)
 	parts := make([]string, 0, len(entries))
 	for i, entry := range entries {
 		chip := entry.label

@@ -125,7 +125,7 @@ func addRootFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Config, opti
 	addBool("yes", "Y", "non-interactive mode", &opts.yes)
 	addBool("editor", "E", "open output in editor", &opts.editorTarget)
 	addStringSlice("template", "", "template names to include", &opts.templates)
-	addString("tag", "", "tag to include in history frontmatter", &opts.historyTag)
+	addString("tag", "G", "tag to include in history frontmatter", &opts.historyTag)
 	if options.includeVersion {
 		addBool("version", "V", "print version information", &opts.showVersion)
 	}

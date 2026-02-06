@@ -64,9 +64,9 @@ func renderTemplateGroups(groups []workflow.TemplateGroup, theme ui.Theme) strin
 		return builder.String()
 	}
 
-	groupStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.Primary)
-	pathStyle := lipgloss.NewStyle().Foreground(theme.Secondary)
-	descStyle := lipgloss.NewStyle().Foreground(theme.BasePrompt)
+	groupStyle := lipgloss.NewStyle().Bold(true).Foreground(theme.Headings)
+	pathStyle := lipgloss.NewStyle().Foreground(theme.Muted)
+	descStyle := lipgloss.NewStyle().Foreground(theme.Text)
 
 	for i, group := range groups {
 		if i > 0 {
@@ -86,7 +86,7 @@ func renderTemplateGroups(groups []workflow.TemplateGroup, theme ui.Theme) strin
 
 func renderTemplateList(templates []domain.Template, descStyle lipgloss.Style, theme ui.Theme) string {
 	if len(templates) == 0 {
-		return descStyle.Render("No templates found.")
+		return lipgloss.NewStyle().Foreground(theme.Muted).Render("No templates found.")
 	}
 	items := make([]list.Item, 0, len(templates))
 	for _, tmpl := range templates {
@@ -102,7 +102,7 @@ func renderTemplateList(templates []domain.Template, descStyle lipgloss.Style, t
 	delegate.Styles.SelectedTitle = delegate.Styles.NormalTitle
 	delegate.Styles.SelectedDesc = delegate.Styles.NormalDesc
 	delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.Foreground(theme.Secondary).Bold(true)
-	delegate.Styles.NormalDesc = delegate.Styles.NormalDesc.Foreground(theme.BasePrompt)
+	delegate.Styles.NormalDesc = delegate.Styles.NormalDesc.Foreground(theme.Text)
 
 	model := list.New(items, delegate, 80, len(items)+2)
 	model.SetShowStatusBar(false)
@@ -138,7 +138,7 @@ type templateListItem struct {
 
 func (t templateListItem) Title() string {
 	nameStyle := lipgloss.NewStyle().Foreground(t.theme.Secondary).Bold(true)
-	flagStyle := lipgloss.NewStyle().Foreground(t.theme.Accent)
+	flagStyle := lipgloss.NewStyle().Foreground(t.theme.Tags)
 	parts := []string{nameStyle.Render(t.display)}
 	if t.pinned {
 		parts = append(parts, flagStyle.Render("[pinned]"))
@@ -147,8 +147,8 @@ func (t templateListItem) Title() string {
 }
 
 func (t templateListItem) Description() string {
-	descStyle := lipgloss.NewStyle().Foreground(t.theme.BasePrompt)
-	flagStyle := lipgloss.NewStyle().Foreground(t.theme.Accent)
+	descStyle := lipgloss.NewStyle().Foreground(t.theme.Text)
+	flagStyle := lipgloss.NewStyle().Foreground(t.theme.Flags)
 	parts := []string{}
 	if t.description != "" {
 		parts = append(parts, descStyle.Render(t.description))

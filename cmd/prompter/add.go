@@ -221,12 +221,12 @@ func (m addTemplateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m addTemplateModel) View() string {
-	title := lipgloss.NewStyle().Bold(true).Foreground(m.theme.Primary).Render("Add template")
+	title := lipgloss.NewStyle().Bold(true).Foreground(m.theme.Headings).Render("Add template")
 	help := "Enter name, then press Enter. Add content, then press Ctrl+S to save."
 	if m.errMessage != "" {
-		help = lipgloss.NewStyle().Foreground(m.theme.Accent).Render(m.errMessage)
+		help = lipgloss.NewStyle().Foreground(m.theme.TextHighlight).Render(m.errMessage)
 	} else {
-		help = lipgloss.NewStyle().Foreground(m.theme.Secondary).Render(help)
+		help = lipgloss.NewStyle().Foreground(m.theme.Muted).Render(help)
 	}
 
 	nameBox := lipgloss.NewStyle().

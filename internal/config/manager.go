@@ -99,6 +99,14 @@ type partialConfig struct {
 	Target                  *string           `toml:"target"`
 	Primary                 *string           `toml:"primary"`
 	Secondary               *string           `toml:"secondary"`
+	Headings                *string           `toml:"headings"`
+	Text                    *string           `toml:"text"`
+	TextHighlight           *string           `toml:"text_highlight"`
+	DescriptionHighlight    *string           `toml:"description_highlight"`
+	Tags                    *string           `toml:"tags"`
+	Flags                   *string           `toml:"flags"`
+	Muted                   *string           `toml:"muted"`
+	BasePromptBadge         *string           `toml:"base_prompt_badge"`
 	Accent                  *string           `toml:"accent"`
 	BasePrompt              *string           `toml:"base_prompt"`
 	Border                  *string           `toml:"border"`
@@ -164,6 +172,30 @@ func applyPartial(config *domain.Config, partial *partialConfig) {
 	}
 	if partial.Secondary != nil {
 		config.Secondary = *partial.Secondary
+	}
+	if partial.Headings != nil {
+		config.Headings = *partial.Headings
+	}
+	if partial.Text != nil {
+		config.Text = *partial.Text
+	}
+	if partial.TextHighlight != nil {
+		config.TextHighlight = *partial.TextHighlight
+	}
+	if partial.DescriptionHighlight != nil {
+		config.DescriptionHighlight = *partial.DescriptionHighlight
+	}
+	if partial.Tags != nil {
+		config.Tags = *partial.Tags
+	}
+	if partial.Flags != nil {
+		config.Flags = *partial.Flags
+	}
+	if partial.Muted != nil {
+		config.Muted = *partial.Muted
+	}
+	if partial.BasePromptBadge != nil {
+		config.BasePromptBadge = *partial.BasePromptBadge
 	}
 	if partial.Accent != nil {
 		config.Accent = *partial.Accent

@@ -13,7 +13,7 @@ type ListDelegateOptions struct {
 func NewListDelegate(theme Theme, opts ListDelegateOptions) list.DefaultDelegate {
 	delegate := list.NewDefaultDelegate()
 	delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.Foreground(theme.Primary).Bold(true)
-	delegate.Styles.SelectedDesc = delegate.Styles.SelectedDesc.Foreground(theme.Secondary)
+	delegate.Styles.SelectedDesc = delegate.Styles.SelectedDesc.Foreground(theme.DescriptionHighlight)
 	if opts.Height > 0 {
 		delegate.SetHeight(opts.Height)
 	}

@@ -147,8 +147,8 @@ func (m fixRunModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m fixRunModel) View() string {
-	commandStyle := lipgloss.NewStyle().Foreground(m.theme.BasePrompt)
-	timeStyle := lipgloss.NewStyle().Foreground(m.theme.Secondary)
+	commandStyle := lipgloss.NewStyle().Foreground(m.theme.Text)
+	timeStyle := lipgloss.NewStyle().Foreground(m.theme.Muted)
 	title := "Running previous command"
 	if m.done {
 		title = "Finished running previous command"

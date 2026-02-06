@@ -21,6 +21,14 @@ type Config struct {
 	Target                  string            `toml:"target"`
 	Primary                 string            `toml:"primary"`
 	Secondary               string            `toml:"secondary"`
+	Headings                string            `toml:"headings"`
+	Text                    string            `toml:"text"`
+	TextHighlight           string            `toml:"text_highlight"`
+	DescriptionHighlight    string            `toml:"description_highlight"`
+	Tags                    string            `toml:"tags"`
+	Flags                   string            `toml:"flags"`
+	Muted                   string            `toml:"muted"`
+	BasePromptBadge         string            `toml:"base_prompt_badge"`
 	Accent                  string            `toml:"accent"`
 	BasePrompt              string            `toml:"base_prompt"`
 	Border                  string            `toml:"border"`
@@ -47,11 +55,19 @@ func DefaultConfig() Config {
 		Editor:                  "nvim",
 		DirectoryStrategy:       "git",
 		Target:                  "clipboard",
-		Primary:                 "2",
-		Secondary:               "5",
+		Headings:                "15",
+		Primary:                 "02",
+		Secondary:               "06",
+		Text:                    "07",
+		TextHighlight:           "06",
+		DescriptionHighlight:    "06",
+		Tags:                    "13",
+		Flags:                   "12",
+		Muted:                   "08",
+		BasePromptBadge:         "06",
 		Accent:                  "13",
-		BasePrompt:              "7",
-		Border:                  "8",
+		BasePrompt:              "07",
+		Border:                  "08",
 		InteractiveDefault:      true,
 		IncludeBuiltinShorthand: true,
 		RemapShortFlags:         map[string]string{},
