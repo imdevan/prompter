@@ -12,8 +12,26 @@ type ListDelegateOptions struct {
 // NewListModel creates a list with shared styles applied.
 func NewListModel(items []list.Item, delegate list.ItemDelegate, width, height int, theme Theme) list.Model {
 	model := list.New(items, delegate, width, height)
-	ApplyListFilterStyles(&model, theme)
+	ApplyListStyles(&model, theme)
 	return model
+}
+
+// ApplyListStyles sets shared list styles.
+func ApplyListStyles(model *list.Model, theme Theme) {
+	if model == nil {
+		return
+	}
+	ApplyListFilterStyles(model, theme)
+	model.Styles.NoItems = model.Styles.NoItems.Foreground(theme.Muted)
+	model.Styles.StatusBar = model.Styles.StatusBar.Foreground(theme.Muted)
+	model.Styles.StatusEmpty = model.Styles.StatusEmpty.Foreground(theme.Muted)
+	model.Styles.StatusBarActiveFilter = model.Styles.StatusBarActiveFilter.Foreground(theme.Secondary)
+	model.Styles.StatusBarFilterCount = model.Styles.StatusBarFilterCount.Foreground(theme.Muted)
+	model.Styles.HelpStyle = model.Styles.HelpStyle.Foreground(theme.Muted)
+	model.Styles.PaginationStyle = model.Styles.PaginationStyle.Foreground(theme.Muted)
+	model.Styles.ActivePaginationDot = model.Styles.ActivePaginationDot.Foreground(theme.Secondary)
+	model.Styles.InactivePaginationDot = model.Styles.InactivePaginationDot.Foreground(theme.Muted)
+	model.Styles.DividerDot = model.Styles.DividerDot.Foreground(theme.Muted)
 }
 
 // ApplyListFilterStyles sets shared filter styles for lists.
@@ -32,7 +50,7 @@ func ApplyListFilterStyles(model *list.Model, theme Theme) {
 // NewListDelegate provides shared list focus styles.
 func NewListDelegate(theme Theme, opts ListDelegateOptions) list.DefaultDelegate {
 	delegate := list.NewDefaultDelegate()
-	delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.Foreground(theme.Primary).Bold(true)
+	delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.Foreground(theme.TextHighlight).Bold(true)
 	delegate.Styles.SelectedDesc = delegate.Styles.SelectedDesc.Foreground(theme.DescriptionHighlight)
 	if opts.Height > 0 {
 		delegate.SetHeight(opts.Height)
