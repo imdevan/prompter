@@ -188,7 +188,7 @@ e.g. `primary=7 or other color type that lipgloss supports`
 
 
 13) color scheme changes
-- [ ] update color scheme
+- [x] update color scheme
 
 
 14) Release readiness
