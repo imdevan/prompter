@@ -209,6 +209,12 @@ e.g. `primary=7 or other color type that lipgloss supports`
  Status: pending
 - Notes: Cross-platform build, Homebrew template, docs updates.
 
+16.1 config init changes
+- [ ] should comment out all default options (everything)
+
+- [ ] 16.2 build for arch
+- [ ] 16.3 build for homebrew
+
 
 ## V2.1
 
@@ -220,16 +226,3 @@ sm: < 40
 md: < 80
 lg: > 80
 xl: > 300
-
-## Progress Log
-- 2025-01-29: Created plan.md with milestones and status tracking.
-- 2025-01-29: Confirmed scope with UI/layout expectations and default include_agents behavior.
-- 2025-01-29: Scaffolded repository structure and baseline files.
-- 2025-01-29: Started configuration and path resolution implementation.
-- 2025-01-29: Implemented config defaults, XDG path helpers, and TOML loading with precedence.
-- 2025-01-29: Started template system implementation.
-- 2025-01-29: Implemented filesystem template repository, frontmatter parsing, and template rendering helpers.
-- 2025-01-29: Started prompt generation workflow implementation.
-- 2025-01-29: Completed prompt generation workflow and started interactive UI work.
-- 2025-01-29: Implemented Bubble Tea/Bubbles interactive base prompt and template selection UI.
-- 2025-01-29: Started CLI wiring with Cobra root command and generate flow.
