@@ -18,17 +18,21 @@ import (
 
 // Adapter implements interactive UI using Bubble Tea + Bubbles.
 type Adapter struct {
-	Theme ui.Theme
+	Theme          ui.Theme
+	AltEnterSubmit bool
 }
 
 // NewAdapter returns a Bubble Tea adapter configured with theme colors.
 func NewAdapter(cfg domain.Config) Adapter {
-	return Adapter{Theme: ui.ThemeFromConfig(cfg)}
+	return Adapter{
+		Theme:          ui.ThemeFromConfig(cfg),
+		AltEnterSubmit: cfg.AltEnterSubmit,
+	}
 }
 
 // AskBasePrompt prompts for the base prompt.
 func (a Adapter) AskBasePrompt(defaultValue, note string) (string, error) {
-	model := newTextInputModel("Base prompt", "Enter your base prompt", defaultValue, note, a.Theme)
+	model := newTextInputModel("Base prompt", "Enter your base prompt", defaultValue, note, a.Theme, a.AltEnterSubmit)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
@@ -68,9 +72,11 @@ type textInputModel struct {
 	ready       bool
 	theme       ui.Theme
 	canceled    bool
+	submitKey   key.Binding
+	newlineKey  key.Binding
 }
 
-func newTextInputModel(title, description, defaultValue, note string, theme ui.Theme) textInputModel {
+func newTextInputModel(title, description, defaultValue, note string, theme ui.Theme, altEnterSubmit bool) textInputModel {
 	input := textarea.New()
 	input.Placeholder = description
 	input.SetValue(strings.TrimSpace(defaultValue))
@@ -81,6 +87,19 @@ func newTextInputModel(title, description, defaultValue, note string, theme ui.T
 	input.ShowLineNumbers = false
 	input.FocusedStyle.Base = lipgloss.NewStyle().Foreground(theme.Text)
 	input.BlurredStyle.Base = lipgloss.NewStyle().Foreground(theme.Text)
+	submitKey := key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "submit"))
+	newlineKey := key.NewBinding(
+		key.WithKeys("alt+enter", "shift+enter", "ctrl+j"),
+		key.WithHelp("alt+enter", "newline"),
+	)
+	if altEnterSubmit {
+		submitKey = key.NewBinding(key.WithKeys("alt+enter"), key.WithHelp("alt+enter", "submit"))
+		newlineKey = key.NewBinding(
+			key.WithKeys("enter", "shift+enter", "ctrl+j"),
+			key.WithHelp("enter", "newline"),
+		)
+	}
+	input.KeyMap.InsertNewline = newlineKey
 
 	return textInputModel{
 		title:       title,
@@ -88,6 +107,8 @@ func newTextInputModel(title, description, defaultValue, note string, theme ui.T
 		note:        note,
 		input:       input,
 		theme:       theme,
+		submitKey:   submitKey,
+		newlineKey:  newlineKey,
 	}
 }
 
@@ -98,11 +119,11 @@ func (m textInputModel) Init() tea.Cmd {
 func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyCtrlC, tea.KeyEsc:
-			m.canceled = true
+		switch {
+		case key.Matches(msg, m.submitKey):
 			return m, tea.Quit
-		case tea.KeyCtrlS:
+		case msg.Type == tea.KeyCtrlC, msg.Type == tea.KeyEsc:
+			m.canceled = true
 			return m, tea.Quit
 		}
 	case tea.WindowSizeMsg:
@@ -122,7 +143,11 @@ func (m textInputModel) View() string {
 		note := lipgloss.NewStyle().Foreground(m.theme.Muted).Render(m.note)
 		parts = append(parts, note)
 	}
-	parts = append(parts, body, "Press Ctrl+S to continue.")
+	help := "Press Enter to continue. Alt+Enter (or Shift+Enter/Ctrl+J) for a new line."
+	if m.submitKey.Help().Key == "alt+enter" {
+		help = "Press Alt+Enter to continue. Enter (or Shift+Enter/Ctrl+J) for a new line."
+	}
+	parts = append(parts, body, help)
 	return lipgloss.NewStyle().Margin(1, 1).Render(strings.Join(parts, "\n"))
 }
 

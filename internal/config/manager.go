@@ -111,6 +111,7 @@ type partialConfig struct {
 	BasePrompt              *string           `toml:"base_prompt"`
 	Border                  *string           `toml:"border"`
 	InteractiveDefault      *bool             `toml:"interactive_default"`
+	AltEnterSubmit          *bool             `toml:"alt_enter_submit"`
 	IncludeBuiltinShorthand *bool             `toml:"include_builtin_shorthand"`
 	RemapShortFlags         map[string]string `toml:"remap_short_flags"`
 }
@@ -208,6 +209,9 @@ func applyPartial(config *domain.Config, partial *partialConfig) {
 	}
 	if partial.InteractiveDefault != nil {
 		config.InteractiveDefault = *partial.InteractiveDefault
+	}
+	if partial.AltEnterSubmit != nil {
+		config.AltEnterSubmit = *partial.AltEnterSubmit
 	}
 	if partial.IncludeBuiltinShorthand != nil {
 		config.IncludeBuiltinShorthand = *partial.IncludeBuiltinShorthand
