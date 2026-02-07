@@ -9,7 +9,7 @@ import (
 func FrameStyle(theme Theme) lipgloss.Style {
 	return lipgloss.NewStyle().
 		Padding(1, 2).
-		Margin(1, 1).
+		Margin(2, 1, 0, 1).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(theme.Border)
 }
