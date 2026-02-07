@@ -103,7 +103,7 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 		}
 		tag := strings.TrimSpace(args[0])
 		if tag != "" {
-			return runHistoryTagSearch(cmd, cfg, entries, tag)
+			return runHistoryTagSearch(cmd, cfg, entries, tag, opts.insert)
 		}
 		return err
 	}
@@ -624,7 +624,7 @@ func extractHistoryTag(path string) string {
 	return ""
 }
 
-func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []historyEntry, tag string) error {
+func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []historyEntry, tag string, insert bool) error {
 	matches := make([]historyEntry, 0)
 	for _, entry := range entries {
 		entryTag := strings.ToLower(strings.TrimSpace(entry.Tag))
@@ -638,7 +638,7 @@ func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []histor
 	}
 	editorAdapter := editor.New(cfg.Editor)
 	if len(matches) == 1 {
-		return editorAdapter.Open(matches[0].Path)
+		return openHistoryForInsert(editorAdapter, matches[0].Path, insert)
 	}
 	theme := ui.ThemeFromConfig(cfg)
 	model := newHistoryModel(matches, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo, cfg.HistoryDateTime, theme)
@@ -651,10 +651,15 @@ func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []histor
 	if !ok {
 		return fmt.Errorf("unexpected history model result")
 	}
-	if strings.TrimSpace(m.selectedPath) == "" {
+	path := strings.TrimSpace(m.selectedPath)
+	if strings.TrimSpace(m.insertPath) != "" {
+		path = m.insertPath
+		insert = true
+	}
+	if path == "" {
 		return nil
 	}
-	return openHistoryForInsert(editorAdapter, m.selectedPath, false)
+	return openHistoryForInsert(editorAdapter, path, insert)
 }
 
 type historyModel struct {
