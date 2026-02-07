@@ -7,7 +7,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
@@ -64,20 +64,23 @@ type textInputModel struct {
 	title       string
 	description string
 	note        string
-	input       textinput.Model
+	input       textarea.Model
 	ready       bool
 	theme       ui.Theme
 	canceled    bool
 }
 
 func newTextInputModel(title, description, defaultValue, note string, theme ui.Theme) textInputModel {
-	input := textinput.New()
+	input := textarea.New()
 	input.Placeholder = description
-	input.SetValue(defaultValue)
+	input.SetValue(strings.TrimSpace(defaultValue))
 	input.Focus()
 	input.CharLimit = 2000
-	input.Width = 80
-	input.TextStyle = lipgloss.NewStyle().Foreground(theme.Text)
+	input.SetWidth(80)
+	input.SetHeight(6)
+	input.ShowLineNumbers = false
+	input.FocusedStyle.Base = lipgloss.NewStyle().Foreground(theme.Text)
+	input.BlurredStyle.Base = lipgloss.NewStyle().Foreground(theme.Text)
 
 	return textInputModel{
 		title:       title,
@@ -89,7 +92,7 @@ func newTextInputModel(title, description, defaultValue, note string, theme ui.T
 }
 
 func (m textInputModel) Init() tea.Cmd {
-	return textinput.Blink
+	return textarea.Blink
 }
 
 func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -99,9 +102,11 @@ func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			m.canceled = true
 			return m, tea.Quit
-		case tea.KeyEnter:
+		case tea.KeyCtrlS:
 			return m, tea.Quit
 		}
+	case tea.WindowSizeMsg:
+		m.applySize(msg.Width, msg.Height)
 	}
 	var cmd tea.Cmd
 	m.input, cmd = m.input.Update(msg)
@@ -117,8 +122,24 @@ func (m textInputModel) View() string {
 		note := lipgloss.NewStyle().Foreground(m.theme.Muted).Render(m.note)
 		parts = append(parts, note)
 	}
-	parts = append(parts, body, "Press Enter to continue.")
+	parts = append(parts, body, "Press Ctrl+S to continue.")
 	return lipgloss.NewStyle().Margin(1, 1).Render(strings.Join(parts, "\n"))
+}
+
+func (m *textInputModel) applySize(width, height int) {
+	contentWidth := width - 6
+	if contentWidth < 40 {
+		contentWidth = 40
+	}
+	m.input.SetWidth(contentWidth)
+	contentHeight := height - 8
+	if contentHeight < 4 {
+		contentHeight = 4
+	}
+	if contentHeight > 12 {
+		contentHeight = 12
+	}
+	m.input.SetHeight(contentHeight)
 }
 
 type templateSelectModel struct {
@@ -247,6 +268,8 @@ func (m templateSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// 		return m, nil
 			// 	}
 		}
+	case tea.WindowSizeMsg:
+		m.applySize(msg.Width, msg.Height)
 	}
 	var cmd tea.Cmd
 	m.list, cmd = m.list.Update(msg)
@@ -262,6 +285,15 @@ func (m templateSelectModel) View() string {
 	header := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("Space to toggle, Enter to continue.")
 	summary := m.renderSelectionBar()
 	return ui.FrameStyle(m.theme).Render(header + "\n\n" + summary + "\n\n" + m.list.View())
+}
+
+func (m *templateSelectModel) applySize(width, height int) {
+	ui.ApplyFrameListSize(&m.list, width, height, ui.FrameSizeOptions{
+		HorizontalInset: 8,
+		VerticalInset:   10,
+		MinWidth:        40,
+		MinHeight:       8,
+	})
 }
 
 func (m templateSelectModel) selected() []domain.Template {
