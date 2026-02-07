@@ -175,29 +175,27 @@ file_name • 0 B -- light font as date is now. prompter- and .md omitted from f
     inserted above the last text in insert mode above that
 - [x] or if history called with flag -n, --insert
 
-11 Config update
-11.1 Color scheme change
+11.6 Improve keybinding tips. 
+  - [ ] adjust visible keybind help in ui.list (both prompt select templates and hist)
+    - prevent tips from forcing width open. 
+    - show all keybinds in ? menu
+                        
+12 Config update
+12.1 Color scheme change
 - [x]replace colors with colors derived from config primary, secondary, accent base_prompt, border
   - the colors default to their current color definitions
 - [x] add to config defaults and init
 e.g. `primary=7 or other color type that lipgloss supports`
 
-12 Escape
+13 Escape
 - [x] quiting a bubble tea program should end without a prompt being generated
   only generate a prompt when a user completes the input flow. this applies to all bubble tea inputs
 
 
-13) color scheme changes
+14) color scheme changes
 - [x] update color scheme
 
-
-14) Release readiness
- Status: pending
-- Notes: Cross-platform build, Homebrew template, docs updates.
-
-v2
-
-15. Improve editor / vim integration
+15.00 Improve editor / vim integration
 - [ ] on root command if in editor insert cursor at end of of file
 - [ ] if target === clipboard
   on root command
@@ -206,6 +204,10 @@ v2
     - [ ] copy all content between frontmatter and last prompt seperator ---
 - [ ] define prompt separator in config
 
+
+16) Release readiness
+ Status: pending
+- Notes: Cross-platform build, Homebrew template, docs updates.
 
 
 ## Progress Log
