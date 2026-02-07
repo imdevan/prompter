@@ -165,9 +165,7 @@ func newTemplateSelectModel(templates []domain.Template, basePrompt string, pres
 		selecteds[idx] = true
 		order = append(order, idx)
 	}
-	defaultDelegate := list.NewDefaultDelegate()
-	defaultDelegate.Styles.SelectedTitle = defaultDelegate.Styles.SelectedTitle.Foreground(theme.TextHighlight).Bold(true)
-	defaultDelegate.Styles.SelectedDesc = defaultDelegate.Styles.SelectedDesc.Foreground(theme.DescriptionHighlight)
+	defaultDelegate := ui.NewListDelegate(theme, ui.ListDelegateOptions{})
 	defaultDelegate.ShortHelpFunc = func() []key.Binding {
 		return []key.Binding{
 			key.NewBinding(
