@@ -77,7 +77,7 @@ func newTextInputModel(title, description, defaultValue, note string, theme ui.T
 	input.Focus()
 	input.CharLimit = 2000
 	input.SetWidth(80)
-	input.SetHeight(6)
+	input.SetHeight(3)
 	input.ShowLineNumbers = false
 	input.FocusedStyle.Base = lipgloss.NewStyle().Foreground(theme.Text)
 	input.BlurredStyle.Base = lipgloss.NewStyle().Foreground(theme.Text)
@@ -133,11 +133,11 @@ func (m *textInputModel) applySize(width, height int) {
 	}
 	m.input.SetWidth(contentWidth)
 	contentHeight := height - 8
-	if contentHeight < 4 {
-		contentHeight = 4
+	if contentHeight < 3 {
+		contentHeight = 3
 	}
-	if contentHeight > 12 {
-		contentHeight = 12
+	if contentHeight > 3 {
+		contentHeight = 3
 	}
 	m.input.SetHeight(contentHeight)
 }
