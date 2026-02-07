@@ -210,6 +210,17 @@ e.g. `primary=7 or other color type that lipgloss supports`
 - Notes: Cross-platform build, Homebrew template, docs updates.
 
 
+## V2.1
+
+- [ ] create a ui util to manage responsiveness. it should track the width of the view and 
+  - [ ] render which tips are visible based on ui width
+  - [ ] only render borders in md or larger views
+
+sm: < 40
+md: < 80
+lg: > 80
+xl: > 300
+
 ## Progress Log
 - 2025-01-29: Created plan.md with milestones and status tracking.
 - 2025-01-29: Confirmed scope with UI/layout expectations and default include_agents behavior.
