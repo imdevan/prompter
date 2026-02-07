@@ -127,18 +127,20 @@ type templateSelectModel struct {
 	selecteds  map[int]bool
 	order      []int
 	basePrompt string
-	barIndex   int
-	focus      focusArea
+	// todo: summary manipulation deferred to later version
+	// barIndex   int
+	// focus      focusArea
 	theme      ui.Theme
 	canceled   bool
 }
 
-type focusArea int
-
-const (
-	focusList focusArea = iota
-	focusBar
-)
+// todo: summary manipulation deferred to later version
+// type focusArea int
+//
+// const (
+// 	focusList focusArea = iota
+// 	focusBar
+// )
 
 func newTemplateSelectModel(templates []domain.Template, basePrompt string, preselected []string, theme ui.Theme) templateSelectModel {
 	items := make([]list.Item, 0, len(templates))
@@ -172,10 +174,11 @@ func newTemplateSelectModel(templates []domain.Template, basePrompt string, pres
 				key.WithKeys("󱁐"),
 				key.WithHelp("󱁐", "Toggle"),
 			),
-			key.NewBinding(
-				key.WithKeys("󰌒"),
-				key.WithHelp("󰌒", "Focus summary"),
-			),
+			// todo: summary manipulation deferred to later version
+			// key.NewBinding(
+			// 	key.WithKeys("󰌒"),
+			// 	key.WithHelp("󰌒", "Focus summary"),
+			// ),
 			key.NewBinding(
 				key.WithKeys("󰌑"),
 				key.WithHelp("󰌑", "Continue"),
@@ -200,8 +203,6 @@ func newTemplateSelectModel(templates []domain.Template, basePrompt string, pres
 		selecteds:  selecteds,
 		order:      order,
 		basePrompt: strings.TrimSpace(basePrompt),
-		barIndex:   0,
-		focus:      focusList,
 		theme:      theme,
 	}
 }
@@ -217,33 +218,36 @@ func (m templateSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			m.canceled = true
 			return m, tea.Quit
-		case tea.KeyTab:
-			if m.focus == focusList {
-				m.focus = focusBar
-			} else {
-				m.focus = focusList
-			}
-			return m, nil
+		// todo: summary manipulation deferred to later version
+		// case tea.KeyTab:
+		// 	if m.focus == focusList {
+		// 		m.focus = focusBar
+		// 	} else {
+		// 		m.focus = focusList
+		// 	}
+		// 	return m, nil
 		case tea.KeyEnter:
 			return m, tea.Quit
 		case tea.KeySpace:
-			if m.focus == focusBar {
-				m.toggleFocusedSelection()
-				return m, nil
-			}
+			// todo: summary manipulation deferred to later version
+			// if m.focus == focusBar {
+			// 	m.toggleFocusedSelection()
+			// 	return m, nil
+			// }
 			if item, ok := m.list.SelectedItem().(templateItem); ok {
 				m.toggleSelection(item.index)
 			}
-		case tea.KeyLeft, tea.KeyRight:
-			if m.focus == focusBar {
-				m.moveBarIndex(msg.Type)
-				return m, nil
-			}
-		case tea.KeyBackspace, tea.KeyDelete:
-			if m.focus == focusBar {
-				m.toggleFocusedSelection()
-				return m, nil
-			}
+		// todo: summary manipulation deferred to later version
+		// case tea.KeyLeft, tea.KeyRight:
+		// 	if m.focus == focusBar {
+		// 		m.moveBarIndex(msg.Type)
+		// 		return m, nil
+		// 	}
+		// case tea.KeyBackspace, tea.KeyDelete:
+		// 	if m.focus == focusBar {
+		// 		m.toggleFocusedSelection()
+		// 		return m, nil
+		// 	}
 		}
 	}
 	var cmd tea.Cmd
@@ -255,7 +259,9 @@ func (m templateSelectModel) View() string {
 	if len(m.templates) == 0 {
 		return "No templates available."
 	}
-	header := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("Space to toggle, Tab to focus summary, Enter to continue.")
+	// todo: summary manipulation deferred to later version
+	// header := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("Space to toggle, Tab to focus summary, Enter to continue.")
+	header := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("Space to toggle, Enter to continue.")
 	summary := m.renderSelectionBar()
 	return lipgloss.NewStyle().
 		Padding(1, 2).
@@ -274,48 +280,49 @@ func (m templateSelectModel) selected() []domain.Template {
 	return selected
 }
 
-func (m *templateSelectModel) moveBarIndex(key tea.KeyType) {
-	entries := m.selectionEntries()
-	if len(entries) == 0 {
-		m.barIndex = 0
-		return
-	}
-	switch key {
-	case tea.KeyLeft:
-		m.barIndex--
-	case tea.KeyRight:
-		m.barIndex++
-	}
-	if m.barIndex < 0 {
-		m.barIndex = 0
-	}
-	if m.barIndex >= len(entries) {
-		m.barIndex = len(entries) - 1
-	}
-}
-
-func (m *templateSelectModel) clampBarIndex() {
-	entries := m.selectionEntries()
-	if len(entries) == 0 {
-		m.barIndex = 0
-		return
-	}
-	if m.barIndex >= len(entries) {
-		m.barIndex = len(entries) - 1
-	}
-}
-
-func (m *templateSelectModel) toggleFocusedSelection() {
-	entries := m.selectionEntries()
-	if len(entries) == 0 || m.barIndex >= len(entries) {
-		return
-	}
-	entry := entries[m.barIndex]
-	if entry.templateIndex < 0 {
-		return
-	}
-	m.toggleSelection(entry.templateIndex)
-}
+// todo: summary manipulation deferred to later version
+// func (m *templateSelectModel) moveBarIndex(key tea.KeyType) {
+// 	entries := m.selectionEntries()
+// 	if len(entries) == 0 {
+// 		m.barIndex = 0
+// 		return
+// 	}
+// 	switch key {
+// 	case tea.KeyLeft:
+// 		m.barIndex--
+// 	case tea.KeyRight:
+// 		m.barIndex++
+// 	}
+// 	if m.barIndex < 0 {
+// 		m.barIndex = 0
+// 	}
+// 	if m.barIndex >= len(entries) {
+// 		m.barIndex = len(entries) - 1
+// 	}
+// }
+//
+// func (m *templateSelectModel) clampBarIndex() {
+// 	entries := m.selectionEntries()
+// 	if len(entries) == 0 {
+// 		m.barIndex = 0
+// 		return
+// 	}
+// 	if m.barIndex >= len(entries) {
+// 		m.barIndex = len(entries) - 1
+// 	}
+// }
+//
+// func (m *templateSelectModel) toggleFocusedSelection() {
+// 	entries := m.selectionEntries()
+// 	if len(entries) == 0 || m.barIndex >= len(entries) {
+// 		return
+// 	}
+// 	entry := entries[m.barIndex]
+// 	if entry.templateIndex < 0 {
+// 		return
+// 	}
+// 	m.toggleSelection(entry.templateIndex)
+// }
 
 func (m *templateSelectModel) toggleSelection(index int) {
 	if m.selecteds[index] {
@@ -325,7 +332,8 @@ func (m *templateSelectModel) toggleSelection(index int) {
 		m.selecteds[index] = true
 		m.order = append(m.order, index)
 	}
-	m.clampBarIndex()
+	// todo: summary manipulation deferred to later version
+	// m.clampBarIndex()
 }
 
 func (m *templateSelectModel) removeFromOrder(index int) {
@@ -374,30 +382,27 @@ func (m templateSelectModel) renderSelectionBar() string {
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(m.theme.Border).
 		Foreground(m.theme.Text)
-	focused := lipgloss.NewStyle().
-		Padding(0, 1).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(m.theme.Primary).
-		Foreground(m.theme.Text).
-		Background(m.theme.Primary).
-		Bold(true)
+	// todo: summary manipulation deferred to later version
+	// focused := lipgloss.NewStyle().
+	// 	Padding(0, 1).
+	// 	Border(lipgloss.RoundedBorder()).
+	// 	BorderForeground(m.theme.Primary).
+	// 	Foreground(m.theme.Text).
+	// 	Background(m.theme.Primary).
+	// 	Bold(true)
 	basePromptStyle := lipgloss.NewStyle().
 		Padding(0, 1).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(m.theme.BasePromptBadge).
 		Foreground(m.theme.BasePromptBadge)
 	parts := make([]string, 0, len(entries))
-	for i, entry := range entries {
+	for _, entry := range entries {
 		chip := entry.label
 		if entry.templateIndex < 0 {
 			parts = append(parts, basePromptStyle.Render(chip))
 			continue
 		}
-		if m.focus == focusBar && i == m.barIndex {
-			parts = append(parts, focused.Render(chip))
-		} else {
-			parts = append(parts, normal.Render(chip))
-		}
+		parts = append(parts, normal.Render(chip))
 	}
 	return lipgloss.JoinHorizontal(lipgloss.Top, parts...)
 }
