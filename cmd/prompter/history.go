@@ -775,15 +775,12 @@ func (m historyModel) View() string {
 }
 
 func (m historyModel) applySize(width, height int) {
-	listWidth := width - 4
-	listHeight := height - 2
-	if listWidth < 40 {
-		listWidth = 40
-	}
-	if listHeight < 8 {
-		listHeight = 8
-	}
-	m.list.SetSize(listWidth, listHeight)
+	ui.ApplyFrameListSize(&m.list, width, height, ui.FrameSizeOptions{
+		HorizontalInset: 8,
+		VerticalInset:   6,
+		MinWidth:        40,
+		MinHeight:       8,
+	})
 }
 
 func (m historyModel) startDeleteConfirm() (tea.Model, tea.Cmd) {
