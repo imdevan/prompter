@@ -767,10 +767,7 @@ func (m historyModel) View() string {
 		empty := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("No history entries found.")
 		return empty
 	}
-	frame := lipgloss.NewStyle().
-		Padding(1, 2).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(m.theme.Border)
+	frame := ui.FrameStyle(m.theme)
 	if !m.deleteMode {
 		return frame.Render(m.list.View())
 	}
@@ -779,7 +776,7 @@ func (m historyModel) View() string {
 
 func (m historyModel) applySize(width, height int) {
 	listWidth := width - 4
-	listHeight := height - 6
+	listHeight := height - 2
 	if listWidth < 40 {
 		listWidth = 40
 	}

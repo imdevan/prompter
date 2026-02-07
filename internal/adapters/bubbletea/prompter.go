@@ -111,14 +111,14 @@ func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m textInputModel) View() string {
 	title := lipgloss.NewStyle().Bold(true).Foreground(m.theme.Headings).Render(m.title)
 	description := lipgloss.NewStyle().Foreground(m.theme.Text).Render(m.description)
-	body := lipgloss.NewStyle().Padding(1, 2).Border(lipgloss.RoundedBorder()).BorderForeground(m.theme.Border).Render(m.input.View())
+	body := lipgloss.NewStyle().Padding(0, 1).Border(lipgloss.RoundedBorder()).BorderForeground(m.theme.Border).Render(m.input.View())
 	parts := []string{title, description}
 	if strings.TrimSpace(m.note) != "" {
 		note := lipgloss.NewStyle().Foreground(m.theme.Muted).Render(m.note)
 		parts = append(parts, note)
 	}
 	parts = append(parts, body, "Press Enter to continue.")
-	return strings.Join(parts, "\n")
+	return lipgloss.NewStyle().Margin(1, 1).Render(strings.Join(parts, "\n"))
 }
 
 type templateSelectModel struct {
@@ -130,8 +130,8 @@ type templateSelectModel struct {
 	// todo: summary manipulation deferred to later version
 	// barIndex   int
 	// focus      focusArea
-	theme      ui.Theme
-	canceled   bool
+	theme    ui.Theme
+	canceled bool
 }
 
 // todo: summary manipulation deferred to later version
@@ -235,17 +235,17 @@ func (m templateSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if item, ok := m.list.SelectedItem().(templateItem); ok {
 				m.toggleSelection(item.index)
 			}
-		// todo: summary manipulation deferred to later version
-		// case tea.KeyLeft, tea.KeyRight:
-		// 	if m.focus == focusBar {
-		// 		m.moveBarIndex(msg.Type)
-		// 		return m, nil
-		// 	}
-		// case tea.KeyBackspace, tea.KeyDelete:
-		// 	if m.focus == focusBar {
-		// 		m.toggleFocusedSelection()
-		// 		return m, nil
-		// 	}
+			// todo: summary manipulation deferred to later version
+			// case tea.KeyLeft, tea.KeyRight:
+			// 	if m.focus == focusBar {
+			// 		m.moveBarIndex(msg.Type)
+			// 		return m, nil
+			// 	}
+			// case tea.KeyBackspace, tea.KeyDelete:
+			// 	if m.focus == focusBar {
+			// 		m.toggleFocusedSelection()
+			// 		return m, nil
+			// 	}
 		}
 	}
 	var cmd tea.Cmd
@@ -261,11 +261,7 @@ func (m templateSelectModel) View() string {
 	// header := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("Space to toggle, Tab to focus summary, Enter to continue.")
 	header := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("Space to toggle, Enter to continue.")
 	summary := m.renderSelectionBar()
-	return lipgloss.NewStyle().
-		Padding(1, 2).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(m.theme.Border).
-		Render(header + "\n\n" + summary + "\n\n" + m.list.View())
+	return ui.FrameStyle(m.theme).Render(header + "\n\n" + summary + "\n\n" + m.list.View())
 }
 
 func (m templateSelectModel) selected() []domain.Template {
