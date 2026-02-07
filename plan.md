@@ -195,6 +195,16 @@ e.g. `primary=7 or other color type that lipgloss supports`
  Status: pending
 - Notes: Cross-platform build, Homebrew template, docs updates.
 
+v2
+
+15. Improve editor / vim integration
+- [ ] on root command if in editor insert cursor at end of of file
+- [ ] if target === clipboard
+  on root command
+    - [ ] when vim closes copy all content after frontmatter to the clipboard
+  on insert from history
+    - [ ] copy all content between frontmatter and last prompt seperator ---
+- [ ] define prompt separator in config
 
 
 
