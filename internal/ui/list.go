@@ -50,8 +50,8 @@ func ApplyListFilterStyles(model *list.Model, theme Theme) {
 // NewListDelegate provides shared list focus styles.
 func NewListDelegate(theme Theme, opts ListDelegateOptions) list.DefaultDelegate {
 	delegate := list.NewDefaultDelegate()
-	delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.Foreground(theme.TextHighlight).Bold(true)
-	delegate.Styles.SelectedDesc = delegate.Styles.SelectedDesc.Foreground(theme.DescriptionHighlight)
+	delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.Foreground(theme.TextHighlight).BorderForeground(theme.Primary).Bold(true)
+	delegate.Styles.SelectedDesc = delegate.Styles.SelectedDesc.Foreground(theme.DescriptionHighlight).BorderForeground(theme.Primary)
 	if opts.Height > 0 {
 		delegate.SetHeight(opts.Height)
 	}
