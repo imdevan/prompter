@@ -739,6 +739,15 @@ func (m historyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.deleteMode {
 			return m.updateDelete(msg)
 		}
+		if m.list.FilterState() == list.Filtering {
+			if msg.Type == tea.KeyCtrlC {
+				return m, tea.Quit
+			}
+			break
+		}
+		if msg.Type == tea.KeyEsc && m.list.FilterState() == list.FilterApplied {
+			break
+		}
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
