@@ -808,12 +808,7 @@ func (m historyModel) fullHelpKeys() [][]key.Binding {
 }
 
 func (m historyModel) applySize(width, height int) {
-	ui.ApplyFrameListSize(&m.list, width, height, ui.FrameSizeOptions{
-		HorizontalInset: 8,
-		VerticalInset:   6,
-		MinWidth:        40,
-		MinHeight:       8,
-	})
+	ui.ApplyFrameListSize(&m.list, width, height, ui.FrameSizeOptions{})
 }
 
 func (m historyModel) startDeleteConfirm() (tea.Model, tea.Cmd) {

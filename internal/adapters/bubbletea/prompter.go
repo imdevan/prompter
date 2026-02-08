@@ -330,10 +330,7 @@ func (m templateSelectModel) fullHelpKeys() [][]key.Binding {
 
 func (m *templateSelectModel) applySize(width, height int) {
 	ui.ApplyFrameListSize(&m.list, width, height, ui.FrameSizeOptions{
-		HorizontalInset: 8,
-		VerticalInset:   10,
-		MinWidth:        40,
-		MinHeight:       8,
+		VerticalInset: 12,
 	})
 }
 
