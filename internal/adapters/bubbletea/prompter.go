@@ -444,8 +444,10 @@ func (m templateSelectModel) renderSelectionBar() string {
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(m.theme.Muted).
 			Foreground(m.theme.Muted).
-			Render("nil")
+			Render("empty")
 
+		// TODO: deciding between "empty and \n\n"
+		// return "\n\n"
 		return emptyMessage
 	}
 	normal := lipgloss.NewStyle().
