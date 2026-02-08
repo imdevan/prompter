@@ -193,12 +193,14 @@ func readHistoryEntries(dir string) ([]historyEntry, error) {
 
 type historyListItem struct {
 	entry       historyEntry
-	title       string
+	tag         string
+	timeLine    string
 	description string
+	filterValue string
 }
 
 func (h historyListItem) Title() string {
-	return h.title
+	return h.timeLine
 }
 
 func (h historyListItem) Description() string {
@@ -206,7 +208,36 @@ func (h historyListItem) Description() string {
 }
 
 func (h historyListItem) FilterValue() string {
-	return h.entry.Name
+	return h.filterValue
+}
+
+type historyItemDelegate struct {
+	list.DefaultDelegate
+	theme ui.Theme
+}
+
+func (d historyItemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
+	item, ok := listItem.(historyListItem)
+	if !ok {
+		return
+	}
+	titleStyle := d.Styles.NormalTitle
+	descStyle := d.Styles.NormalDesc
+	if index == m.Index() {
+		titleStyle = d.Styles.SelectedTitle
+		descStyle = d.Styles.SelectedDesc
+	}
+	title := titleStyle.Render(item.timeLine)
+	if strings.TrimSpace(item.tag) != "" {
+		tagStyle := titleStyle.Foreground(d.theme.Tags)
+		title = tagStyle.Render("#"+item.tag) + "\n" + titleStyle.Render(item.timeLine)
+	}
+	desc := descStyle.Render(item.description)
+	if d.ShowDescription {
+		fmt.Fprintf(w, "%s\n%s", title, desc)
+		return
+	}
+	fmt.Fprint(w, title)
 }
 
 func formatSize(size int64) string {
@@ -234,7 +265,13 @@ func historyFlagsFromName(name string) string {
 	return strings.Join(parts[2:], "-")
 }
 
-func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool, dateTimeFormat string, theme ui.Theme, flagWidth int, tokenWidth int) (string, string) {
+type historyDisplay struct {
+	tag         string
+	timeLine    string
+	description string
+}
+
+func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool, dateTimeFormat string, flagWidth int, tokenWidth int) historyDisplay {
 	const day = 24 * time.Hour
 	const week = 7 * day
 	const month = 30 * day
@@ -246,13 +283,21 @@ func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool,
 	}
 
 	timeLine := formatHistoryTimeLine(entry.ModTime, age, week, month, enableTimeAgo, dateTimeFormat)
-	title := timeLine
-	if tag != "" {
-		tagStyle := lipgloss.NewStyle().Foreground(theme.Tags)
-		title = tagStyle.Render("#"+tag) + "\n" + timeLine
-	}
 	description := formatHistoryFileLine(entry.Flags, entry.BodyBytes, entry.BodyTokens, flagWidth, tokenWidth)
-	return title, description
+	return historyDisplay{
+		tag:         tag,
+		timeLine:    timeLine,
+		description: description,
+	}
+}
+
+func historyFilterValue(entry historyEntry, display historyDisplay) string {
+	parts := []string{
+		strings.TrimSpace(entry.Name),
+		strings.TrimSpace(display.tag),
+		strings.TrimSpace(entry.Flags),
+	}
+	return strings.TrimSpace(strings.Join(parts, " "))
 }
 
 func formatHistoryTimeLine(modTime time.Time, age time.Duration, week time.Duration, month time.Duration, enableTimeAgo bool, dateTimeFormat string) string {
@@ -706,16 +751,22 @@ func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool
 	flagWidth := maxHistoryFlagWidth(entries)
 	tokenWidth := maxHistoryTokenWidth(entries)
 	for _, entry := range entries {
-		title, description := formatHistoryDisplay(entry, now, enableTimeAgo, dateTimeFormat, theme, flagWidth, tokenWidth)
+		display := formatHistoryDisplay(entry, now, enableTimeAgo, dateTimeFormat, flagWidth, tokenWidth)
 		items = append(items, historyListItem{
 			entry:       entry,
-			title:       title,
-			description: description,
+			tag:         display.tag,
+			timeLine:    display.timeLine,
+			description: display.description,
+			filterValue: historyFilterValue(entry, display),
 		})
 	}
-	delegate := ui.NewListDelegate(theme, ui.ListDelegateOptions{
+	baseDelegate := ui.NewListDelegate(theme, ui.ListDelegateOptions{
 		Height: 2,
 	})
+	delegate := historyItemDelegate{
+		DefaultDelegate: baseDelegate,
+		theme:           theme,
+	}
 	model := ui.NewListModel(items, delegate, 80, 20, theme)
 	model.Title = "History"
 	model.Styles.Title = lipgloss.NewStyle().Foreground(theme.Headings).Bold(true)
