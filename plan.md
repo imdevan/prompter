@@ -14,10 +14,18 @@ Status key: pending, in-progress, blocked, completed
 3) Configuration and path resolution
 - Status: completed
 - Notes: Config manager, defaults, precedence, validation.
-**
+
 4) Template system
 - Status: completed
 - Notes: Template repository, processing, frontmatter, custom flags.
+
+4.1 Support opencode compatible skills as templates. 
+- [ ] Add opencode compatible skills as templates
+  - opencode reference https://opencode.ai/docs/skills/
+  - enabled if include_agents == all || opencode
+  - See placefiles and understand discovery for skills discovery and formats.
+    - Template names should be derived from folder name OR. name from frontmatter. 
+    - flags and shorthand flags may be defined in metadata
 
 5) Prompt generation workflow
 - Status: completed
@@ -26,7 +34,7 @@ Status key: pending, in-progress, blocked, completed
 6) Interactive UI
 - Status: completed
 
-7) CLI commands and flags**7) CLI commands and flags
+7) CLI commands and flags7) CLI commands and flags
 - Status: in-progress
 - Notes: Cobra commands, completion, version, help text, dynamic template flags from config.
 
