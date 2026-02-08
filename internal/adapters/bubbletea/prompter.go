@@ -242,6 +242,16 @@ func (m templateSelectModel) Init() tea.Cmd {
 func (m templateSelectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if m.list.FilterState() == list.Filtering {
+			if msg.Type == tea.KeyCtrlC {
+				m.canceled = true
+				return m, tea.Quit
+			}
+			break
+		}
+		if msg.Type == tea.KeyEsc && m.list.FilterState() == list.FilterApplied {
+			break
+		}
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			m.canceled = true
