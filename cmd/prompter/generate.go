@@ -16,6 +16,7 @@ import (
 	"prompter-cli/internal/interactive"
 	"prompter-cli/internal/output"
 	"prompter-cli/internal/template"
+	"prompter-cli/internal/ui"
 	"prompter-cli/internal/workflow"
 
 	"github.com/spf13/cobra"
@@ -67,7 +68,8 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 	if len(templates) == 0 {
 		templates = append([]string{}, opts.templates...)
 	}
-	if shouldInteractive(opts, cfg) {
+	usedInteractive := shouldInteractive(opts, cfg)
+	if usedInteractive {
 		allTemplates, err := repo.List()
 		if err != nil {
 			return err
@@ -85,7 +87,7 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		req, err := prompter.Collect(basePrompt, allTemplates, templates, opts.clipboard, note)
 		if err != nil {
 			if errors.Is(err, interactive.ErrCanceled) {
-				return nil
+				return printExitMessage(cmd.OutOrStdout(), cfg, "Canceled. No prompt generated.", true)
 			}
 			return err
 		}
@@ -136,6 +138,10 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 	req.TemplateOrder, req.TemplateNames = dedupeTemplateOrder(req.TemplateOrder, req.TemplateNames)
 	shorthands := templateShorthandsForNames(req.TemplateNames, opts.templateShortByName, opts.agents || containsTemplateName(req.TemplateNames, "agents.md"))
 	req.HistorySuffix = buildHistorySuffix(shorthands)
+
+	if usedInteractive && !hasPromptInput(req) {
+		return printExitMessage(cmd.OutOrStdout(), cfg, "No prompt generated. No input provided.", true)
+	}
 
 	handler := output.NewHandler(cmd.OutOrStdout(), clip, editor.New(cfg.Editor))
 	service := workflow.New(repo, handler)
@@ -211,6 +217,41 @@ func dedupeTemplateOrder(order []string, names []string) ([]string, []string) {
 		dedupedNames = append(dedupedNames, entry)
 	}
 	return dedupedOrder, dedupedNames
+}
+
+func hasPromptInput(req domain.Request) bool {
+	if strings.TrimSpace(req.BasePrompt) != "" {
+		return true
+	}
+	if len(req.TemplateNames) > 0 {
+		return true
+	}
+	if len(req.Files) > 0 {
+		return true
+	}
+	if req.IncludeDirectory {
+		return true
+	}
+	if req.Fix.Enabled && strings.TrimSpace(req.Fix.Output) != "" {
+		return true
+	}
+	if strings.TrimSpace(req.PipedInput) != "" {
+		return true
+	}
+	return false
+}
+
+func printExitMessage(out io.Writer, cfg domain.Config, message string, mutedText bool) error {
+	if out == nil {
+		return nil
+	}
+	theme := ui.ThemeFromConfig(cfg)
+	_, err := io.WriteString(out, ui.ExitMessage(theme, message, mutedText))
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(out, "\n")
+	return err
 }
 
 func containsTemplateName(names []string, match string) bool {
