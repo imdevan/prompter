@@ -4,15 +4,7 @@ import "github.com/charmbracelet/lipgloss"
 
 // ClipboardConfirm renders the standard clipboard confirmation message.
 func ClipboardConfirm(theme Theme) string {
-	style := lipgloss.NewStyle().
-		Margin(1, 1).
-		Padding(1, 2).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color(theme.Muted)).
-		Foreground(lipgloss.Color(theme.Text)).
-		Bold(true)
-
-	return style.Render("  Copied to clipboard  󱁖")
+	return ExitMessage(theme, "  Copied to clipboard  󱁖", false)
 }
 
 // ExitMessage renders a standard framed exit message.
