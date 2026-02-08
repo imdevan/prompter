@@ -210,7 +210,7 @@ e.g. `primary=7 or other color type that lipgloss supports`
 - Notes: Cross-platform build, Homebrew template, docs updates.
 
 16.1 config init changes
-- [ ] should comment out all default options (everything)
+- [x] should comment out all default options (everything)
 
 - [ ] 16.2 build for arch
 - [ ] 16.3 build for homebrew
