@@ -176,7 +176,7 @@ file_name • 0 B -- light font as date is now. prompter- and .md omitted from f
 - [x] or if history called with flag -n, --insert
 
 11.6 Improve keybinding tips. 
-  - [ ] adjust visible keybind help in ui.list (both prompt select templates and hist)
+  - [x] adjust visible keybind help in ui.list (both prompt select templates and hist)
     - prevent tips from forcing width open. 
     - show all keybinds in ? menu
                         
