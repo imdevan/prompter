@@ -163,36 +163,12 @@ func (t templateListItem) FilterValue() string {
 	return t.display
 }
 
-func isAgentTemplateName(name string) bool {
-	trimmed := strings.ToLower(strings.TrimSpace(name))
-	if trimmed == "agents.md" || trimmed == "agents" {
-		return true
-	}
-	if strings.HasPrefix(trimmed, "cursor/commands") {
-		return true
-	}
-	if strings.HasPrefix(trimmed, "kiro/steering") {
-		return true
-	}
-	if strings.HasPrefix(trimmed, "opencode/commands") {
-		return true
-	}
-	return false
-}
-
 func templateDisplayName(tmpl domain.Template) string {
-	title := strings.TrimSpace(tmpl.Title)
-	if title != "" {
-		title = toTitleCase(title)
-	}
 	name := strings.TrimSpace(tmpl.Name)
-	if title == "" {
+	if name != "" {
 		return name
 	}
-	if name != "" && isAgentTemplateName(name) {
-		return fmt.Sprintf("%s (%s)", title, name)
-	}
-	return title
+	return strings.TrimSpace(tmpl.Name)
 }
 
 func formatFlagLabel(tmpl domain.Template) string {
@@ -215,22 +191,6 @@ func formatFlagLabel(tmpl domain.Template) string {
 		return ""
 	}
 	return strings.Join(flags, ", ")
-}
-
-func toTitleCase(value string) string {
-	words := strings.Fields(value)
-	for i, word := range words {
-		runes := []rune(word)
-		if len(runes) == 0 {
-			continue
-		}
-		runes[0] = []rune(strings.ToUpper(string(runes[0])))[0]
-		for j := 1; j < len(runes); j++ {
-			runes[j] = []rune(strings.ToLower(string(runes[j])))[0]
-		}
-		words[i] = string(runes)
-	}
-	return strings.Join(words, " ")
 }
 
 func listTemplateFlagName(name string) string {
