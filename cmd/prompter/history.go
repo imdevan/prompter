@@ -295,6 +295,7 @@ func historyFilterValue(entry historyEntry, display historyDisplay) string {
 	parts := []string{
 		strings.TrimSpace(entry.Name),
 		strings.TrimSpace(display.tag),
+		strings.TrimSpace(display.timeLine),
 		strings.TrimSpace(entry.Flags),
 	}
 	return strings.TrimSpace(strings.Join(parts, " "))
@@ -846,6 +847,14 @@ func (m historyModel) View() string {
 }
 
 func (m historyModel) shortHelpKeys() []key.Binding {
+	if m.list.FilterState() == list.Filtering {
+		return []key.Binding{
+			m.list.KeyMap.AcceptWhileFiltering,
+			m.list.KeyMap.CancelWhileFiltering,
+			m.list.KeyMap.ClearFilter,
+			m.list.KeyMap.ShowFullHelp,
+		}
+	}
 	return []key.Binding{
 		key.NewBinding(
 			key.WithKeys("󰌑"),
@@ -859,6 +868,8 @@ func (m historyModel) shortHelpKeys() []key.Binding {
 			key.WithKeys("i", "insert"),
 			key.WithHelp("i/ins", "insert"),
 		),
+		m.list.KeyMap.Filter,
+		m.list.KeyMap.ClearFilter,
 		m.list.KeyMap.ShowFullHelp,
 	}
 }
