@@ -20,6 +20,7 @@ Status key: pending, in-progress, blocked, completed
 - Notes: Template repository, processing, frontmatter, custom flags.
 
 4.1 Support opencode compatible skills as templates. 
+- [ ] refactor templates title to name
 - [ ] Add opencode compatible skills as templates
   - opencode reference https://opencode.ai/docs/skills/
   - enabled if include_agents == all || opencode
