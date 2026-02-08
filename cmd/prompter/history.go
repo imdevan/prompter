@@ -692,31 +692,11 @@ func newHistoryModel(entries []historyEntry, location string, enableTimeAgo bool
 	delegate := ui.NewListDelegate(theme, ui.ListDelegateOptions{
 		Height: 2,
 	})
-	delegate.ShortHelpFunc = func() []key.Binding {
-		return []key.Binding{
-			key.NewBinding(
-				key.WithKeys("󰌑"),
-				key.WithHelp("󰌑", "Open"),
-			),
-			key.NewBinding(
-				key.WithKeys("d", "D"),
-				key.WithHelp("d/D", "delete"),
-			),
-			key.NewBinding(
-				key.WithKeys("i", "insert"),
-				key.WithHelp("i/ins", "insert"),
-			),
-			key.NewBinding(
-				key.WithKeys("esc"),
-				key.WithHelp("esc", "Exit"),
-			),
-		}
-	}
 	model := ui.NewListModel(items, delegate, 80, 20, theme)
 	model.Title = "History"
 	model.Styles.Title = lipgloss.NewStyle().Foreground(theme.Headings).Bold(true)
 	model.SetShowStatusBar(false)
-	model.SetShowHelp(true)
+	model.SetShowHelp(false)
 	model.SetFilteringEnabled(true)
 	return historyModel{
 		list:     model,
@@ -774,9 +754,47 @@ func (m historyModel) View() string {
 	}
 	frame := ui.FrameStyle(m.theme)
 	if !m.deleteMode {
-		return frame.Render(m.list.View())
+		listView := m.list.View()
+		helpView := ui.ListHelpView(m.list, m.shortHelpKeys(), m.fullHelpKeys())
+		return frame.Render(listView + "\n" + helpView)
 	}
 	return frame.Render(m.deleteView())
+}
+
+func (m historyModel) shortHelpKeys() []key.Binding {
+	return []key.Binding{
+		key.NewBinding(
+			key.WithKeys("󰌑"),
+			key.WithHelp("󰌑", "Open"),
+		),
+		key.NewBinding(
+			key.WithKeys("d", "D"),
+			key.WithHelp("d/D", "delete"),
+		),
+		key.NewBinding(
+			key.WithKeys("i", "insert"),
+			key.WithHelp("i/ins", "insert"),
+		),
+		m.list.KeyMap.ShowFullHelp,
+	}
+}
+
+func (m historyModel) fullHelpKeys() [][]key.Binding {
+	short := m.shortHelpKeys()
+	sections := [][]key.Binding{
+		{
+			short[0],
+			short[1],
+			short[2],
+			short[3],
+		},
+	}
+	sections = append(sections, ui.ListFullHelpSections(m.list, ui.ListHelpOptions{
+		IncludeFilter: true,
+		IncludePaging: true,
+		IncludeQuit:   true,
+	})...)
+	return sections
 }
 
 func (m historyModel) applySize(width, height int) {

@@ -212,23 +212,6 @@ func newTemplateSelectModel(templates []domain.Template, basePrompt string, pres
 		order = append(order, idx)
 	}
 	defaultDelegate := ui.NewListDelegate(theme, ui.ListDelegateOptions{})
-	defaultDelegate.ShortHelpFunc = func() []key.Binding {
-		return []key.Binding{
-			key.NewBinding(
-				key.WithKeys("󱁐"),
-				key.WithHelp("󱁐", "Toggle"),
-			),
-			// todo: summary manipulation deferred to later version
-			// key.NewBinding(
-			// 	key.WithKeys("󰌒"),
-			// 	key.WithHelp("󰌒", "Focus summary"),
-			// ),
-			key.NewBinding(
-				key.WithKeys("󰌑"),
-				key.WithHelp("󰌑", "Continue"),
-			),
-		}
-	}
 	delegate := templateItemDelegate{
 		DefaultDelegate: defaultDelegate,
 		selecteds:       selecteds,
@@ -239,6 +222,7 @@ func newTemplateSelectModel(templates []domain.Template, basePrompt string, pres
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowPagination(true)
+	l.SetShowHelp(false)
 	l.Styles.Title = lipgloss.NewStyle().Foreground(theme.Headings).Bold(true)
 
 	return templateSelectModel{
@@ -309,7 +293,42 @@ func (m templateSelectModel) View() string {
 	// header := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("Space to toggle, Tab to focus summary, Enter to continue.")
 	header := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("Space to toggle, Enter to continue.")
 	summary := m.renderSelectionBar()
-	return ui.FrameStyle(m.theme).Render(header + "\n\n" + summary + "\n\n" + m.list.View())
+	listView := m.list.View()
+	helpView := ui.ListHelpView(m.list, m.shortHelpKeys(), m.fullHelpKeys())
+	return ui.FrameStyle(m.theme).Render(header + "\n\n" + summary + "\n\n" + listView + "\n" + helpView)
+}
+
+func (m templateSelectModel) shortHelpKeys() []key.Binding {
+	return []key.Binding{
+		key.NewBinding(
+			key.WithKeys("󱁐"),
+			key.WithHelp("󱁐", "Toggle"),
+		),
+		key.NewBinding(
+			key.WithKeys("󰌑"),
+			key.WithHelp("󰌑", "Continue"),
+		),
+		m.list.KeyMap.Filter,
+		m.list.KeyMap.ShowFullHelp,
+	}
+}
+
+func (m templateSelectModel) fullHelpKeys() [][]key.Binding {
+	short := m.shortHelpKeys()
+	sections := [][]key.Binding{
+		{
+			short[0],
+			short[1],
+			short[2],
+			short[3],
+		},
+	}
+	sections = append(sections, ui.ListFullHelpSections(m.list, ui.ListHelpOptions{
+		IncludeFilter: true,
+		IncludePaging: true,
+		IncludeQuit:   true,
+	})...)
+	return sections
 }
 
 func (m *templateSelectModel) applySize(width, height int) {

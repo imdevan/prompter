@@ -1,6 +1,9 @@
 package ui
 
-import "github.com/charmbracelet/bubbles/list"
+import (
+	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/list"
+)
 
 // ListDelegateOptions configures shared list presentation settings.
 type ListDelegateOptions struct {
@@ -64,4 +67,40 @@ func NewListDelegate(theme Theme, opts ListDelegateOptions) list.DefaultDelegate
 		delegate.Styles.SelectedDesc = delegate.Styles.SelectedDesc.Padding(0, 0, 0, opts.SelectedPaddingLeft)
 	}
 	return delegate
+}
+
+type ListHelpOptions struct {
+	IncludeFilter bool
+	IncludePaging bool
+	IncludeQuit   bool
+}
+
+func ListFullHelpSections(model list.Model, opts ListHelpOptions) [][]key.Binding {
+	sections := make([][]key.Binding, 0, 2)
+	if opts.IncludePaging {
+		sections = append(sections, []key.Binding{
+			model.KeyMap.CursorUp,
+			model.KeyMap.CursorDown,
+			model.KeyMap.NextPage,
+			model.KeyMap.PrevPage,
+			model.KeyMap.GoToStart,
+			model.KeyMap.GoToEnd,
+		})
+	}
+	if opts.IncludeFilter || opts.IncludeQuit {
+		section := make([]key.Binding, 0, 5)
+		if opts.IncludeFilter {
+			section = append(section,
+				model.KeyMap.Filter,
+				model.KeyMap.ClearFilter,
+				model.KeyMap.AcceptWhileFiltering,
+				model.KeyMap.CancelWhileFiltering,
+			)
+		}
+		if opts.IncludeQuit {
+			section = append(section, model.KeyMap.Quit)
+		}
+		sections = append(sections, section)
+	}
+	return sections
 }
