@@ -97,7 +97,7 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 			if index <= 0 || index > len(entries) {
 				return fmt.Errorf("history index out of range (1-%d)", len(entries))
 			}
-			return openHistoryForInsert(editorAdapter, entries[index-1].Path, opts.insert)
+			return openHistoryForInsert(editorAdapter, entries[index-1].Path, opts.insert, cfg.PromptSeparator)
 		}
 		tag := strings.TrimSpace(args[0])
 		if tag != "" {
@@ -125,7 +125,7 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 	if path == "" {
 		return nil
 	}
-	return openHistoryForInsert(editorAdapter, path, opts.insert)
+	return openHistoryForInsert(editorAdapter, path, opts.insert, cfg.PromptSeparator)
 }
 
 type historyEntry struct {
@@ -404,11 +404,11 @@ func historyDateTimeLayout(value string) string {
 	}
 }
 
-func openHistoryForInsert(editorAdapter *editor.Adapter, path string, insert bool) error {
+func openHistoryForInsert(editorAdapter *editor.Adapter, path string, insert bool, separator string) error {
 	if !insert {
 		return editorAdapter.Open(path)
 	}
-	line, err := ensureHistoryInsertMarker(path)
+	line, err := ensureHistoryInsertMarker(path, separator)
 	if err != nil {
 		return err
 	}
@@ -422,22 +422,23 @@ func openHistoryForInsert(editorAdapter *editor.Adapter, path string, insert boo
 	return editorAdapter.Open(path)
 }
 
-func ensureHistoryInsertMarker(path string) (int, error) {
+func ensureHistoryInsertMarker(path string, separator string) (int, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return 0, err
 	}
+	separator = normalizePromptSeparator(separator)
 	content := string(data)
 	header, body, hasFrontmatter := splitHistoryFrontmatter(content)
-	body = strings.TrimLeft(body, "\n")
+	body = strings.TrimLeft(body, "\r\n")
 	insertLine := 2
 	if hasFrontmatter {
 		insertLine = countLines(header) + 2
 	}
-	if strings.HasPrefix(body, "---") {
+	if strings.HasPrefix(body, separator) {
 		return insertLine, nil
 	}
-	insertBlock := "\n\n\n\n---\n\n"
+	insertBlock := "\n\n\n\n" + separator + "\n\n"
 	if hasFrontmatter {
 		content = header + insertBlock + body
 	} else {
@@ -473,6 +474,14 @@ func countLines(value string) int {
 		return 0
 	}
 	return strings.Count(value, "\n") + 1
+}
+
+func normalizePromptSeparator(separator string) string {
+	trimmed := strings.TrimSpace(separator)
+	if trimmed == "" {
+		return "---"
+	}
+	return trimmed
 }
 
 func clearHistory(dir string, keepTags bool) error {
@@ -603,7 +612,7 @@ func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []histor
 	}
 	editorAdapter := editor.New(cfg.Editor)
 	if len(matches) == 1 {
-		return openHistoryForInsert(editorAdapter, matches[0].Path, insert)
+		return openHistoryForInsert(editorAdapter, matches[0].Path, insert, cfg.PromptSeparator)
 	}
 	theme := ui.ThemeFromConfig(cfg)
 	model := newHistoryModel(matches, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo, cfg.HistoryDateTime, theme)
@@ -624,7 +633,7 @@ func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []histor
 	if path == "" {
 		return nil
 	}
-	return openHistoryForInsert(editorAdapter, path, insert)
+	return openHistoryForInsert(editorAdapter, path, insert, cfg.PromptSeparator)
 }
 
 type historyModel struct {
