@@ -143,7 +143,7 @@ func (m textInputModel) View() string {
 		note := lipgloss.NewStyle().Foreground(m.theme.Muted).Render(m.note)
 		parts = append(parts, note)
 	}
-	help := "Press Enter to continue. Alt+Enter (or Shift+Enter/Ctrl+J) for a new line."
+	help := "Press Enter to continue. Alt+Enter (or Shift+Enter/Ctrl+J) for a new line.\n"
 	if m.submitKey.Help().Key == "alt+enter" {
 		help = "Press Alt+Enter to continue. Enter (or Shift+Enter/Ctrl+J) for a new line."
 	}
