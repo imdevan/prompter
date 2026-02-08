@@ -1,5 +1,5 @@
 ---
-title: Question Template
+name: Question Template
 description: Asks a focused question
 flag: question
 shorthand: q

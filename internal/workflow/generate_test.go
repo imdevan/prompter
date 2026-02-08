@@ -88,7 +88,7 @@ func TestGeneratorIncludeAgents(t *testing.T) {
 
 	agentsPath := filepath.Join(root, "AGENTS.md")
 	agentsContent := "---\n" +
-		"title: Agent Instructions\n" +
+		"name: Agent Instructions\n" +
 		"---\n" +
 		"Agent guidance"
 	if err := os.WriteFile(agentsPath, []byte(agentsContent), 0o644); err != nil {
@@ -109,7 +109,7 @@ func TestGeneratorIncludeAgents(t *testing.T) {
 	if !strings.Contains(out, "Agent guidance") {
 		t.Fatalf("expected agents content, got %q", out)
 	}
-	if strings.Contains(out, "title: Agent Instructions") {
+	if strings.Contains(out, "name: Agent Instructions") {
 		t.Fatalf("expected frontmatter stripped from agents content, got %q", out)
 	}
 }
@@ -122,7 +122,7 @@ func TestGeneratorStripsTemplateFrontmatter(t *testing.T) {
 	}
 
 	templateContent := "---\n" +
-		"title: Question\n" +
+		"name: Question\n" +
 		"description: Question - no code no output\n" +
 		"pin: true\n" +
 		"---\n" +
@@ -147,7 +147,7 @@ func TestGeneratorStripsTemplateFrontmatter(t *testing.T) {
 	if !strings.Contains(out, "The following is a question. No Code.") {
 		t.Fatalf("expected template content, got %q", out)
 	}
-	if strings.Contains(out, "title: Question") {
+	if strings.Contains(out, "name: Question") {
 		t.Fatalf("expected frontmatter stripped from template content, got %q", out)
 	}
 }

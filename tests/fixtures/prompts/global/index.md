@@ -1,5 +1,5 @@
 ---
-title: "Index"
+name: "Index"
 description: "Fixture index template"
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: "Question"
+name: "Question"
 description: "Fixture question template"
 flag: "question"
 shorthand: "q"

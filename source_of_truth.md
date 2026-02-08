@@ -270,7 +270,7 @@ Templates may optionally contain front matter which can contain the following op
 The frontmatter is not added to the prompt as a part of the template. 
 
 ```bash
-title: string # template title when showing in interactive mode and help menu
+name: string # template display name in interactive mode and help menu (defaults to file name)
 description: string # description in interactive list and help menu
 flag: string # custom flag 
 shorthand: string # custom shorthand flag

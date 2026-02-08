@@ -1,5 +1,5 @@
 ---
-title: "Fix"
+name: "Fix"
 description: "Fixture fix template"
 ---
 

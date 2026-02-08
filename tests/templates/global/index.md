@@ -1,5 +1,5 @@
 ---
-title: Index Template
+name: Index Template
 description: Default preface
 pin: true
 ---

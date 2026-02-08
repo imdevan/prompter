@@ -1,5 +1,5 @@
 ---
-title: Post-prompt
+name: Post-prompt
 description: comes after
 ---
 {{.Prompt}}

@@ -1,5 +1,5 @@
 ---
-title: Wrapper
+name: Wrapper
 description: this wraps 
 ---
 
@@ -13,4 +13,3 @@ view this "code":
 ```
 
 this is wrapped after
-

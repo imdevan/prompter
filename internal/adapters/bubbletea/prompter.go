@@ -544,11 +544,7 @@ type templateItem struct {
 }
 
 func (t templateItem) Title() string {
-	name := strings.TrimSpace(t.template.Name)
-	if name == "" {
-		return strings.TrimSpace(t.template.Title)
-	}
-	return name
+	return t.template.DisplayLabel()
 }
 
 func (t templateItem) Description() string {

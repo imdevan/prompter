@@ -145,8 +145,8 @@ func parseFrontmatter(template domain.Template) (domain.Template, error) {
 		value = strings.TrimSpace(value)
 		value = strings.Trim(value, "\"")
 		switch key {
-		case "title":
-			template.Title = value
+		case "name":
+			template.DisplayName = value
 		case "description":
 			template.Description = value
 		case "flag":

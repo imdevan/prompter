@@ -117,7 +117,7 @@ func agentTemplateFromFile(cwd, filename string) (*domain.Template, error) {
 	if _, err := os.Stat(path); err == nil {
 		return &domain.Template{
 			Name:        "agents.md",
-			Title:       "Agent instructions",
+			DisplayName: "Agent instructions",
 			Description: "From " + filename,
 			Location:    path,
 		}, nil

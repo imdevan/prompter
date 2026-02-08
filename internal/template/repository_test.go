@@ -43,8 +43,8 @@ func TestRepositoryListAndGet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get question: %v", err)
 	}
-	if got.Title != "Question Template" {
-		t.Fatalf("expected title from frontmatter, got %q", got.Title)
+	if got.DisplayName != "Question Template" {
+		t.Fatalf("expected display name from frontmatter, got %q", got.DisplayName)
 	}
 	if got.Flag != "question" || got.Shorthand != "q" {
 		t.Fatalf("expected flag/shorthand from frontmatter, got %q/%q", got.Flag, got.Shorthand)
@@ -74,7 +74,7 @@ func TestRepositoryParsesFrontmatterWithCRLF(t *testing.T) {
 
 	content := strings.Join([]string{
 		"---",
-		"title: Question",
+		"name: Ask",
 		"description: Question - no code no output",
 		"pin: true",
 		"---",
@@ -92,6 +92,9 @@ func TestRepositoryParsesFrontmatterWithCRLF(t *testing.T) {
 	}
 	if tmpl.Description != "Question - no code no output" {
 		t.Fatalf("expected description from frontmatter, got %q", tmpl.Description)
+	}
+	if tmpl.DisplayName != "Ask" {
+		t.Fatalf("expected display name from frontmatter, got %q", tmpl.DisplayName)
 	}
 	if strings.Contains(tmpl.Content, "description:") {
 		t.Fatalf("expected frontmatter stripped from content, got %q", tmpl.Content)

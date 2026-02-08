@@ -185,7 +185,7 @@ func registerTemplateFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Con
 		}
 		usage := strings.TrimSpace(tmpl.Description)
 		if usage == "" {
-			usage = "include template " + tmpl.Name
+			usage = "include template " + tmpl.DisplayLabel()
 		}
 		if shorthand != "" {
 			cmd.Flags().BoolP(flagName, shorthand, false, usage)

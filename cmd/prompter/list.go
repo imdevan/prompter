@@ -91,7 +91,7 @@ func renderTemplateList(templates []domain.Template, descStyle lipgloss.Style, t
 	items := make([]list.Item, 0, len(templates))
 	for _, tmpl := range templates {
 		items = append(items, templateListItem{
-			display:     templateDisplayName(tmpl),
+			display:     tmpl.DisplayLabel(),
 			flagLabel:   formatFlagLabel(tmpl),
 			description: strings.TrimSpace(tmpl.Description),
 			pinned:      tmpl.Pinned,
@@ -161,14 +161,6 @@ func (t templateListItem) Description() string {
 
 func (t templateListItem) FilterValue() string {
 	return t.display
-}
-
-func templateDisplayName(tmpl domain.Template) string {
-	name := strings.TrimSpace(tmpl.Name)
-	if name != "" {
-		return name
-	}
-	return strings.TrimSpace(tmpl.Name)
 }
 
 func formatFlagLabel(tmpl domain.Template) string {

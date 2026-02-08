@@ -90,20 +90,20 @@ func runEdit(cmd *cobra.Command, args []string) error {
 }
 
 func defaultTemplateContent(name string) string {
-	title := strings.TrimSpace(name)
-	if title == "" {
-		title = "New template"
+	displayName := strings.TrimSpace(name)
+	if displayName == "" {
+		displayName = "New template"
 	}
 	var builder strings.Builder
 	builder.WriteString("---\n")
-	builder.WriteString(fmt.Sprintf("title: %q\n", title))
+	builder.WriteString(fmt.Sprintf("name: %q\n", displayName))
 	builder.WriteString("description: \"Describe when to use this template\"\n")
 	builder.WriteString("flag: \"\"\n")
 	builder.WriteString("shorthand: \"\"\n")
 	builder.WriteString("pin: false\n")
 	builder.WriteString("---\n\n")
 	builder.WriteString("# ")
-	builder.WriteString(title)
+	builder.WriteString(displayName)
 	builder.WriteString("\n\n")
 	builder.WriteString("Write your template here.\n")
 	return builder.String()
