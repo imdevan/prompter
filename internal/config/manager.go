@@ -97,6 +97,7 @@ type partialConfig struct {
 	Editor                  *string           `toml:"editor"`
 	DirectoryStrategy       *string           `toml:"directory_strategy"`
 	Target                  *string           `toml:"target"`
+	PromptSeparator         *string           `toml:"prompt_separator"`
 	Primary                 *string           `toml:"primary"`
 	Secondary               *string           `toml:"secondary"`
 	Headings                *string           `toml:"headings"`
@@ -167,6 +168,9 @@ func applyPartial(config *domain.Config, partial *partialConfig) {
 	}
 	if partial.Target != nil {
 		config.Target = *partial.Target
+	}
+	if partial.PromptSeparator != nil {
+		config.PromptSeparator = *partial.PromptSeparator
 	}
 	if partial.Primary != nil {
 		config.Primary = *partial.Primary

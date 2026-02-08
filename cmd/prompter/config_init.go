@@ -80,6 +80,7 @@ func renderConfigTemplate(cfg domain.Config) string {
 	builder.WriteString("\n# Output\n")
 	builder.WriteString("# target options: clipboard, stdout, file:/path, editor\n")
 	builder.WriteString(fmt.Sprintf("target = %q\n", cfg.Target))
+	builder.WriteString(fmt.Sprintf("prompt_separator = %q\n", cfg.PromptSeparator))
 	builder.WriteString("\n# Colors\n")
 	builder.WriteString("# Colors support named, numeric, or hex values (ex: 7, 13, \"#ff8800\").\n")
 	builder.WriteString(fmt.Sprintf("headings = %q\n", cfg.Headings))

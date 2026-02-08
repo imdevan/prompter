@@ -19,6 +19,7 @@ type Config struct {
 	Editor                  string            `toml:"editor"`
 	DirectoryStrategy       string            `toml:"directory_strategy"`
 	Target                  string            `toml:"target"`
+	PromptSeparator         string            `toml:"prompt_separator"`
 	Primary                 string            `toml:"primary"`
 	Secondary               string            `toml:"secondary"`
 	Headings                string            `toml:"headings"`
@@ -56,6 +57,7 @@ func DefaultConfig() Config {
 		Editor:                  "nvim",
 		DirectoryStrategy:       "git",
 		Target:                  "clipboard",
+		PromptSeparator:         "---",
 		Headings:                "15",
 		Primary:                 "02",
 		Secondary:               "06",
