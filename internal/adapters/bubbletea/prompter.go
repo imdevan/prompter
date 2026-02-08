@@ -289,13 +289,10 @@ func (m templateSelectModel) View() string {
 	if len(m.templates) == 0 {
 		return "No templates available."
 	}
-	// todo: summary manipulation deferred to later version
-	// header := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("Space to toggle, Tab to focus summary, Enter to continue.")
-	header := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("Space to toggle, Enter to continue.")
 	summary := m.renderSelectionBar()
 	listView := m.list.View()
 	helpView := ui.ListHelpView(m.list, m.shortHelpKeys(), m.fullHelpKeys())
-	return ui.FrameStyle(m.theme).Render(header + "\n\n" + summary + "\n\n" + listView + "\n" + helpView)
+	return ui.FrameStyle(m.theme).Render(summary + "\n\n" + listView + "\n" + helpView)
 }
 
 func (m templateSelectModel) shortHelpKeys() []key.Binding {
@@ -445,7 +442,14 @@ func (m templateSelectModel) selectionEntries() []selectionEntry {
 func (m templateSelectModel) renderSelectionBar() string {
 	entries := m.selectionEntries()
 	if len(entries) == 0 {
-		return lipgloss.NewStyle().Foreground(m.theme.Muted).Render("No templates selected yet.")
+		emptyMessage := lipgloss.NewStyle().
+			Padding(0, 1).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(m.theme.Muted).
+			Foreground(m.theme.Muted).
+			Render("nil")
+
+		return emptyMessage
 	}
 	normal := lipgloss.NewStyle().
 		Padding(0, 1).
