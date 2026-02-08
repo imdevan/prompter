@@ -88,6 +88,9 @@ func (h *Handler) openInEditor(content string, cfg domain.Config, suffix, tag st
 	if err := writeFile(path, withHistoryFrontmatter(content, tag)); err != nil {
 		return err
 	}
+	if opener, ok := h.Editor.(interface{ OpenAtEnd(string) error }); ok {
+		return opener.OpenAtEnd(path)
+	}
 	return h.Editor.Open(path)
 }
 
