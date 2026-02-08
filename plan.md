@@ -196,7 +196,7 @@ e.g. `primary=7 or other color type that lipgloss supports`
 - [x] update color scheme
 
 15.00 Improve editor / vim integration
-- [ ] 15.1 on root command if in editor insert cursor at end of of file
+- [x] 15.1 on root command if in editor insert cursor at end of of file
 - [ ] 15.2 if target === clipboard
   on root command
     - [ ] when vim closes copy all content after frontmatter to the clipboard
