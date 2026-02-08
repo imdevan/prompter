@@ -7,7 +7,7 @@ build-run:
 	go build -o bin/prompter ./cmd/prompter && ./bin/prompter
 
 watch:
-	@rg --files | entr -r sh -c 'sleep 10; go build -o bin/prompter ./cmd/prompter'
+	@rg --files | entr -r sh -c 'sleep 0.5; go build -o bin/prompter ./cmd/prompter'
 
 dev-build:
 	go build -gcflags "all=-N -l" -o bin/prompter ./cmd/prompter
