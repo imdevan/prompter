@@ -293,7 +293,6 @@ func formatHistoryDisplay(entry historyEntry, now time.Time, enableTimeAgo bool,
 
 func historyFilterValue(entry historyEntry, display historyDisplay) string {
 	parts := []string{
-		strings.TrimSpace(entry.Name),
 		strings.TrimSpace(display.tag),
 		strings.TrimSpace(display.timeLine),
 		strings.TrimSpace(entry.Flags),
