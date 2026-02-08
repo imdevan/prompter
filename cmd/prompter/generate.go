@@ -87,7 +87,7 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		req, err := prompter.Collect(basePrompt, allTemplates, templates, opts.clipboard, note)
 		if err != nil {
 			if errors.Is(err, interactive.ErrCanceled) {
-				return printExitMessage(cmd.OutOrStdout(), cfg, "Canceled. No prompt generated.", true)
+				return printExitMessage(cmd.OutOrStdout(), cfg, "Canceled.", true)
 			}
 			return err
 		}
@@ -140,7 +140,7 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 	req.HistorySuffix = buildHistorySuffix(shorthands)
 
 	if usedInteractive && !hasPromptInput(req) {
-		return printExitMessage(cmd.OutOrStdout(), cfg, "No prompt generated. No input provided.", true)
+		return printExitMessage(cmd.OutOrStdout(), cfg, "Canceled: No prompt.", true)
 	}
 
 	handler := output.NewHandler(cmd.OutOrStdout(), clip, editor.New(cfg.Editor))
