@@ -1,10 +1,8 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -414,12 +412,12 @@ func openHistoryForInsert(editorAdapter *editor.Adapter, path string, insert boo
 	if err != nil {
 		return err
 	}
-	command := resolveEditorCommand(editorAdapter)
+	command := editor.ResolveCommand(editorAdapter.Command)
 	if command == "" {
 		return editorAdapter.Open(path)
 	}
-	if isVimEditor(command) {
-		return openVimInsert(command, path, line)
+	if editor.IsVim(command) {
+		return editor.OpenVimInsert(command, path, line)
 	}
 	return editorAdapter.Open(path)
 }
@@ -475,39 +473,6 @@ func countLines(value string) int {
 		return 0
 	}
 	return strings.Count(value, "\n") + 1
-}
-
-func resolveEditorCommand(editorAdapter *editor.Adapter) string {
-	command := strings.TrimSpace(editorAdapter.Command)
-	if command == "" {
-		command = strings.TrimSpace(os.Getenv("VISUAL"))
-	}
-	if command == "" {
-		command = strings.TrimSpace(os.Getenv("EDITOR"))
-	}
-	return command
-}
-
-func isVimEditor(command string) bool {
-	fields := strings.Fields(command)
-	if len(fields) == 0 {
-		return false
-	}
-	base := strings.ToLower(filepath.Base(fields[0]))
-	return strings.Contains(base, "nvim") || strings.Contains(base, "vim") || base == "vi"
-}
-
-func openVimInsert(command, path string, line int) error {
-	fields := strings.Fields(command)
-	if len(fields) == 0 {
-		return errors.New("editor command is required")
-	}
-	args := append(fields[1:], fmt.Sprintf("+call cursor(%d,1)", line), "+startinsert", path)
-	cmd := exec.Command(fields[0], args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	return cmd.Run()
 }
 
 func clearHistory(dir string, keepTags bool) error {
