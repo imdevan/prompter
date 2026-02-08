@@ -59,9 +59,6 @@ func newRootCmd() *cobra.Command {
 				cmd.Printf("version=%s commit=%s date=%s\n", version, commit, date)
 				return nil
 			}
-			if opts.editorTarget {
-				opts.target = "editor"
-			}
 			return runGenerate(cmd, opts, args)
 		},
 	}

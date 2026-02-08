@@ -16,6 +16,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 
+	"prompter-cli/internal/adapters/clipboard"
 	"prompter-cli/internal/adapters/editor"
 	"prompter-cli/internal/config"
 	"prompter-cli/internal/domain"
@@ -63,6 +64,7 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 		return fmt.Errorf("history_location is not configured")
 	}
 	editorAdapter := editor.New(cfg.Editor)
+	clip := clipboard.Adapter{}
 	if opts.open {
 		return editorAdapter.Open(cfg.HistoryLocation)
 	}
@@ -97,7 +99,7 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 			if index <= 0 || index > len(entries) {
 				return fmt.Errorf("history index out of range (1-%d)", len(entries))
 			}
-			return openHistoryForInsert(editorAdapter, entries[index-1].Path, opts.insert, cfg.PromptSeparator)
+			return openHistoryForInsert(editorAdapter, &clip, entries[index-1].Path, opts.insert, cfg.PromptSeparator, cfg.Target)
 		}
 		tag := strings.TrimSpace(args[0])
 		if tag != "" {
@@ -125,7 +127,7 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 	if path == "" {
 		return nil
 	}
-	return openHistoryForInsert(editorAdapter, path, opts.insert, cfg.PromptSeparator)
+	return openHistoryForInsert(editorAdapter, &clip, path, opts.insert, cfg.PromptSeparator, cfg.Target)
 }
 
 type historyEntry struct {
@@ -404,7 +406,7 @@ func historyDateTimeLayout(value string) string {
 	}
 }
 
-func openHistoryForInsert(editorAdapter *editor.Adapter, path string, insert bool, separator string) error {
+func openHistoryForInsert(editorAdapter *editor.Adapter, clip *clipboard.Adapter, path string, insert bool, separator string, target string) error {
 	if !insert {
 		return editorAdapter.Open(path)
 	}
@@ -417,7 +419,13 @@ func openHistoryForInsert(editorAdapter *editor.Adapter, path string, insert boo
 		return editorAdapter.Open(path)
 	}
 	if editor.IsVim(command) {
-		return editor.OpenVimInsert(command, path, line)
+		if err := editor.OpenVimInsert(command, path, line); err != nil {
+			return err
+		}
+		if strings.EqualFold(strings.TrimSpace(target), "clipboard") && clip != nil {
+			return copyHistoryInsertToClipboard(clip, path, separator)
+		}
+		return nil
 	}
 	return editorAdapter.Open(path)
 }
@@ -445,6 +453,33 @@ func ensureHistoryInsertMarker(path string, separator string) (int, error) {
 		content = insertBlock + body
 	}
 	return insertLine, os.WriteFile(path, []byte(content), 0o644)
+}
+
+func copyHistoryInsertToClipboard(clip *clipboard.Adapter, path string, separator string) error {
+	if clip == nil {
+		return fmt.Errorf("clipboard adapter is required")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	body := template.StripFrontmatter(string(data))
+	body = strings.TrimLeft(body, "\r\n")
+	separator = normalizePromptSeparator(separator)
+	lines := strings.Split(body, "\n")
+	firstSeparator := -1
+	for i, line := range lines {
+		line = strings.TrimSpace(strings.TrimRight(line, "\r"))
+		if line == separator {
+			firstSeparator = i
+			break
+		}
+	}
+	if firstSeparator >= 0 {
+		body = strings.Join(lines[:firstSeparator], "\n")
+	}
+	body = strings.TrimSpace(body)
+	return clip.WriteText(body)
 }
 
 func splitHistoryFrontmatter(content string) (string, string, bool) {
@@ -611,8 +646,9 @@ func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []histor
 		return fmt.Errorf("no history entries found with tag %q", tag)
 	}
 	editorAdapter := editor.New(cfg.Editor)
+	clip := clipboard.Adapter{}
 	if len(matches) == 1 {
-		return openHistoryForInsert(editorAdapter, matches[0].Path, insert, cfg.PromptSeparator)
+		return openHistoryForInsert(editorAdapter, &clip, matches[0].Path, insert, cfg.PromptSeparator, cfg.Target)
 	}
 	theme := ui.ThemeFromConfig(cfg)
 	model := newHistoryModel(matches, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo, cfg.HistoryDateTime, theme)
@@ -633,7 +669,7 @@ func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []histor
 	if path == "" {
 		return nil
 	}
-	return openHistoryForInsert(editorAdapter, path, insert, cfg.PromptSeparator)
+	return openHistoryForInsert(editorAdapter, &clip, path, insert, cfg.PromptSeparator, cfg.Target)
 }
 
 type historyModel struct {

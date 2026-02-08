@@ -20,6 +20,8 @@ type Request struct {
 	DirectoryStrategy string
 	Fix               FixInput
 	Target            string
+	EditorTarget      bool
+	EditorIsVim       bool
 	PipedInput        string
 	CWD               string
 	Env               map[string]string

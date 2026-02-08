@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"prompter-cli/internal/domain"
+	"prompter-cli/internal/template"
 )
 
 // Handler routes generated prompts to the configured target.
@@ -51,12 +52,29 @@ func (h *Handler) Write(req domain.Request, content string, cfg domain.Config) e
 		_, err := io.Copy(h.Stdout, bytes.NewBufferString(content))
 		return err
 	case target == "clipboard":
+		if req.EditorTarget {
+			if h.Editor == nil {
+				return errors.New("editor adapter is required")
+			}
+			if h.Clipboard == nil {
+				return errors.New("clipboard adapter is required")
+			}
+			path, err := h.openInEditor(content, cfg, req.HistorySuffix, req.HistoryTag)
+			if err != nil {
+				return err
+			}
+			if !req.EditorIsVim {
+				return h.Clipboard.WriteText(content)
+			}
+			return h.copyBodyAfterFrontmatter(path)
+		}
 		if h.Clipboard == nil {
 			return errors.New("clipboard adapter is required")
 		}
 		return h.Clipboard.WriteText(content)
 	case target == "editor":
-		return h.openInEditor(content, cfg, req.HistorySuffix, req.HistoryTag)
+		_, err := h.openInEditor(content, cfg, req.HistorySuffix, req.HistoryTag)
+		return err
 	case strings.HasPrefix(target, "file:"):
 		path := strings.TrimPrefix(target, "file:")
 		if strings.TrimSpace(path) == "" {
@@ -68,16 +86,16 @@ func (h *Handler) Write(req domain.Request, content string, cfg domain.Config) e
 	}
 }
 
-func (h *Handler) openInEditor(content string, cfg domain.Config, suffix, tag string) error {
+func (h *Handler) openInEditor(content string, cfg domain.Config, suffix, tag string) (string, error) {
 	if h.Editor == nil {
-		return errors.New("editor adapter is required")
+		return "", errors.New("editor adapter is required")
 	}
 	dir := cfg.HistoryLocation
 	if dir == "" {
 		dir = os.TempDir()
 	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
+		return "", err
 	}
 	filename := fmt.Sprintf("prompt-%s", time.Now().Format("20060102-150405"))
 	if strings.TrimSpace(suffix) != "" {
@@ -86,12 +104,12 @@ func (h *Handler) openInEditor(content string, cfg domain.Config, suffix, tag st
 	filename += ".md"
 	path := filepath.Join(dir, filename)
 	if err := writeFile(path, withHistoryFrontmatter(content, tag)); err != nil {
-		return err
+		return "", err
 	}
 	if opener, ok := h.Editor.(interface{ OpenAtEnd(string) error }); ok {
-		return opener.OpenAtEnd(path)
+		return path, opener.OpenAtEnd(path)
 	}
-	return h.Editor.Open(path)
+	return path, h.Editor.Open(path)
 }
 
 func (h *Handler) writeHistory(content string, cfg domain.Config, suffix, tag string) (string, error) {
@@ -133,4 +151,14 @@ func writeFile(path, content string) error {
 		return err
 	}
 	return os.WriteFile(path, []byte(content), 0o644)
+}
+
+func (h *Handler) copyBodyAfterFrontmatter(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	body := template.StripFrontmatter(string(data))
+	body = strings.TrimSpace(body)
+	return h.Clipboard.WriteText(body)
 }

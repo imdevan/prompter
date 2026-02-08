@@ -198,11 +198,11 @@ e.g. `primary=7 or other color type that lipgloss supports`
 15.00 Improve editor / vim integration
 - [x] 15.1 on root command if in editor insert cursor at end of of file
 - [x] 15.2 define prompt separator in config defaults to '---'
-- [ ] 15.3 if target ==== clipboard and --editor ==== true
+- [x] 15.3 if target ==== clipboard and --editor ==== true
   on root command
-    - [ ] when vim closes copy all content after frontmatter to the clipboard
+    - [x] when vim closes copy all content after frontmatter to the clipboard
   on insert from history
-    - [ ] copy all content between frontmatter and last prompt seperator ---
+    - [x] copy all content between frontmatter and last prompt seperator ---
 
 
 16) Release readiness

@@ -101,6 +101,17 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		}
 	}
 
+	target := strings.TrimSpace(opts.target)
+	if target == "" {
+		target = cfg.Target
+	}
+	editorCommand := editor.ResolveCommand(cfg.Editor)
+	editorIsVim := editor.IsVim(editorCommand)
+	editorTarget := opts.editorTarget && strings.EqualFold(target, "clipboard")
+	if opts.editorTarget && !editorTarget {
+		target = "editor"
+	}
+
 	req := domain.Request{
 		BasePrompt:        basePrompt,
 		TemplateNames:     templates,
@@ -109,7 +120,9 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		Files:             opts.files,
 		IncludeDirectory:  opts.includeDir,
 		DirectoryStrategy: cfg.DirectoryStrategy,
-		Target:            opts.target,
+		Target:            target,
+		EditorTarget:      editorTarget,
+		EditorIsVim:       editorIsVim,
 		PipedInput:        piped,
 	}
 

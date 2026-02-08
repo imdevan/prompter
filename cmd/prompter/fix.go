@@ -56,9 +56,6 @@ func newFixCmd() *cobra.Command {
 			opts.yes = true
 			opts.interactive = false
 			opts.fixOutput = output
-			if opts.editorTarget {
-				opts.target = "editor"
-			}
 			return runGenerate(cmd, opts, nil)
 		},
 	}
