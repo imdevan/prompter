@@ -12,6 +12,7 @@ import (
 
 	"prompter-cli/internal/domain"
 	"prompter-cli/internal/template"
+	"prompter-cli/internal/ui"
 )
 
 // Handler routes generated prompts to the configured target.
@@ -64,14 +65,23 @@ func (h *Handler) Write(req domain.Request, content string, cfg domain.Config) e
 				return err
 			}
 			if !req.EditorIsVim {
-				return h.Clipboard.WriteText(content)
+				if err := h.Clipboard.WriteText(content); err != nil {
+					return err
+				}
+				return h.confirmClipboardCopy(cfg)
 			}
-			return h.copyBodyAfterFrontmatter(path)
+			if err := h.copyBodyAfterFrontmatter(path); err != nil {
+				return err
+			}
+			return h.confirmClipboardCopy(cfg)
 		}
 		if h.Clipboard == nil {
 			return errors.New("clipboard adapter is required")
 		}
-		return h.Clipboard.WriteText(content)
+		if err := h.Clipboard.WriteText(content); err != nil {
+			return err
+		}
+		return h.confirmClipboardCopy(cfg)
 	case target == "editor":
 		_, err := h.openInEditor(content, cfg, req.HistorySuffix, req.HistoryTag)
 		return err
@@ -161,4 +171,13 @@ func (h *Handler) copyBodyAfterFrontmatter(path string) error {
 	body := template.StripFrontmatter(string(data))
 	body = strings.TrimSpace(body)
 	return h.Clipboard.WriteText(body)
+}
+
+func (h *Handler) confirmClipboardCopy(cfg domain.Config) error {
+	if h.Stdout == nil {
+		return nil
+	}
+	theme := ui.ThemeFromConfig(cfg)
+	_, err := fmt.Fprintln(h.Stdout, ui.ClipboardConfirm(theme))
+	return err
 }

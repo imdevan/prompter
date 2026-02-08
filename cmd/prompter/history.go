@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -65,6 +66,8 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 	}
 	editorAdapter := editor.New(cfg.Editor)
 	clip := clipboard.Adapter{}
+	out := cmd.OutOrStdout()
+	theme := ui.ThemeFromConfig(cfg)
 	if opts.open {
 		return editorAdapter.Open(cfg.HistoryLocation)
 	}
@@ -99,7 +102,7 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 			if index <= 0 || index > len(entries) {
 				return fmt.Errorf("history index out of range (1-%d)", len(entries))
 			}
-			return openHistoryForInsert(editorAdapter, &clip, entries[index-1].Path, opts.insert, cfg.PromptSeparator, cfg.Target)
+			return openHistoryForInsert(out, theme, editorAdapter, &clip, entries[index-1].Path, opts.insert, cfg.PromptSeparator, cfg.Target)
 		}
 		tag := strings.TrimSpace(args[0])
 		if tag != "" {
@@ -108,7 +111,6 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 		return err
 	}
 
-	theme := ui.ThemeFromConfig(cfg)
 	model := newHistoryModel(entries, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo, cfg.HistoryDateTime, theme)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
@@ -127,7 +129,7 @@ func runHistory(cmd *cobra.Command, opts *historyOptions, args []string) error {
 	if path == "" {
 		return nil
 	}
-	return openHistoryForInsert(editorAdapter, &clip, path, opts.insert, cfg.PromptSeparator, cfg.Target)
+	return openHistoryForInsert(out, theme, editorAdapter, &clip, path, opts.insert, cfg.PromptSeparator, cfg.Target)
 }
 
 type historyEntry struct {
@@ -406,7 +408,7 @@ func historyDateTimeLayout(value string) string {
 	}
 }
 
-func openHistoryForInsert(editorAdapter *editor.Adapter, clip *clipboard.Adapter, path string, insert bool, separator string, target string) error {
+func openHistoryForInsert(out io.Writer, theme ui.Theme, editorAdapter *editor.Adapter, clip *clipboard.Adapter, path string, insert bool, separator string, target string) error {
 	if !insert {
 		return editorAdapter.Open(path)
 	}
@@ -423,7 +425,10 @@ func openHistoryForInsert(editorAdapter *editor.Adapter, clip *clipboard.Adapter
 			return err
 		}
 		if strings.EqualFold(strings.TrimSpace(target), "clipboard") && clip != nil {
-			return copyHistoryInsertToClipboard(clip, path, separator)
+			if err := copyHistoryInsertToClipboard(clip, path, separator); err != nil {
+				return err
+			}
+			return confirmClipboardCopy(out, theme)
 		}
 		return nil
 	}
@@ -647,10 +652,11 @@ func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []histor
 	}
 	editorAdapter := editor.New(cfg.Editor)
 	clip := clipboard.Adapter{}
-	if len(matches) == 1 {
-		return openHistoryForInsert(editorAdapter, &clip, matches[0].Path, insert, cfg.PromptSeparator, cfg.Target)
-	}
+	out := cmd.OutOrStdout()
 	theme := ui.ThemeFromConfig(cfg)
+	if len(matches) == 1 {
+		return openHistoryForInsert(out, theme, editorAdapter, &clip, matches[0].Path, insert, cfg.PromptSeparator, cfg.Target)
+	}
 	model := newHistoryModel(matches, cfg.HistoryLocation, cfg.HistoryEnableTimeAgo, cfg.HistoryDateTime, theme)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
@@ -669,7 +675,15 @@ func runHistoryTagSearch(cmd *cobra.Command, cfg domain.Config, entries []histor
 	if path == "" {
 		return nil
 	}
-	return openHistoryForInsert(editorAdapter, &clip, path, insert, cfg.PromptSeparator, cfg.Target)
+	return openHistoryForInsert(out, theme, editorAdapter, &clip, path, insert, cfg.PromptSeparator, cfg.Target)
+}
+
+func confirmClipboardCopy(out io.Writer, theme ui.Theme) error {
+	if out == nil {
+		return nil
+	}
+	_, err := fmt.Fprintln(out, ui.ClipboardConfirm(theme))
+	return err
 }
 
 type historyModel struct {
