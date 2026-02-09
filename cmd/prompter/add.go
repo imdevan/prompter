@@ -245,7 +245,7 @@ func (m addTemplateModel) View() string {
 		Padding(0, 1).
 		Render(m.contentInput.View())
 
-	return strings.Join([]string{
+	content := strings.Join([]string{
 		title,
 		help,
 		"",
@@ -255,4 +255,6 @@ func (m addTemplateModel) View() string {
 		"Content:",
 		contentBox,
 	}, "\n")
+
+	return lipgloss.NewStyle().Margin(1, 1).Render(content)
 }
