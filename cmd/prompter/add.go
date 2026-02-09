@@ -63,19 +63,23 @@ func runAdd(cmd *cobra.Command, opts *addOptions, args []string) error {
 
 	if opts.interactive {
 		theme := ui.ThemeFromConfig(cfg)
-		name, content, err = promptAddTemplate(name, content, theme)
+		var canceled bool
+		name, content, canceled, err = promptAddTemplate(name, content, theme)
 		if err != nil {
 			return err
+		}
+		if canceled {
+			return printExitMessage(cmd.OutOrStdout(), cfg, "Canceled.", false)
 		}
 	}
 
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return errors.New("template name is required (use --interactive to enter it)")
+		return printExitMessage(cmd.OutOrStdout(), cfg, "Empty template name.", true)
 	}
 	name = strings.TrimSuffix(name, ".md")
 	if strings.TrimSpace(content) == "" {
-		return errors.New("template content is required (use --interactive or pipe content)")
+		return printExitMessage(cmd.OutOrStdout(), cfg, "Empty template content.", true)
 	}
 	if cfg.PromptsLocation == "" {
 		return errors.New("prompts_location is not configured")
@@ -101,8 +105,7 @@ func runAdd(cmd *cobra.Command, opts *addOptions, args []string) error {
 		}
 	}
 
-	cmd.Printf("Added template %s\n", name)
-	return nil
+	return printExitMessage(cmd.OutOrStdout(), cfg, fmt.Sprintf("Added template %s.", name), false)
 }
 
 func resolveAddInputs(args []string) (string, string, error) {
@@ -137,21 +140,22 @@ type addTemplateModel struct {
 	step         addTemplateStep
 	nameInput    textinput.Model
 	contentInput textarea.Model
+	canceled     bool
 	errMessage   string
 	theme        ui.Theme
 }
 
-func promptAddTemplate(defaultName, defaultContent string, theme ui.Theme) (string, string, error) {
+func promptAddTemplate(defaultName, defaultContent string, theme ui.Theme) (string, string, bool, error) {
 	model := newAddTemplateModel(defaultName, defaultContent, theme)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
-		return "", "", err
+		return "", "", false, err
 	}
 	if m, ok := result.(addTemplateModel); ok {
-		return strings.TrimSpace(m.nameInput.Value()), strings.TrimRight(m.contentInput.Value(), "\n"), nil
+		return strings.TrimSpace(m.nameInput.Value()), strings.TrimRight(m.contentInput.Value(), "\n"), m.canceled, nil
 	}
-	return "", "", fmt.Errorf("unexpected model result")
+	return "", "", false, fmt.Errorf("unexpected model result")
 }
 
 func newAddTemplateModel(defaultName, defaultContent string, theme ui.Theme) addTemplateModel {
@@ -187,6 +191,7 @@ func (m addTemplateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
+			m.canceled = true
 			return m, tea.Quit
 		case tea.KeyEnter:
 			if m.step == addTemplateNameStep {
