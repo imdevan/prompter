@@ -49,9 +49,6 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 	if err != nil {
 		return err
 	}
-	if strings.TrimSpace(opts.fixOutput) != "" {
-		piped = opts.fixOutput
-	}
 
 	localPrompts := ""
 	if cfg.LocalPromptsLocation != "" {
@@ -126,11 +123,6 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		EditorTarget:      editorTarget,
 		EditorIsVim:       editorIsVim,
 		PipedInput:        piped,
-	}
-
-	if opts.fix {
-		req.Fix.Enabled = true
-		req.Fix.Output = piped
 	}
 	if opts.agents {
 		req.TemplateNames = append(req.TemplateNames, "agents.md")
@@ -230,9 +222,6 @@ func hasPromptInput(req domain.Request) bool {
 		return true
 	}
 	if req.IncludeDirectory {
-		return true
-	}
-	if req.Fix.Enabled && strings.TrimSpace(req.Fix.Output) != "" {
 		return true
 	}
 	if strings.TrimSpace(req.PipedInput) != "" {

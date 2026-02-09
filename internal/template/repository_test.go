@@ -23,9 +23,6 @@ func TestRepositoryListAndGet(t *testing.T) {
 	if err := copyFile(filepath.Join(fixturesRoot, "global", "index.md"), filepath.Join(globalDir, "index.md")); err != nil {
 		t.Fatalf("copy index: %v", err)
 	}
-	if err := copyFile(filepath.Join(fixturesRoot, "global", "fix.md"), filepath.Join(globalDir, "fix.md")); err != nil {
-		t.Fatalf("copy fix: %v", err)
-	}
 	if err := copyFile(filepath.Join(fixturesRoot, "local", "question.md"), filepath.Join(localDir, "question.md")); err != nil {
 		t.Fatalf("copy question: %v", err)
 	}
@@ -35,8 +32,8 @@ func TestRepositoryListAndGet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list templates: %v", err)
 	}
-	if len(templates) != 3 {
-		t.Fatalf("expected 3 templates, got %d", len(templates))
+	if len(templates) != 2 {
+		t.Fatalf("expected 2 templates, got %d", len(templates))
 	}
 
 	got, err := repo.Get("question")

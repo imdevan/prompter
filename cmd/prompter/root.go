@@ -25,7 +25,6 @@ type rootOptions struct {
 	files                 []string
 	includeDir            bool
 	target                string
-	fix                   bool
 	clipboard             bool
 	agents                bool
 	interactive           bool
@@ -33,7 +32,6 @@ type rootOptions struct {
 	editorTarget          bool
 	templates             []string
 	showVersion           bool
-	fixOutput             string
 	historyTag            string
 	templateFlagName      map[string]string
 	templateFlagShorthand map[string]string
@@ -64,7 +62,6 @@ func newRootCmd() *cobra.Command {
 	}
 
 	addRootFlags(cmd, opts, cfg, rootFlagOptions{
-		includeFix:     true,
 		includeVersion: true,
 	})
 	registerTemplateFlags(cmd, opts, cfg, nil)
@@ -74,7 +71,6 @@ func newRootCmd() *cobra.Command {
 	cmd.AddCommand(newListCmd())
 	cmd.AddCommand(newAddCmd())
 	cmd.AddCommand(newEditCmd())
-	cmd.AddCommand(newFixCmd())
 	cmd.AddCommand(newHistoryCmd())
 	cmd.AddCommand(newCompletionCmd())
 
@@ -82,7 +78,6 @@ func newRootCmd() *cobra.Command {
 }
 
 type rootFlagOptions struct {
-	includeFix     bool
 	includeVersion bool
 }
 
@@ -113,9 +108,6 @@ func addRootFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Config, opti
 	addStringSlice("file", "", "files to include", &opts.files)
 	addBool("directory", "D", "include current directory", &opts.includeDir)
 	addString("target", "T", "output target (clipboard, stdout, file:/path, editor)", &opts.target)
-	if options.includeFix {
-		addBool("fix", "F", "fix mode", &opts.fix)
-	}
 	addBool("clipboard", "B", "use clipboard input", &opts.clipboard)
 	addBool("agents", "A", "include AGENTS.md/.cursor/.kiro templates", &opts.agents)
 	addBool("interactive", "I", "force interactive mode", &opts.interactive)

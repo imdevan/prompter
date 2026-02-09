@@ -1,12 +1,5 @@
 package domain
 
-// FixInput captures fix-mode data.
-type FixInput struct {
-	Enabled bool
-	Command string
-	Output  string
-}
-
 // Request describes a prompt generation request.
 type Request struct {
 	BasePrompt        string
@@ -18,7 +11,6 @@ type Request struct {
 	IncludeDirectory  bool
 	DirectoryPath     string
 	DirectoryStrategy string
-	Fix               FixInput
 	Target            string
 	EditorTarget      bool
 	EditorIsVim       bool

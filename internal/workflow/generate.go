@@ -2,7 +2,6 @@ package workflow
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,8 +10,6 @@ import (
 	"prompter-cli/internal/domain"
 	"prompter-cli/internal/template"
 )
-
-const defaultFixTemplate = "Please evaluate the following output for errors, and resolve any issues. If there are multiple issues please fix them in order."
 
 // Generator assembles prompts using templates and request data.
 type Generator struct {
@@ -65,8 +62,6 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 		BasePrompt: req.BasePrompt,
 		Files:      files,
 		Directory:  directory,
-		Fix:        req.Fix,
-		FixContent: req.Fix.Output,
 		CWD:        cwd,
 		Env:        req.Env,
 		Config:     cfg,
@@ -118,13 +113,8 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 	if req.IncludeDirectory && len(directory.Files) > 0 {
 		assembled = joinParts(assembled, formatFiles("Directory", directory.Files))
 	}
-	if req.Fix.Enabled && strings.TrimSpace(req.Fix.Output) != "" {
-		assembled = joinParts(assembled, fmt.Sprintf("Command Output:\n%s", strings.TrimSpace(req.Fix.Output)))
-	}
 	if strings.TrimSpace(req.PipedInput) != "" {
-		if !req.Fix.Enabled || strings.TrimSpace(req.PipedInput) != strings.TrimSpace(req.Fix.Output) {
-			assembled = joinParts(assembled, strings.TrimSpace(req.PipedInput))
-		}
+		assembled = joinParts(assembled, strings.TrimSpace(req.PipedInput))
 	}
 
 	return strings.TrimSpace(assembled), nil
@@ -163,16 +153,6 @@ func collectTemplateContents(cwd string, repo template.Repository, req domain.Re
 		return nil, err
 	}
 	contents = append(contents, agentTemplates...)
-
-	if req.Fix.Enabled {
-		fixContent := defaultFixTemplate
-		if fixTemplate, err := repo.Get("fix"); err == nil {
-			fixContent = fixTemplate.Content
-		} else if !errors.Is(err, os.ErrNotExist) {
-			return nil, err
-		}
-		contents = append(contents, fixContent)
-	}
 
 	order := buildTemplateOrder(req.TemplateOrder, req.TemplateNames)
 	for _, name := range order {
@@ -229,8 +209,6 @@ type TemplateData struct {
 	BasePrompt string
 	Files      []FileContent
 	Directory  DirectoryInfo
-	Fix        domain.FixInput
-	FixContent string
 	CWD        string
 	Env        map[string]string
 	Config     domain.Config

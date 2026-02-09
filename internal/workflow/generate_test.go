@@ -56,29 +56,6 @@ func TestGeneratorRunWithTemplates(t *testing.T) {
 	}
 }
 
-func TestGeneratorRunFixModeDefaultTemplate(t *testing.T) {
-	root := t.TempDir()
-	repo := template.NewRepository(root)
-	gen := NewGenerator(repo)
-	req := domain.Request{
-		Fix: domain.FixInput{
-			Enabled: true,
-			Output:  "failing test output",
-		},
-	}
-
-	out, err := gen.Run(req, domain.DefaultConfig())
-	if err != nil {
-		t.Fatalf("run generator: %v", err)
-	}
-	if !strings.Contains(out, "Please evaluate the following output for errors") {
-		t.Fatalf("expected default fix template content, got %q", out)
-	}
-	if !strings.Contains(out, "failing test output") {
-		t.Fatalf("expected fix output inclusion, got %q", out)
-	}
-}
-
 func TestGeneratorIncludeAgents(t *testing.T) {
 	root := t.TempDir()
 	templatesDir := filepath.Join(root, "templates")
