@@ -95,7 +95,7 @@ func runAdd(cmd *cobra.Command, opts *addOptions, args []string) error {
 				return err
 			}
 			if !confirm {
-				return printExitMessage(cmd.OutOrStdout(), cfg, fmt.Sprintf("Template %s not overwritten.", name), true)
+				return printExitMessage(cmd.OutOrStdout(), cfg, fmt.Sprintf("\nTemplate %s not overwritten.\n", name), true)
 			}
 		} else if !os.IsNotExist(err) {
 			return err
@@ -137,18 +137,14 @@ func resolveAddInputs(args []string) (string, string, error) {
 }
 
 func promptOverwriteTemplate(name string, theme ui.Theme) (bool, error) {
-	model := confirmModel{
-		title:  "Overwrite template?",
-		prompt: fmt.Sprintf("Template %q already exists. Overwrite it? (y/n)", name),
-		theme:  theme,
-	}
+	model := newConfirmModel("Overwrite template?", fmt.Sprintf("Template %q already exists. Overwrite it? (y/n)", name), theme)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
 		return false, err
 	}
 	if m, ok := result.(confirmModel); ok {
-		return m.choice, nil
+		return m.choiceValue(), nil
 	}
 	return false, fmt.Errorf("unexpected model result")
 }
