@@ -241,7 +241,9 @@ e.g. `primary=7 or other color type that lipgloss supports`
 - [ ] 3 Add config to disable base prompt input
   still accepts via string or pipe
 
-- [ ] 4 Add delete template from p interactive
+- [ ] 4 Improve template interaction
+  - [ ] 4.1 Add delete template from p interactive
+  - [ ] 4.2 add edit template from p interactive
 
 
 **Responsive breakpoints**
