@@ -221,17 +221,33 @@ e.g. `primary=7 or other color type that lipgloss supports`
 16.1 config init changes
 - [x] should comment out all default options (everything)
 
-- [ ] 16.2 build for arch
+- [ ] 16.2 build for arch, btw
 - [ ] 16.3 build for homebrew
 
 
-## V2.1
+## V2.1 Fixes
 
-- [ ] create a ui util to manage responsiveness. it should track the width of the view and 
+- [ ] 1 Frontmatter shorthand flags should take precedent in all lists
+  
+
+## V2.2 Improvements
+
+- [ ] 1 Clean UI  
+- [ ] 2 create a ui util to manage responsiveness. it should track the width of the view and 
   - [ ] render which tips are visible based on ui width
   - [ ] only render borders in md or larger views
+- [ ] consolidate confirmation ui's add -> hist
 
+- [ ] 3 Add config to disable base prompt input
+  still accepts via string or pipe
+
+- [ ] 4 Add delete template from p interactive
+
+
+**Responsive breakpoints**
+```
 sm: < 40
 md: < 80
 lg: > 80
 xl: > 300
+```
