@@ -110,6 +110,7 @@ func defaultTemplateContent(name string) string {
 }
 
 type confirmModel struct {
+	title   string
 	prompt  string
 	choice  bool
 	decided bool
@@ -118,6 +119,7 @@ type confirmModel struct {
 
 func promptCreateTemplate(name string, theme ui.Theme) (bool, error) {
 	model := confirmModel{
+		title:  "Create template?",
 		prompt: fmt.Sprintf("Template %q not found. Create it? (y/n)", name),
 		theme:  theme,
 	}
@@ -154,8 +156,18 @@ func (m confirmModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m confirmModel) View() string {
-	title := lipgloss.NewStyle().Bold(true).Foreground(m.theme.Headings).Render("Create template?")
+	titleText := m.title
+	if strings.TrimSpace(titleText) == "" {
+		titleText = "Confirm"
+	}
+	title := lipgloss.NewStyle().Bold(true).Foreground(m.theme.Headings).Render(titleText)
 	prompt := lipgloss.NewStyle().Foreground(m.theme.Text).Render(m.prompt)
 	help := lipgloss.NewStyle().Foreground(m.theme.Muted).Render("Press y or n.")
-	return strings.Join([]string{title, prompt, help}, "\n")
+	content := strings.Join([]string{title, prompt, help}, "\n")
+	return lipgloss.NewStyle().
+		Margin(1, 1).
+		Padding(1, 2).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(m.theme.Border).
+		Render(content)
 }

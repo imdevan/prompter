@@ -89,7 +89,14 @@ func runAdd(cmd *cobra.Command, opts *addOptions, args []string) error {
 	templatePath := filepath.Join(cfg.PromptsLocation, name+".md")
 	if !opts.force {
 		if _, err := os.Stat(templatePath); err == nil {
-			return fmt.Errorf("template already exists: %s (use --force to overwrite)", templatePath)
+			theme := ui.ThemeFromConfig(cfg)
+			confirm, err := promptOverwriteTemplate(name, theme)
+			if err != nil {
+				return err
+			}
+			if !confirm {
+				return printExitMessage(cmd.OutOrStdout(), cfg, fmt.Sprintf("Template %s not overwritten.", name), true)
+			}
 		} else if !os.IsNotExist(err) {
 			return err
 		}
@@ -127,6 +134,23 @@ func resolveAddInputs(args []string) (string, string, error) {
 		}
 	}
 	return name, content, nil
+}
+
+func promptOverwriteTemplate(name string, theme ui.Theme) (bool, error) {
+	model := confirmModel{
+		title:  "Overwrite template?",
+		prompt: fmt.Sprintf("Template %q already exists. Overwrite it? (y/n)", name),
+		theme:  theme,
+	}
+	program := tea.NewProgram(model, tea.WithoutSignalHandler())
+	result, err := program.Run()
+	if err != nil {
+		return false, err
+	}
+	if m, ok := result.(confirmModel); ok {
+		return m.choice, nil
+	}
+	return false, fmt.Errorf("unexpected model result")
 }
 
 type addTemplateStep int
