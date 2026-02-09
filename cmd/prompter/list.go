@@ -152,6 +152,9 @@ func (t templateListItem) Title() string {
 
 func (t templateListItem) Description() string {
 	descStyle := lipgloss.NewStyle().Foreground(t.theme.Text)
+	if strings.HasPrefix(strings.ToLower(t.description), "from ") {
+		descStyle = lipgloss.NewStyle().Foreground(t.theme.Muted)
+	}
 	flagStyle := lipgloss.NewStyle().Foreground(t.theme.Flags)
 	parts := []string{}
 	if t.description != "" {

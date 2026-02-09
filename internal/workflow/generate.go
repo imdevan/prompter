@@ -188,11 +188,21 @@ func isAgentTemplateName(name string) bool {
 	switch {
 	case strings.HasPrefix(path, "cursor/commands/"):
 		return true
+	case strings.HasPrefix(path, "cursor/skills/"):
+		return true
 	case strings.HasPrefix(path, "kiro/steering/"):
+		return true
+	case strings.HasPrefix(path, "kiro/skills/"):
 		return true
 	case strings.HasPrefix(path, "opencode/commands/"):
 		return true
 	case strings.HasPrefix(path, "opencode/skills/"):
+		return true
+	case strings.HasPrefix(path, "claude/skills/"):
+		return true
+	case strings.HasPrefix(path, "agents/skills/"):
+		return true
+	case strings.HasPrefix(path, "antigravity/skills/"):
 		return true
 	default:
 		return false
@@ -391,44 +401,16 @@ func readAgentTemplate(cwd, name string) (string, error) {
 		return readOptionalTemplate(filepath.Join(cwd, ".kiro", "steering", filepath.FromSlash(rel)))
 	case strings.HasPrefix(lower, "opencode/commands/"):
 		rel := strings.TrimPrefix(namePath, "opencode/commands/")
-		return readOpencodeTemplate("commands", rel)
+		return readOpencodeCommandTemplate(rel)
 	case strings.HasPrefix(lower, "opencode/skills/"):
-		rel := strings.TrimPrefix(namePath, "opencode/skills/")
-		return readOpencodeTemplate("skills", rel)
+		return readSkillTemplate(cwd, name)
+	case strings.HasPrefix(lower, "claude/skills/"):
+		return readSkillTemplate(cwd, name)
+	case strings.HasPrefix(lower, "agents/skills/"):
+		return readSkillTemplate(cwd, name)
 	default:
 		return "", nil
 	}
-}
-
-func readOpencodeTemplate(subdir, rel string) (string, error) {
-	candidates := opencodeTemplateRoots()
-	rel = filepath.FromSlash(rel)
-	if subdir == "skills" && !strings.HasSuffix(strings.ToLower(rel), "skill.md") {
-		rel = filepath.Join(rel, "SKILL.md")
-	}
-	for _, root := range candidates {
-		if strings.TrimSpace(root) == "" {
-			continue
-		}
-		path := filepath.Join(root, subdir, rel)
-		if content, err := readOptionalTemplate(path); err != nil {
-			return "", err
-		} else if strings.TrimSpace(content) != "" {
-			return content, nil
-		}
-	}
-	return "", nil
-}
-
-func readOptionalTemplate(path string) (string, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return "", nil
-		}
-		return "", err
-	}
-	return template.StripFrontmatter(string(data)), nil
 }
 
 func formatFiles(label string, files []FileContent) string {
