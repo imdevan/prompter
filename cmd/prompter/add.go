@@ -69,7 +69,7 @@ func runAdd(cmd *cobra.Command, opts *addOptions, args []string) error {
 			return err
 		}
 		if canceled {
-			return printExitMessage(cmd.OutOrStdout(), cfg, "Canceled.", false)
+			return printExitMessage(cmd.OutOrStdout(), cfg, "Canceled.", true)
 		}
 	}
 
