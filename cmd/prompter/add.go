@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -64,7 +65,7 @@ func runAdd(cmd *cobra.Command, opts *addOptions, args []string) error {
 	if opts.interactive {
 		theme := ui.ThemeFromConfig(cfg)
 		var canceled bool
-		name, content, canceled, err = promptAddTemplate(name, content, theme)
+		name, content, canceled, err = promptAddTemplate(name, content, theme, cfg.AltEnterSubmit)
 		if err != nil {
 			return err
 		}
@@ -163,10 +164,11 @@ type addTemplateModel struct {
 	canceled     bool
 	errMessage   string
 	theme        ui.Theme
+	submitKey    key.Binding
 }
 
-func promptAddTemplate(defaultName, defaultContent string, theme ui.Theme) (string, string, bool, error) {
-	model := newAddTemplateModel(defaultName, defaultContent, theme)
+func promptAddTemplate(defaultName, defaultContent string, theme ui.Theme, altEnterSubmit bool) (string, string, bool, error) {
+	model := newAddTemplateModel(defaultName, defaultContent, theme, altEnterSubmit)
 	program := tea.NewProgram(model, tea.WithoutSignalHandler())
 	result, err := program.Run()
 	if err != nil {
@@ -178,7 +180,7 @@ func promptAddTemplate(defaultName, defaultContent string, theme ui.Theme) (stri
 	return "", "", false, fmt.Errorf("unexpected model result")
 }
 
-func newAddTemplateModel(defaultName, defaultContent string, theme ui.Theme) addTemplateModel {
+func newAddTemplateModel(defaultName, defaultContent string, theme ui.Theme, altEnterSubmit bool) addTemplateModel {
 	nameInput := textinput.New()
 	nameInput.Placeholder = "template-name"
 	nameInput.CharLimit = 200
@@ -193,12 +195,14 @@ func newAddTemplateModel(defaultName, defaultContent string, theme ui.Theme) add
 	contentInput.SetHeight(8)
 	contentInput.SetWidth(80)
 	contentInput.Blur()
+	submitKey, _ := ui.ConfigureTextarea(&contentInput, theme, altEnterSubmit)
 
 	return addTemplateModel{
 		step:         addTemplateNameStep,
 		nameInput:    nameInput,
 		contentInput: contentInput,
 		theme:        theme,
+		submitKey:    submitKey,
 	}
 }
 
@@ -225,14 +229,13 @@ func (m addTemplateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.errMessage = ""
 				return m, nil
 			}
-		case tea.KeyCtrlS:
-			if m.step == addTemplateContentStep {
-				if strings.TrimSpace(m.contentInput.Value()) == "" {
-					m.errMessage = "Template content is required."
-					return m, nil
-				}
-				return m, tea.Quit
+		}
+		if m.step == addTemplateContentStep && key.Matches(msg, m.submitKey) {
+			if strings.TrimSpace(m.contentInput.Value()) == "" {
+				m.errMessage = "Template content is required."
+				return m, nil
 			}
+			return m, tea.Quit
 		}
 	}
 
@@ -247,7 +250,10 @@ func (m addTemplateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m addTemplateModel) View() string {
 	title := lipgloss.NewStyle().Bold(true).Foreground(m.theme.Headings).Render("Add template")
-	help := "Enter name, then press Enter. Add content, then press Ctrl+S to save."
+	help := "Enter name, then press Enter."
+	if m.step == addTemplateContentStep {
+		help = ui.TextareaSubmitHelp(m.submitKey, "save")
+	}
 	if m.errMessage != "" {
 		help = lipgloss.NewStyle().Foreground(m.theme.TextHighlight).Render(m.errMessage)
 	} else {
@@ -265,16 +271,15 @@ func (m addTemplateModel) View() string {
 		Padding(0, 1).
 		Render(m.contentInput.View())
 
-	content := strings.Join([]string{
-		title,
-		help,
-		"",
-		"Name:",
-		nameBox,
-		"",
-		"Content:",
-		contentBox,
-	}, "\n")
+	sections := []string{title, "", "Name:", nameBox}
+	if m.step == addTemplateNameStep {
+		sections = append(sections, help)
+	}
+	sections = append(sections, "", "Content:", contentBox)
+	if m.step == addTemplateContentStep {
+		sections = append(sections, help)
+	}
+	content := strings.Join(sections, "\n")
 
 	return lipgloss.NewStyle().Margin(1, 1).Render(content)
 }
