@@ -71,10 +71,12 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		if err != nil {
 			return err
 		}
-		if agentTemplate, err := agentTemplateForSelection(cwd); err != nil {
+		agentTemplates, err := workflow.AgentTemplatesForSelection(cwd, cfg, opts.agents)
+		if err != nil {
 			return err
-		} else if agentTemplate != nil {
-			allTemplates = append(allTemplates, *agentTemplate)
+		}
+		if len(agentTemplates) > 0 {
+			allTemplates = append(allTemplates, agentTemplates...)
 		}
 		prompter := interactive.New(bubbletea.NewAdapter(cfg))
 		note := ""
@@ -262,20 +264,6 @@ func stripSubcommand(args []string, name string) []string {
 		}
 	}
 	return args
-}
-
-func agentTemplateForSelection(cwd string) (*domain.Template, error) {
-	path := filepath.Join(cwd, "AGENTS.md")
-	if _, err := os.Stat(path); err == nil {
-		return &domain.Template{
-			Name:        "agents.md",
-			DisplayName: "Agent instructions",
-			Description: "From AGENTS.md",
-		}, nil
-	} else if !os.IsNotExist(err) {
-		return nil, err
-	}
-	return nil, nil
 }
 
 func shouldInteractive(opts *rootOptions, cfg domain.Config) bool {

@@ -163,7 +163,7 @@ func collectTemplateContents(cwd string, repo template.Repository, req domain.Re
 		if name == "" {
 			continue
 		}
-		if strings.EqualFold(name, "agents.md") {
+		if isAgentTemplateName(name) {
 			continue
 		}
 		tmpl, err := repo.Get(name)
@@ -174,6 +174,29 @@ func collectTemplateContents(cwd string, repo template.Repository, req domain.Re
 	}
 
 	return contents, nil
+}
+
+func isAgentTemplateName(name string) bool {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return false
+	}
+	if strings.EqualFold(trimmed, "agents.md") || strings.EqualFold(trimmed, "agents") {
+		return true
+	}
+	path := strings.ToLower(filepath.ToSlash(trimmed))
+	switch {
+	case strings.HasPrefix(path, "cursor/commands/"):
+		return true
+	case strings.HasPrefix(path, "kiro/steering/"):
+		return true
+	case strings.HasPrefix(path, "opencode/commands/"):
+		return true
+	case strings.HasPrefix(path, "opencode/skills/"):
+		return true
+	default:
+		return false
+	}
 }
 
 func joinParts(left, right string) string {
@@ -330,25 +353,71 @@ func collectGitIgnoredFiles(root string) ([]FileContent, error) {
 }
 
 func collectAgentTemplates(cwd string, templateNames []string) ([]string, error) {
-	if !containsTemplate(templateNames, "agents.md") {
-		return nil, nil
-	}
 	var templates []string
-	if content, err := readOptionalTemplate(filepath.Join(cwd, "AGENTS.md")); err != nil {
-		return nil, err
-	} else if content != "" {
-		templates = append(templates, content)
+	seen := make(map[string]bool)
+	for _, name := range templateNames {
+		key := strings.TrimSpace(strings.ToLower(name))
+		if key == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		content, err := readAgentTemplate(cwd, name)
+		if err != nil {
+			return nil, err
+		}
+		if strings.TrimSpace(content) != "" {
+			templates = append(templates, content)
+		}
 	}
 	return templates, nil
 }
 
-func containsTemplate(names []string, match string) bool {
-	for _, name := range names {
-		if strings.EqualFold(strings.TrimSpace(name), match) {
-			return true
+func readAgentTemplate(cwd, name string) (string, error) {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return "", nil
+	}
+	if strings.EqualFold(trimmed, "agents.md") || strings.EqualFold(trimmed, "agents") {
+		return readOptionalTemplate(filepath.Join(cwd, "AGENTS.md"))
+	}
+	namePath := filepath.ToSlash(trimmed)
+	lower := strings.ToLower(namePath)
+	switch {
+	case strings.HasPrefix(lower, "cursor/commands/"):
+		rel := strings.TrimPrefix(namePath, "cursor/commands/")
+		return readOptionalTemplate(filepath.Join(cwd, ".cursor", "commands", filepath.FromSlash(rel)))
+	case strings.HasPrefix(lower, "kiro/steering/"):
+		rel := strings.TrimPrefix(namePath, "kiro/steering/")
+		return readOptionalTemplate(filepath.Join(cwd, ".kiro", "steering", filepath.FromSlash(rel)))
+	case strings.HasPrefix(lower, "opencode/commands/"):
+		rel := strings.TrimPrefix(namePath, "opencode/commands/")
+		return readOpencodeTemplate("commands", rel)
+	case strings.HasPrefix(lower, "opencode/skills/"):
+		rel := strings.TrimPrefix(namePath, "opencode/skills/")
+		return readOpencodeTemplate("skills", rel)
+	default:
+		return "", nil
+	}
+}
+
+func readOpencodeTemplate(subdir, rel string) (string, error) {
+	candidates := opencodeTemplateRoots()
+	rel = filepath.FromSlash(rel)
+	if subdir == "skills" && !strings.HasSuffix(strings.ToLower(rel), "skill.md") {
+		rel = filepath.Join(rel, "SKILL.md")
+	}
+	for _, root := range candidates {
+		if strings.TrimSpace(root) == "" {
+			continue
+		}
+		path := filepath.Join(root, subdir, rel)
+		if content, err := readOptionalTemplate(path); err != nil {
+			return "", err
+		} else if strings.TrimSpace(content) != "" {
+			return content, nil
 		}
 	}
-	return false
+	return "", nil
 }
 
 func readOptionalTemplate(path string) (string, error) {

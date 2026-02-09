@@ -72,7 +72,11 @@ func renderTemplateGroups(groups []workflow.TemplateGroup, theme ui.Theme) strin
 		if i > 0 {
 			builder.WriteString("\n\n")
 		}
-		builder.WriteString(groupStyle.Render(fmt.Sprintf("%s templates", group.Label)))
+		heading := group.Heading
+		if strings.TrimSpace(heading) == "" {
+			heading = fmt.Sprintf("%s templates", group.Label)
+		}
+		builder.WriteString(groupStyle.Render(heading))
 		if strings.TrimSpace(group.Location) != "" {
 			builder.WriteString("\n")
 			builder.WriteString(pathStyle.Render(group.Location))
