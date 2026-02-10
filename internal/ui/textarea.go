@@ -25,15 +25,12 @@ func ConfigureTextarea(input *textarea.Model, theme Theme, altEnterSubmit bool) 
 func TextareaKeyBindings(altEnterSubmit bool) (key.Binding, key.Binding) {
 	submitKey := key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "submit"))
 	newlineKey := key.NewBinding(
-		key.WithKeys("alt+enter", "shift+enter", "ctrl+j"),
+		key.WithKeys("alt+enter"),
 		key.WithHelp("alt+enter", "newline"),
 	)
 	if altEnterSubmit {
 		submitKey = key.NewBinding(key.WithKeys("alt+enter"), key.WithHelp("alt+enter", "submit"))
-		newlineKey = key.NewBinding(
-			key.WithKeys("enter", "shift+enter", "ctrl+j"),
-			key.WithHelp("enter", "newline"),
-		)
+		newlineKey = key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "newline"))
 	}
 	return submitKey, newlineKey
 }
@@ -41,7 +38,7 @@ func TextareaKeyBindings(altEnterSubmit bool) (key.Binding, key.Binding) {
 // TextareaSubmitHelp formats the key help for a multi-line submit action.
 func TextareaSubmitHelp(submitKey key.Binding, action string) string {
 	if submitKey.Help().Key == "alt+enter" {
-		return fmt.Sprintf("Press Alt+Enter to %s. Enter (or Shift+Enter/Ctrl+J) for a new line.", action)
+		return fmt.Sprintf("Press Alt+Enter to %s. Enter for a new line.", action)
 	}
-	return fmt.Sprintf("Press Enter to %s. Alt+Enter (or Shift+Enter/Ctrl+J) for a new line.", action)
+	return fmt.Sprintf("Press Enter to %s. Alt+Enter for a new line.", action)
 }
