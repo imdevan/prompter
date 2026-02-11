@@ -73,7 +73,7 @@ func renderConfigTemplate(cfg domain.Config) string {
 	builder.WriteString(fmt.Sprintf("# history_location = %q\n", cfg.HistoryLocation))
 	builder.WriteString(fmt.Sprintf("# local_prompts_location = %q\n", cfg.LocalPromptsLocation))
 	builder.WriteString("\n# Templates & agents\n")
-	builder.WriteString("# include_agents options: all, none, agents, kiro, cursor\n")
+	builder.WriteString("# include_agents options: all, none, agents, claude, opencode, cursor, antigravity, kiro\n")
 	builder.WriteString(fmt.Sprintf("# include_agents = %q\n", cfg.IncludeAgents))
 	builder.WriteString(fmt.Sprintf("# editor = %q\n", cfg.Editor))
 	builder.WriteString("# directory_strategy options: git (tracked files), filesystem (walk directory, uses .gitignore when present)\n")

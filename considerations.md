@@ -31,3 +31,11 @@ usage:
 ```bash
 prompter -m 
 ```
+
+
+- Remove remapping builtin shortflags
+  - not needed now after changing them to capital letters
+
+- Add shell execution at template generation time?
+
+- Change default locations to ~/.prompter? curren is XDG_ recommended locations
