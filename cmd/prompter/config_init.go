@@ -67,6 +67,7 @@ func runConfigInit(cmd *cobra.Command, opts *configInitOptions) error {
 
 func renderConfigTemplate(cfg domain.Config) string {
 	var builder strings.Builder
+	builder.WriteString("# Config docs: https://devan.gg/prompter-cli/configuration/\n\n")
 	builder.WriteString("# Locations\n")
 	builder.WriteString(fmt.Sprintf("# prompts_location = %q\n", cfg.PromptsLocation))
 	builder.WriteString(fmt.Sprintf("# history_location = %q\n", cfg.HistoryLocation))
