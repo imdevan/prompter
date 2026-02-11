@@ -31,6 +31,7 @@ border = "08"
 
 # CLI behavior
 interactive_default = true
+show_base_prompt_input = false
 alt_enter_submit = false
 include_builtin_shorthand = true
 

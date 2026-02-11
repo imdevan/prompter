@@ -96,6 +96,7 @@ func renderConfigTemplate(cfg domain.Config) string {
 	builder.WriteString(fmt.Sprintf("# border = %q\n", cfg.Border))
 	builder.WriteString("\n# CLI behavior\n")
 	builder.WriteString(fmt.Sprintf("# interactive_default = %t\n", cfg.InteractiveDefault))
+	builder.WriteString(fmt.Sprintf("# show_base_prompt_input = %t\n", cfg.ShowBasePromptInput))
 	builder.WriteString(fmt.Sprintf("# alt_enter_submit = %t\n", cfg.AltEnterSubmit))
 	builder.WriteString(fmt.Sprintf("# include_builtin_shorthand = %t\n", cfg.IncludeBuiltinShorthand))
 	builder.WriteString("\n# History\n")
