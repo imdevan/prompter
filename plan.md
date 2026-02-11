@@ -220,7 +220,7 @@ e.g. `primary=7 or other color type that lipgloss supports`
 
 - [ ] 16.1 config init changes
   - [x] 16.1.a should comment out all default options (everything)
-  - [ ] 16.1.b add config to toggle base prompt input 
+  - [x] 16.1.b add config to toggle base prompt input 
   - [ ] 16.1.c standardize config variable names
 
 - [ ] 16.2 build for arch, btw
