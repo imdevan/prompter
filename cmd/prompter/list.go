@@ -12,6 +12,7 @@ import (
 
 	"prompter-cli/internal/config"
 	"prompter-cli/internal/domain"
+	"prompter-cli/internal/flags"
 	"prompter-cli/internal/ui"
 	"prompter-cli/internal/workflow"
 )
@@ -52,12 +53,12 @@ func runList(cmd *cobra.Command, opts *listOptions) error {
 	}
 
 	theme := ui.ThemeFromConfig(cfg)
-	content := renderTemplateGroups(groups, theme)
+	content := renderTemplateGroups(groups, theme, cfg)
 	_, err = fmt.Fprintln(cmd.OutOrStdout(), content)
 	return err
 }
 
-func renderTemplateGroups(groups []workflow.TemplateGroup, theme ui.Theme) string {
+func renderTemplateGroups(groups []workflow.TemplateGroup, theme ui.Theme, cfg domain.Config) string {
 	var builder strings.Builder
 	if len(groups) == 0 {
 		builder.WriteString("No template locations configured.")
@@ -82,27 +83,44 @@ func renderTemplateGroups(groups []workflow.TemplateGroup, theme ui.Theme) strin
 			builder.WriteString(pathStyle.Render(group.Location))
 		}
 		builder.WriteString("\n\n")
-		builder.WriteString(renderTemplateList(group.Templates, descStyle, theme))
+		builder.WriteString(renderTemplateList(group.Templates, descStyle, theme, cfg))
 	}
 
 	return builder.String()
 }
 
-func renderTemplateList(templates []domain.Template, descStyle lipgloss.Style, theme ui.Theme) string {
+func renderTemplateList(templates []domain.Template, descStyle lipgloss.Style, theme ui.Theme, cfg domain.Config) string {
 	if len(templates) == 0 {
 		return lipgloss.NewStyle().Foreground(theme.Muted).Render("No templates found.")
 	}
+	flagLabels := listFlagLabels(templates, cfg)
 	items := make([]list.Item, 0, len(templates))
+	maxDescLines := 0
 	for _, tmpl := range templates {
+		flagLabel := flagLabels[tmpl.Name]
 		items = append(items, templateListItem{
 			display:     tmpl.DisplayLabel(),
-			flagLabel:   formatFlagLabel(tmpl),
+			flagLabel:   flagLabel,
 			description: strings.TrimSpace(tmpl.Description),
 			pinned:      tmpl.Pinned,
 			theme:       theme,
 		})
+		descLines := 0
+		if strings.TrimSpace(tmpl.Description) != "" {
+			descLines++
+		}
+		if strings.TrimSpace(flagLabel) != "" {
+			descLines++
+		}
+		if descLines > maxDescLines {
+			maxDescLines = descLines
+		}
 	}
 	delegate := list.NewDefaultDelegate()
+	if maxDescLines < 1 {
+		maxDescLines = 1
+	}
+	delegate.SetHeight(maxDescLines + 1)
 	delegate.Styles.SelectedTitle = delegate.Styles.NormalTitle
 	delegate.Styles.SelectedDesc = delegate.Styles.NormalDesc
 	delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.Foreground(theme.Secondary).Bold(true)
@@ -170,62 +188,33 @@ func (t templateListItem) FilterValue() string {
 	return t.display
 }
 
-func formatFlagLabel(tmpl domain.Template) string {
-	flags := []string{}
-	shorthand := strings.TrimSpace(tmpl.Shorthand)
-	if shorthand == "" {
-		shorthand = listTemplateShorthand(tmpl.Name)
-	}
-	flag := strings.TrimSpace(tmpl.Flag)
-	if flag == "" {
-		flag = listTemplateFlagName(tmpl.Name)
-	}
-	if shorthand != "" {
-		flags = append(flags, "-"+shorthand)
-	}
-	if flag != "" {
-		flags = append(flags, "--"+flag)
-	}
-	if len(flags) == 0 {
-		return ""
-	}
-	return strings.Join(flags, ", ")
-}
-
-func listTemplateFlagName(name string) string {
-	name = strings.TrimSpace(strings.ToLower(name))
-	if name == "" {
-		return ""
-	}
-	var builder strings.Builder
-	lastDash := false
-	for _, r := range name {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
-			builder.WriteRune(r)
-			lastDash = false
+func listFlagLabels(templates []domain.Template, cfg domain.Config) map[string]string {
+	usedShort := flags.BuiltinShortFlags(cfg)
+	labels := make(map[string]string, len(templates))
+	for _, tmpl := range templates {
+		if isSkillTemplateName(tmpl.Name) {
 			continue
 		}
-		if !lastDash {
-			builder.WriteRune('-')
-			lastDash = true
-		}
-	}
-	return strings.Trim(builder.String(), "-")
-}
-
-func listTemplateShorthand(name string) string {
-	base := strings.TrimSpace(filepath.Base(name))
-	if base == "" {
-		return ""
-	}
-	for _, r := range base {
-		if r >= 'A' && r <= 'Z' {
-			r = r - 'A' + 'a'
-		}
-		if r < 'a' || r > 'z' {
+		info := flags.TemplateFlags(cfg, []domain.Template{tmpl}, usedShort)
+		entry, ok := info[tmpl.Name]
+		if !ok {
 			continue
 		}
-		return string(r)
+		parts := []string{}
+		if entry.Shorthand != "" {
+			parts = append(parts, "-"+entry.Shorthand)
+		}
+		if entry.Flag != "" {
+			parts = append(parts, "--"+entry.Flag)
+		}
+		if len(parts) > 0 {
+			labels[tmpl.Name] = strings.Join(parts, ", ")
+		}
 	}
-	return ""
+	return labels
+}
+
+func isSkillTemplateName(name string) bool {
+	path := strings.ToLower(filepath.ToSlash(strings.TrimSpace(name)))
+	return strings.Contains(path, "/skills/")
 }
