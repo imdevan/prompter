@@ -223,7 +223,6 @@ e.g. `primary=7 or other color type that lipgloss supports`
 - [ ] 16.1.b add config to toggle base prompt input 
 - [ ] 16.1.c standardize config variable names
 
-
 - [ ] 16.2 build for arch, btw
 - [ ] 16.3 build for homebrew
 
