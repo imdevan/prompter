@@ -83,7 +83,7 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		if opts.clipboard {
 			note = "Clipboard content will be appended."
 		}
-		req, err := prompter.Collect(basePrompt, allTemplates, templates, opts.clipboard || cfg.ShowBasePromptInput, note)
+		req, err := prompter.Collect(basePrompt, allTemplates, templates, cfg.ShowBasePromptInput, note)
 		if err != nil {
 			if errors.Is(err, interactive.ErrCanceled) {
 				return printExitMessage(cmd.OutOrStdout(), cfg, "Canceled.", true)

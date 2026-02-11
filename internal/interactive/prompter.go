@@ -23,13 +23,13 @@ func New(ui UI) *Prompter {
 }
 
 // Collect gathers base prompt and template selections.
-func (p *Prompter) Collect(basePrompt string, templates []domain.Template, preselected []string, forcePrompt bool, note string) (domain.Request, error) {
+func (p *Prompter) Collect(basePrompt string, templates []domain.Template, preselected []string, promptForBase bool, note string) (domain.Request, error) {
 	if p.UI == nil {
 		return domain.Request{}, nil
 	}
 
 	prompt := strings.TrimSpace(basePrompt)
-	if prompt == "" || forcePrompt {
+	if promptForBase {
 		var err error
 		prompt, err = p.UI.AskBasePrompt(prompt, note)
 		if err != nil {

@@ -17,7 +17,7 @@ func TestPrompterCollectPreselectsTemplates(t *testing.T) {
 		Selected:   selected,
 	}
 	prompter := New(ui)
-	req, err := prompter.Collect("base", selected, []string{"question", "test"}, false, "")
+	req, err := prompter.Collect("base", selected, []string{"question", "test"}, true, "")
 	if err != nil {
 		t.Fatalf("collect: %v", err)
 	}
