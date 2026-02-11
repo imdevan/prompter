@@ -219,7 +219,10 @@ e.g. `primary=7 or other color type that lipgloss supports`
 - Notes: Cross-platform build, Homebrew template, docs updates.
 
 16.1 config init changes
-- [x] should comment out all default options (everything)
+- [x] 16.1.a should comment out all default options (everything)
+- [ ] 16.1.b add config to toggle base prompt input 
+- [ ] 16.1.c standardize config variable names
+
 
 - [ ] 16.2 build for arch, btw
 - [ ] 16.3 build for homebrew
@@ -244,7 +247,6 @@ e.g. `primary=7 or other color type that lipgloss supports`
 - [ ] 4 Improve template interaction
   - [ ] 4.1 Add delete template from p interactive
   - [ ] 4.2 add edit template from p interactive
-
 
 **Responsive breakpoints**
 ```
