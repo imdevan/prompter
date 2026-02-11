@@ -73,7 +73,7 @@ func DefaultConfig() Config {
 		BasePrompt:              "07",
 		Border:                  "08",
 		InteractiveDefault:      true,
-		ShowBasePromptInput:     false,
+		ShowBasePromptInput:     true,
 		AltEnterSubmit:          false,
 		IncludeBuiltinShorthand: true,
 		RemapShortFlags:         map[string]string{},
