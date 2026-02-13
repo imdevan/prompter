@@ -121,7 +121,7 @@ func addRootFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Config, opti
 
 	addString("config", "", "config file path", &opts.configPath)
 	addStringSlice("file", "", "files to include", &opts.files)
-	addBool("directory", "D", "include current directory", &opts.includeDir)
+	addBool("dir-content", "", "include current directory content in prompt", &opts.includeDir)
 	addString("target", "T", "output target (clipboard, stdout, file:/path, editor)", &opts.target)
 	addBool("clipboard", "B", "use clipboard input", &opts.clipboard)
 	addBool("agents", "A", "include AGENTS.md/.cursor/.kiro templates", &opts.agents)

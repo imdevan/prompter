@@ -4,4 +4,4 @@ include_agents = "all"
 editor = "nvim"
 
 [remap_short_flags]
-directory = "D"
+dir-content = "D"

@@ -6,4 +6,4 @@ interactive_default = false
 include_builtin_shorthand = false
 
 [remap_short_flags]
-directory = "d"
+dir-content = "d"

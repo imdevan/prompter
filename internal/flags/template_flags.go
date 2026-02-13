@@ -73,7 +73,7 @@ func BuiltinShortFlags(cfg domain.Config) map[string]bool {
 	}{
 		{"config", ""},
 		{"file", ""},
-		{"directory", "D"},
+		{"dir-content", ""},
 		{"target", "T"},
 		{"clipboard", "B"},
 		{"agents", "A"},
