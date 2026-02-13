@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -55,7 +56,8 @@ func newRootCmd() *cobra.Command {
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if opts.showVersion {
-				cmd.Printf("version=%s commit=%s date=%s\n", version, commit, date)
+				ver := resolvedVersion()
+				cmd.Printf("%s\n", ver)
 				return nil
 			}
 			return runGenerate(cmd, opts, args)
@@ -76,6 +78,18 @@ func newRootCmd() *cobra.Command {
 	cmd.AddCommand(newCompletionCmd())
 
 	return cmd
+}
+
+func resolvedVersion() string {
+	ver := version
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return ver
+	}
+	if ver == "dev" && strings.TrimSpace(info.Main.Version) != "" && info.Main.Version != "(devel)" {
+		ver = info.Main.Version
+	}
+	return ver
 }
 
 type rootFlagOptions struct {
