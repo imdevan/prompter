@@ -5,6 +5,11 @@
 brew install imdevan/prompter/prompter
 ```
 
+## Arch (AUR)
+```bash
+yay -S prompter
+```
+
 ## Manual
 ```bash
 just build

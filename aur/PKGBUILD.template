@@ -1,0 +1,19 @@
+pkgname=prompter
+pkgver=__PKGVER__
+pkgrel=1
+pkgdesc="Prompt assembly tool for AI coding agents"
+arch=('x86_64' 'aarch64')
+url="https://github.com/imdevan/prompter"
+license=('MIT')
+makedepends=('go')
+source=("prompter-${pkgver}.tar.gz::__SOURCE_URL__")
+sha256sums=('__SHA256__')
+
+build() {
+  cd "$srcdir/prompter-${pkgver}"
+  go build -trimpath -ldflags "-s -w -X main.version=v${pkgver}" -o prompter ./cmd/prompter
+}
+
+package() {
+  install -Dm755 "$srcdir/prompter-${pkgver}/prompter" "$pkgdir/usr/bin/prompter"
+}

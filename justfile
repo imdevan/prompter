@@ -15,6 +15,9 @@ dev-build:
 cross-platform:
 	./scripts/build.sh
 
+build-aur:
+	./scripts/build_aur.sh
+
 install:
 	install -m 0755 bin/prompter /usr/local/bin/prompter
 
