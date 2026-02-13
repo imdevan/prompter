@@ -218,10 +218,10 @@ e.g. `primary=7 or other color type that lipgloss supports`
  Status: pending
 - Notes: Cross-platform build, Homebrew template, docs updates.
 
-- [ ] 16.1 config init changes
+- [x] 16.1 config init changes
   - [x] 16.1.a should comment out all default options (everything)
   - [x] 16.1.b add config to toggle base prompt input 
-  - [ ] 16.1.c validate prompter --version shows correct version
+  - [x] 16.1.c validate prompter --version shows correct version
 
 - [ ] 16.2 build for arch, btw
 - [ ] 16.3 build for homebrew
