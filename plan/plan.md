@@ -211,7 +211,7 @@ e.g. `primary=7 or other color type that lipgloss supports`
   on root command
     - [x] when vim closes copy all content after frontmatter to the clipboard
   on insert from history
-    - [x] copy all content between frontmatter and last prompt seperator ---
+    - [x] copy all content between frontmatter and last prompt separator ---
 
 
 16) Release readiness
