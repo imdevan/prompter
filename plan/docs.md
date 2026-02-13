@@ -22,17 +22,12 @@ bug fixes: change to pipe implementation
 ## Docs:
 
 - [x] 5 Install
-- [ ] 5.1 add arch install after homebrew
-
-- [ ] 6 Setup update
-- [ ] Rewrite to match:
-- [ ] Call config init `prompter config init`
-- [ ] Add a prompt `prompter add`
-- [ ] remove quick start section entirely
+- [x] 5.1 add arch install after homebrew
 
 7 Remove side bar sections are related content
+
+Intro (current)
 Usage Guide
-Interactive Mode
 Custom Templates
 
 New side bar:
@@ -40,7 +35,7 @@ Prompter Cli / Install
 Commands
   - derive all subcommands from project
     - Add commands include:
-      - descriptions
+      - description
       - command, interactive and non interactive
       - flags
       - examples
