@@ -111,6 +111,39 @@ func TestManagerSave(t *testing.T) {
 	}
 }
 
+func TestManagerNormalizesRemapShortFlags(t *testing.T) {
+	root := t.TempDir()
+	cwd := filepath.Join(root, "project")
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "config"))
+	if err := os.MkdirAll(cwd, 0o755); err != nil {
+		t.Fatalf("mkdir cwd: %v", err)
+	}
+
+	configPath := utils.ConfigPathGlobal()
+	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
+		t.Fatalf("mkdir config dir: %v", err)
+	}
+	data := []byte("[remap_short_flags]\nClipboard = \" b \"\n directory = \" D \"\n")
+	if err := os.WriteFile(configPath, data, 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	manager := NewManager(cwd)
+	got, err := manager.Load()
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if got.RemapShortFlags["clipboard"] != "b" {
+		t.Fatalf("expected normalized clipboard shorthand, got %q", got.RemapShortFlags["clipboard"])
+	}
+	if got.RemapShortFlags["directory"] != "D" {
+		t.Fatalf("expected normalized directory shorthand, got %q", got.RemapShortFlags["directory"])
+	}
+	if _, ok := got.RemapShortFlags["Clipboard"]; ok {
+		t.Fatalf("expected remap keys to be lowercased")
+	}
+}
+
 func TestManagerExists(t *testing.T) {
 	root := t.TempDir()
 	cwd := filepath.Join(root, "project")

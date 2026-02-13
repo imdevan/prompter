@@ -225,8 +225,23 @@ func applyPartial(config *domain.Config, partial *partialConfig) {
 		config.IncludeBuiltinShorthand = *partial.IncludeBuiltinShorthand
 	}
 	if partial.RemapShortFlags != nil {
-		config.RemapShortFlags = partial.RemapShortFlags
+		config.RemapShortFlags = normalizeRemapShortFlags(partial.RemapShortFlags)
 	}
+}
+
+func normalizeRemapShortFlags(input map[string]string) map[string]string {
+	if input == nil {
+		return nil
+	}
+	normalized := make(map[string]string, len(input))
+	for key, value := range input {
+		trimmedKey := strings.ToLower(strings.TrimSpace(key))
+		if trimmedKey == "" {
+			continue
+		}
+		normalized[trimmedKey] = strings.TrimSpace(value)
+	}
+	return normalized
 }
 
 func expandPath(value string) string {
