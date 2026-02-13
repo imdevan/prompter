@@ -496,10 +496,6 @@ func (d templateItemDelegate) Render(w io.Writer, m list.Model, index int, listI
 		return
 	}
 	isSelected := d.selecteds[item.index]
-	cursor := " "
-	if index == m.Index() {
-		cursor = ">"
-	}
 	marker := "[ ]"
 	if isSelected {
 		marker = "[x]"
@@ -511,7 +507,7 @@ func (d templateItemDelegate) Render(w io.Writer, m list.Model, index int, listI
 		descStyle = d.Styles.SelectedDesc
 	}
 
-	title := titleStyle.Render(fmt.Sprintf("%s %s %s", cursor, marker, item.Title()))
+	title := titleStyle.Render(fmt.Sprintf("%s %s", marker, item.Title()))
 	if desc := item.Description(); desc != "" {
 		desc = descStyle.Render("    " + desc)
 		fmt.Fprintf(w, "%s\n%s", title, desc)
