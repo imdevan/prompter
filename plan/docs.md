@@ -24,7 +24,7 @@ bug fixes: change to pipe implementation
 - [x] 5 Install
 - [x] 5.1 add arch install after homebrew
 
-7 Remove side bar sections are related content
+6 Sidebar outline
 
 Intro (current)
 Usage Guide
@@ -44,7 +44,6 @@ Templates
   Discovery
   Index.md
   Template Syntax
-    - includes details from "Template SYntax and Template Variables Reference"
 Configuration
 Nvim integration 
 Advanced
