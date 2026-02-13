@@ -11,6 +11,8 @@ prompter "explain this output"
 ```bash
 prompter list
 prompter list -a # include agent templates (AGENTS.md, .cursor/commands, .kiro/steering, opencode)
+prompter --directory # include current directory path in prompt
+prompter --dir-content # include current directory content in prompt
 ```
 
 ## Development

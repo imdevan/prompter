@@ -33,6 +33,7 @@ type rootOptions struct {
 	yes                   bool
 	editorTarget          bool
 	templates             []string
+	includeDirPath        bool
 	showVersion           bool
 	historyTag            string
 	templateFlagName      map[string]string
@@ -122,6 +123,7 @@ func addRootFlags(cmd *cobra.Command, opts *rootOptions, cfg domain.Config, opti
 	addString("config", "", "config file path", &opts.configPath)
 	addStringSlice("file", "", "files to include", &opts.files)
 	addBool("dir-content", "", "include current directory content in prompt", &opts.includeDir)
+	addBool("directory", "D", "include current directory path in prompt", &opts.includeDirPath)
 	addString("target", "T", "output target (clipboard, stdout, file:/path, editor)", &opts.target)
 	addBool("clipboard", "B", "use clipboard input", &opts.clipboard)
 	addBool("agents", "A", "include AGENTS.md/.cursor/.kiro templates", &opts.agents)

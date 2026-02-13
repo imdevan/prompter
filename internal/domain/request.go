@@ -9,6 +9,7 @@ type Request struct {
 	HistoryTag        string
 	Files             []string
 	IncludeDirectory  bool
+	IncludeDirPath    bool
 	DirectoryPath     string
 	DirectoryStrategy string
 	Target            string

@@ -42,20 +42,23 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 	}
 
 	var directory DirectoryInfo
-	if req.IncludeDirectory {
+	if req.IncludeDirectory || req.IncludeDirPath {
 		root := req.DirectoryPath
 		if root == "" {
 			root = cwd
 		}
-		strategy := req.DirectoryStrategy
-		if strategy == "" {
-			strategy = cfg.DirectoryStrategy
+		directory.Root = root
+		if req.IncludeDirectory {
+			strategy := req.DirectoryStrategy
+			if strategy == "" {
+				strategy = cfg.DirectoryStrategy
+			}
+			dirFiles, err := collectDirectoryFiles(root, strategy)
+			if err != nil {
+				return "", err
+			}
+			directory.Files = dirFiles
 		}
-		dirFiles, err := collectDirectoryFiles(root, strategy)
-		if err != nil {
-			return "", err
-		}
-		directory = DirectoryInfo{Root: root, Files: dirFiles}
 	}
 
 	data := TemplateData{
@@ -109,6 +112,9 @@ func (g *Generator) Run(req domain.Request, cfg domain.Config) (string, error) {
 
 	if len(files) > 0 {
 		assembled = joinParts(assembled, formatFiles("Files", files))
+	}
+	if req.IncludeDirPath && directory.Root != "" {
+		assembled = joinParts(assembled, formatDirectoryPath(directory.Root))
 	}
 	if req.IncludeDirectory && len(directory.Files) > 0 {
 		assembled = joinParts(assembled, formatFiles("Directory", directory.Files))
@@ -433,4 +439,8 @@ func formatFiles(label string, files []FileContent) string {
 		builder.WriteString("\n")
 	}
 	return strings.TrimSpace(builder.String())
+}
+
+func formatDirectoryPath(path string) string {
+	return "Directory: " + path
 }

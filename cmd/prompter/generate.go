@@ -120,6 +120,7 @@ func runGenerate(cmd *cobra.Command, opts *rootOptions, args []string) error {
 		HistoryTag:        strings.TrimSpace(opts.historyTag),
 		Files:             opts.files,
 		IncludeDirectory:  opts.includeDir,
+		IncludeDirPath:    opts.includeDirPath,
 		DirectoryStrategy: cfg.DirectoryStrategy,
 		Target:            target,
 		EditorTarget:      editorTarget,
@@ -223,7 +224,7 @@ func hasPromptInput(req domain.Request) bool {
 	if len(req.Files) > 0 {
 		return true
 	}
-	if req.IncludeDirectory {
+	if req.IncludeDirectory || req.IncludeDirPath {
 		return true
 	}
 	if strings.TrimSpace(req.PipedInput) != "" {

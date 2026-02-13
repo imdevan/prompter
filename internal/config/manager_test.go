@@ -73,8 +73,8 @@ func TestManagerLoadPrecedence(t *testing.T) {
 	if got.Target == "" || got.PromptsLocation == "" {
 		t.Fatalf("expected config to be populated")
 	}
-	if got.RemapShortFlags["dir-content"] != "D" {
-		t.Fatalf("expected remap_short_flags override from local config, got %q", got.RemapShortFlags["dir-content"])
+	if got.RemapShortFlags["directory"] != "D" {
+		t.Fatalf("expected remap_short_flags override from local config, got %q", got.RemapShortFlags["directory"])
 	}
 }
 
@@ -90,7 +90,7 @@ func TestManagerSave(t *testing.T) {
 	want := domain.DefaultConfig()
 	want.Editor = "vim"
 	want.Target = "stdout"
-	want.RemapShortFlags = map[string]string{"dir-content": "d"}
+	want.RemapShortFlags = map[string]string{"directory": "d"}
 
 	if err := manager.Save(want); err != nil {
 		t.Fatalf("save config: %v", err)
@@ -123,7 +123,7 @@ func TestManagerNormalizesRemapShortFlags(t *testing.T) {
 	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
 		t.Fatalf("mkdir config dir: %v", err)
 	}
-	data := []byte("[remap_short_flags]\nClipboard = \" b \"\n dir-content = \" D \"\n")
+	data := []byte("[remap_short_flags]\nClipboard = \" b \"\n directory = \" D \"\n")
 	if err := os.WriteFile(configPath, data, 0o644); err != nil {
 		t.Fatalf("write config: %v", err)
 	}
@@ -136,8 +136,8 @@ func TestManagerNormalizesRemapShortFlags(t *testing.T) {
 	if got.RemapShortFlags["clipboard"] != "b" {
 		t.Fatalf("expected normalized clipboard shorthand, got %q", got.RemapShortFlags["clipboard"])
 	}
-	if got.RemapShortFlags["dir-content"] != "D" {
-		t.Fatalf("expected normalized dir-content shorthand, got %q", got.RemapShortFlags["dir-content"])
+	if got.RemapShortFlags["directory"] != "D" {
+		t.Fatalf("expected normalized directory shorthand, got %q", got.RemapShortFlags["directory"])
 	}
 	if _, ok := got.RemapShortFlags["Clipboard"]; ok {
 		t.Fatalf("expected remap keys to be lowercased")
