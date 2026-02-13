@@ -268,7 +268,15 @@ func readFiles(paths []string) ([]FileContent, error) {
 func collectDirectoryFiles(root, strategy string) ([]FileContent, error) {
 	switch strings.ToLower(strategy) {
 	case "git":
-		return collectGitFiles(root)
+		files, err := collectGitFiles(root)
+		if err == nil {
+			return files, nil
+		}
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) && exitErr.ExitCode() == 128 {
+			return collectFilesystemFiles(root)
+		}
+		return nil, err
 	default:
 		return collectFilesystemFiles(root)
 	}
