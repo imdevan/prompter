@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/term"
 	"github.com/spf13/cobra"
 
 	"prompter-cli/internal/adapters/editor"
@@ -90,6 +91,9 @@ func runAdd(cmd *cobra.Command, opts *addOptions, args []string) error {
 	templatePath := filepath.Join(cfg.PromptsLocation, name+".md")
 	if !opts.force {
 		if _, err := os.Stat(templatePath); err == nil {
+			if !term.IsTerminal(os.Stdin.Fd()) {
+				return fmt.Errorf("template %s already exists (use --force to overwrite)", name)
+			}
 			theme := ui.ThemeFromConfig(cfg)
 			confirm, err := promptOverwriteTemplate(name, theme)
 			if err != nil {
