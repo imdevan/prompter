@@ -163,7 +163,7 @@ func (t templateListItem) Title() string {
 	flagStyle := lipgloss.NewStyle().Foreground(t.theme.Tags)
 	parts := []string{nameStyle.Render(t.display)}
 	if t.pinned {
-		parts = append(parts, flagStyle.Render("[pinned]"))
+		parts = append(parts, flagStyle.Render(""))
 	}
 	return strings.Join(parts, "  ")
 }

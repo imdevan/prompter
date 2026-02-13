@@ -526,7 +526,11 @@ type templateItem struct {
 }
 
 func (t templateItem) Title() string {
-	return t.template.DisplayLabel()
+	title := t.template.DisplayLabel()
+	if t.template.Pinned {
+		return title + " "
+	}
+	return title
 }
 
 func (t templateItem) Description() string {
