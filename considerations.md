@@ -10,7 +10,8 @@
 - Access tagged prompts from root
   current: prompter history prompt_tag
   change:  prompter #prompt_tag         # In addition to standard history function
-
+- Add subcommand
+  - optino to add from a file
 - Nested templates 
 
 ```markdown_format.md
@@ -39,3 +40,8 @@ prompter -m
 - Add shell execution at template generation time?
 
 - Change default locations to ~/.prompter? curren is XDG_ recommended locations
+
+- Remove cwd or diectory
+{{ .Directory }} - Included directory info
+{{ .CWD }} - Current working directory
+
