@@ -47,4 +47,4 @@ border = "08"
 [remap_short_flags]
 # Map long flags to a custom short flag (single letter).
 # Existing short flags: A B D E F I T V Y
-# Example: directory = "D"
+# Example: clipboard = "b"
