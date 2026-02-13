@@ -13,12 +13,11 @@ import (
 )
 
 type skillSource struct {
-	Token       string
-	Prefix      string
-	LocalDir    string
-	LocalLabel  string
-	GlobalDir   string
-	GlobalLabel string
+	Token      string
+	Prefix     string
+	LocalDir   string
+	LocalLabel string
+	GlobalDir  string
 }
 
 func skillSources() []skillSource {
@@ -42,52 +41,46 @@ func skillSources() []skillSource {
 	}
 	return []skillSource{
 		{
-			Token:       "opencode",
-			Prefix:      "opencode/skills",
-			LocalDir:    filepath.Join(".opencode", "skills"),
-			LocalLabel:  ".opencode/skills",
-			GlobalDir:   opencodeGlobal,
-			GlobalLabel: "opencode/skills",
+			Token:      "opencode",
+			Prefix:     "opencode/skills",
+			LocalDir:   filepath.Join(".opencode", "skills"),
+			LocalLabel: ".opencode/skills",
+			GlobalDir:  opencodeGlobal,
 		},
 		{
-			Token:       "claude",
-			Prefix:      "claude/skills",
-			LocalDir:    filepath.Join(".claude", "skills"),
-			LocalLabel:  ".claude/skills",
-			GlobalDir:   claudeGlobal,
-			GlobalLabel: ".claude/skills",
+			Token:      "claude",
+			Prefix:     "claude/skills",
+			LocalDir:   filepath.Join(".claude", "skills"),
+			LocalLabel: ".claude/skills",
+			GlobalDir:  claudeGlobal,
 		},
 		{
-			Token:       "agents",
-			Prefix:      "agents/skills",
-			LocalDir:    filepath.Join(".agents", "skills"),
-			LocalLabel:  ".agents/skills",
-			GlobalDir:   agentsGlobal,
-			GlobalLabel: ".agents/skills",
+			Token:      "agents",
+			Prefix:     "agents/skills",
+			LocalDir:   filepath.Join(".agents", "skills"),
+			LocalLabel: ".agents/skills",
+			GlobalDir:  agentsGlobal,
 		},
 		{
-			Token:       "kiro",
-			Prefix:      "kiro/skills",
-			LocalDir:    filepath.Join(".kiro", "skills"),
-			LocalLabel:  ".kiro/skills",
-			GlobalDir:   kiroGlobal,
-			GlobalLabel: ".kiro/skills",
+			Token:      "kiro",
+			Prefix:     "kiro/skills",
+			LocalDir:   filepath.Join(".kiro", "skills"),
+			LocalLabel: ".kiro/skills",
+			GlobalDir:  kiroGlobal,
 		},
 		{
-			Token:       "cursor",
-			Prefix:      "cursor/skills",
-			LocalDir:    filepath.Join(".cursor", "skills"),
-			LocalLabel:  ".cursor/skills",
-			GlobalDir:   cursorGlobal,
-			GlobalLabel: ".cursor/skills",
+			Token:      "cursor",
+			Prefix:     "cursor/skills",
+			LocalDir:   filepath.Join(".cursor", "skills"),
+			LocalLabel: ".cursor/skills",
+			GlobalDir:  cursorGlobal,
 		},
 		{
-			Token:       "antigravity",
-			Prefix:      "antigravity/skills",
-			LocalDir:    filepath.Join(".antigravity", "skills"),
-			LocalLabel:  ".antigravity/skills",
-			GlobalDir:   antigravityGlobal,
-			GlobalLabel: ".antigravity/skills",
+			Token:      "antigravity",
+			Prefix:     "antigravity/skills",
+			LocalDir:   filepath.Join(".antigravity", "skills"),
+			LocalLabel: ".antigravity/skills",
+			GlobalDir:  antigravityGlobal,
 		},
 	}
 }
@@ -273,7 +266,8 @@ func collectSkillTemplatesFromRoots(roots []string, sources []skillSource, local
 		if strings.TrimSpace(source.GlobalDir) == "" {
 			continue
 		}
-		entries, err := collectSkillsFromDir(source.GlobalDir, source.Prefix, source.GlobalLabel)
+		label := formatSkillLocationLabel(source.GlobalDir)
+		entries, err := collectSkillsFromDir(source.GlobalDir, source.Prefix, label)
 		if err != nil {
 			return nil, err
 		}
@@ -290,15 +284,17 @@ type skillDir struct {
 func opencodeGlobalSkillDirs() []skillDir {
 	dirs := []skillDir{}
 	if configHome := strings.TrimSpace(utils.XDGConfigHome()); configHome != "" {
+		dir := filepath.Join(configHome, "opencode", "skills")
 		dirs = append(dirs, skillDir{
-			dir:   filepath.Join(configHome, "opencode", "skills"),
-			label: "opencode/skills",
+			dir:   dir,
+			label: formatSkillLocationLabel(dir),
 		})
 	}
 	if home, err := os.UserHomeDir(); err == nil && strings.TrimSpace(home) != "" {
+		dir := filepath.Join(home, ".opencode", "skills")
 		dirs = append(dirs, skillDir{
-			dir:   filepath.Join(home, ".opencode", "skills"),
-			label: ".opencode/skills",
+			dir:   dir,
+			label: formatSkillLocationLabel(dir),
 		})
 	}
 	return dirs
@@ -421,6 +417,25 @@ func readOpencodeCommandTemplate(rel string) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+func formatSkillLocationLabel(dir string) string {
+	dir = filepath.Clean(strings.TrimSpace(dir))
+	if dir == "" {
+		return ""
+	}
+	home, err := os.UserHomeDir()
+	if err == nil && strings.TrimSpace(home) != "" {
+		home = filepath.Clean(home)
+		if dir == home {
+			return "~"
+		}
+		prefix := home + string(os.PathSeparator)
+		if strings.HasPrefix(dir, prefix) {
+			return "~" + dir[len(home):]
+		}
+	}
+	return dir
 }
 
 func skillFrontmatterName(content string) string {
