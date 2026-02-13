@@ -60,11 +60,23 @@ func ListTemplates(cwd string, cfg domain.Config, opts ListOptions) ([]TemplateG
 		if err != nil {
 			return nil, err
 		}
-		skills := append(append([]domain.Template{}, localSkills...), globalSkills...)
-		if len(skills) > 0 {
+		cursorCommands, err := collectCursorCommandTemplates(cwd, cfg.IncludeAgents, opts.IncludeAgents)
+		if err != nil {
+			return nil, err
+		}
+		if len(cursorCommands) > 0 {
+			localSkills = append(localSkills, cursorCommands...)
+		}
+		if len(globalSkills) > 0 {
 			groups = append(groups, TemplateGroup{
 				Heading:   "Global Skills",
-				Templates: skills,
+				Templates: globalSkills,
+			})
+		}
+		if len(localSkills) > 0 {
+			groups = append(groups, TemplateGroup{
+				Heading:   "Local Skills",
+				Templates: localSkills,
 			})
 		}
 
@@ -97,17 +109,9 @@ func collectAgentTemplatesForList(cwd, includeAgentsValue string, includeAll boo
 			templates = append(templates, *tmpl)
 		}
 	}
-	if includeAll || shouldIncludeAgent(includeAgentsValue, "cursor") {
-		cursorDir := filepath.Join(cwd, ".cursor", "commands")
-		cursorTemplates, err := collectTemplatesFromDir(cursorDir, "cursor/commands")
-		if err != nil {
-			return nil, err
-		}
-		templates = append(templates, cursorTemplates...)
-	}
 	if includeAll || shouldIncludeAgent(includeAgentsValue, "kiro") {
 		kiroDir := filepath.Join(cwd, ".kiro", "steering")
-		kiroTemplates, err := collectTemplatesFromDir(kiroDir, "kiro/steering")
+		kiroTemplates, err := collectTemplatesFromDir(kiroDir, "kiro/steering", "kiro/steering")
 		if err != nil {
 			return nil, err
 		}
@@ -122,6 +126,37 @@ func collectAgentTemplatesForList(cwd, includeAgentsValue string, includeAll boo
 		templates = append(templates, opencodeCommands...)
 	}
 	return templates, nil
+}
+
+func collectCursorCommandTemplates(cwd, includeAgentsValue string, includeAll bool) ([]domain.Template, error) {
+	if !includeAll && !shouldIncludeAgent(includeAgentsValue, "cursor") {
+		return nil, nil
+	}
+	cursorDir := filepath.Join(cwd, ".cursor", "commands")
+	return collectTemplatesFromDir(cursorDir, "cursor/commands", ".cursor/commands")
+}
+
+func templateFrontmatterName(content string) string {
+	header, ok := frontmatterHeader(content)
+	if !ok {
+		return ""
+	}
+	for _, line := range strings.Split(header, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		key, value, ok := strings.Cut(line, ":")
+		if !ok {
+			continue
+		}
+		if strings.TrimSpace(strings.ToLower(key)) != "name" {
+			continue
+		}
+		value = strings.TrimSpace(strings.Trim(value, "\""))
+		return value
+	}
+	return ""
 }
 
 func agentTemplateFromFile(cwd, filename string) (*domain.Template, error) {
@@ -173,7 +208,7 @@ func splitConfigList(value string) []string {
 	})
 }
 
-func collectTemplatesFromDir(root, labelPrefix string) ([]domain.Template, error) {
+func collectTemplatesFromDir(root, namePrefix, label string) ([]domain.Template, error) {
 	info, err := os.Stat(root)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -196,10 +231,19 @@ func collectTemplatesFromDir(root, labelPrefix string) ([]domain.Template, error
 		if err != nil {
 			return err
 		}
-		name := filepath.ToSlash(filepath.Join(labelPrefix, rel))
+		name := filepath.ToSlash(filepath.Join(namePrefix, rel))
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		displayName := templateFrontmatterName(string(data))
+		if displayName == "" {
+			displayName = strings.TrimSuffix(filepath.Base(rel), filepath.Ext(rel))
+		}
 		templates = append(templates, domain.Template{
 			Name:        name,
-			Description: "From " + labelPrefix,
+			DisplayName: displayName,
+			Description: "From " + label,
 			Location:    path,
 		})
 		return nil
@@ -218,7 +262,7 @@ func collectTemplatesFromDirs(roots []string, subdir, labelPrefix string) ([]dom
 			continue
 		}
 		dir := filepath.Join(root, subdir)
-		items, err := collectTemplatesFromDir(dir, labelPrefix)
+		items, err := collectTemplatesFromDir(dir, labelPrefix, labelPrefix)
 		if err != nil {
 			return nil, err
 		}
@@ -245,6 +289,13 @@ func AgentTemplatesForSelection(cwd string, cfg domain.Config, includeAll bool) 
 	skills, err := collectSkillTemplatesForSelection(cwd, cfg.IncludeAgents, includeAll)
 	if err != nil {
 		return nil, err
+	}
+	cursorCommands, err := collectCursorCommandTemplates(cwd, cfg.IncludeAgents, includeAll)
+	if err != nil {
+		return nil, err
+	}
+	if len(cursorCommands) > 0 {
+		skills = append(skills, cursorCommands...)
 	}
 	if len(skills) > 0 {
 		templates = append(templates, skills...)

@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -192,9 +191,6 @@ func listFlagLabels(templates []domain.Template, cfg domain.Config) map[string]s
 	usedShort := flags.BuiltinShortFlags(cfg)
 	labels := make(map[string]string, len(templates))
 	for _, tmpl := range templates {
-		if isSkillTemplateName(tmpl.Name) {
-			continue
-		}
 		info := flags.TemplateFlags(cfg, []domain.Template{tmpl}, usedShort)
 		entry, ok := info[tmpl.Name]
 		if !ok {
@@ -212,9 +208,4 @@ func listFlagLabels(templates []domain.Template, cfg domain.Config) map[string]s
 		}
 	}
 	return labels
-}
-
-func isSkillTemplateName(name string) bool {
-	path := strings.ToLower(filepath.ToSlash(strings.TrimSpace(name)))
-	return strings.Contains(path, "/skills/")
 }

@@ -97,6 +97,48 @@ func DefaultTemplateFlagName(name string) string {
 	if name == "" {
 		return ""
 	}
+	if trimmed := templateFlagNameBase(name); trimmed != "" {
+		return normalizeFlagName(trimmed)
+	}
+	return normalizeFlagName(name)
+}
+
+func templateFlagNameBase(name string) string {
+	path := filepath.ToSlash(strings.TrimSpace(name))
+	if path == "" {
+		return ""
+	}
+	lower := strings.ToLower(path)
+	for _, prefix := range []string{
+		"agents/skills/",
+		"claude/skills/",
+		"cursor/skills/",
+		"kiro/skills/",
+		"opencode/skills/",
+		"antigravity/skills/",
+	} {
+		if strings.HasPrefix(lower, prefix) {
+			suffix := path[len(prefix):]
+			return strings.TrimSuffix(suffix, "/")
+		}
+	}
+	for _, prefix := range []string{
+		"cursor/commands/",
+	} {
+		if strings.HasPrefix(lower, prefix) {
+			suffix := path[len(prefix):]
+			suffix = strings.TrimSuffix(suffix, filepath.Ext(suffix))
+			return strings.TrimSuffix(suffix, "/")
+		}
+	}
+	return ""
+}
+
+func normalizeFlagName(name string) string {
+	name = strings.TrimSpace(strings.ToLower(name))
+	if name == "" {
+		return ""
+	}
 	var builder strings.Builder
 	lastDash := false
 	for _, r := range name {
