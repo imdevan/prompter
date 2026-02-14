@@ -106,13 +106,10 @@ flags:
   - [x] Add agent suffix + de-dup tests (agents included in suffix, no repeats)
 
 9) Interactive ui updates
-- [ ] interactive ui reflects template processing
-  - [ ] templates with {{.Prompt}} before any other white space are put at the end of of the visual list
-  - [ ] templates with {{.Prompt}} in the middle of their copy should visual wrap templates it will wrap in the process
 - [x] base prompt is color3
 
 10) Tagging history
-- [ ] History may have frontmatter
+- [x] History may have frontmatter
 10.1 Prompt tag
 - [x] Add a tag flag to root command. If present, history should be created with frontmatter and tag populated
 10.2 History frontmatter
@@ -248,6 +245,9 @@ e.g. `primary=7 or other color type that lipgloss supports`
   - [ ] 4.2 add edit template from p interactive
   - [ ] 4.3 add add template from p interactive
 
+  - [ ] interactive ui reflects template processing
+    - [ ] templates with {{.Prompt}} before any other white space are put at the end of of the visual list
+    - [ ] templates with {{.Prompt}} in the middle of their copy should visual wrap templates it will wrap in the process
 **Responsive breakpoints**
 ```
 sm: < 40
