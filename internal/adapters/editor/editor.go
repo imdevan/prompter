@@ -25,10 +25,16 @@ func (a Adapter) Open(path string) error {
 func (a Adapter) OpenAtEnd(path string) error {
 	command := ResolveCommand(a.Command)
 	if command == "" {
-		return errors.New("editor command is required")
+		return errors.New("editor is required")
 	}
 	if IsVim(command) {
 		return OpenVimAtEnd(command, path)
+	}
+	if IsNano(command) {
+		return OpenNanoAtEnd(command, path)
+	}
+	if IsEmacs(command) {
+		return OpenEmacsAtEnd(command, path)
 	}
 	return a.Open(path)
 }

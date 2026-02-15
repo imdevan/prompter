@@ -465,19 +465,26 @@ func openHistoryForInsert(out io.Writer, theme ui.Theme, editorAdapter *editor.A
 	if command == "" {
 		return editorAdapter.Open(path)
 	}
+	openErr := error(nil)
 	if editor.IsVim(command) {
-		if err := editor.OpenVimInsert(command, path, line); err != nil {
+		openErr = editor.OpenVimInsert(command, path, line)
+	} else if editor.IsNano(command) {
+		openErr = editor.OpenNanoAtLine(command, path, line)
+	} else if editor.IsEmacs(command) {
+		openErr = editor.OpenEmacsAtLine(command, path, line)
+	} else {
+		openErr = editorAdapter.Open(path)
+	}
+	if openErr != nil {
+		return openErr
+	}
+	if strings.EqualFold(strings.TrimSpace(target), "clipboard") && clip != nil {
+		if err := copyHistoryInsertToClipboard(clip, path, separator); err != nil {
 			return err
 		}
-		if strings.EqualFold(strings.TrimSpace(target), "clipboard") && clip != nil {
-			if err := copyHistoryInsertToClipboard(clip, path, separator); err != nil {
-				return err
-			}
-			return confirmClipboardCopy(out, theme)
-		}
-		return nil
+		return confirmClipboardCopy(out, theme)
 	}
-	return editorAdapter.Open(path)
+	return nil
 }
 
 func ensureHistoryInsertMarker(path string, separator string) (int, error) {
