@@ -255,3 +255,9 @@ md: < 80
 lg: > 80
 xl: > 300
 ```
+
+- [ ] 5 Template vars
+  - [ ] clipboard
+  - [ ] git info 
+  - [ ] env (env.USER)
+  - [ ] config (Config.Editor)
