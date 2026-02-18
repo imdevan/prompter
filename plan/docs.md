@@ -51,5 +51,15 @@ Advanced
   Best practices
   
 
+## Docs refinements
 
+2. probably just regenerate template syntax? examples are bad. 
+ available data is the only good part.
+ should address rendering order
 
+1 add section  about prompt generation order
+  where? (prompter gen, Template Syn)?
+
+2 Neovim integration 
+  - save current docs to old
+  - replace neovim integration
