@@ -15,8 +15,20 @@ dev-build:
 cross-platform:
 	./scripts/build.sh
 
-build-aur:
-	./scripts/build_aur.sh
+build-aur version:
+	@if git remote get-url origin >/dev/null 2>&1; then \
+		git tag {{version}}; \
+		git push origin {{version}}; \
+	else \
+		echo "Skipping tag push: no 'origin' remote configured."; \
+		git tag {{version}}; \
+	fi
+	@tarball_url="https://github.com/imdevan/prompter/archive/refs/tags/{{version}}.tar.gz"; \
+	sha256="$$(curl -L -s "$${tarball_url}" | sha256sum | awk '{print $$1}')"; \
+	VERSION={{version}} AUR_SOURCE_SHA256="$${sha256}" ./scripts/build_aur.sh
+
+publish-aur aur_dir:
+	./scripts/aur_publish.sh {{aur_dir}}
 
 install:
 	install -m 0755 bin/prompter /usr/local/bin/prompter
