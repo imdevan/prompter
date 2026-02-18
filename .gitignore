@@ -1,5 +1,6 @@
 .gocache
 bin
+dist
 
 gh_pages_docs
 
